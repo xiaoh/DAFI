@@ -14,6 +14,7 @@ import importlib
 
 ## local modules
 from DAInverse import DAFiltering
+from utilities import readInputData
 
 ## functions used in main code
 def _printUsage():
@@ -37,7 +38,16 @@ DAInputFile = _parseInput()
 
 # initilize which Filtering you will use
 np.random.seed(2000)
-inverseModel = DAFiltering.EnKF(DAInputFile)
+paramDict = readInputData(DAInputFile)
+try:
+    EnsembleMethod = paramDict['EnsembleMethod']
+except KeyError, e:
+    EnsembleMethod = 'EnKF'
+
+print EnsembleMethod+' will be used as ensemble method'
+inverseModel = getattr(importlib.import_module('DAFiltering'), EnsembleMethod)
+inverseModel = inverseModel(DAInputFile)
+
 
 # solving the inverse problem
 startTime = time.time()

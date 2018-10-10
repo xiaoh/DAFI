@@ -1,4 +1,3 @@
-# Copyright: Jianxun Wang (vtwjx@vt.edu)
 # Mar.27, 2015
 
 """
@@ -1013,7 +1012,7 @@ class FoamTauSolver(dynModel):
         DAstep = (nextEndTime - self.DAInterval) / self.DAInterval
         if self.pseudoObs == 0:
             #TO implement experiment observation
-            Obs = self._Observe(nextEndTime)
+            Obs = self.Observe(nextEndTime)
             #pdb.set_trace()
             H = self._constructHMatrix()
             #pdb.set_trace()
@@ -1543,7 +1542,7 @@ class FoamTauSolver(dynModel):
 
         return UObs, TauObs
 
-    def _Observe(self, nextEndTime):
+    def Observe(self, nextEndTime):
         """ Function is to get observation Data from experiment
 
         Arg:
@@ -1724,3 +1723,250 @@ class FoamTauSolver(dynModel):
             elif Vec[i] < lowBound:
                 Vec[i] = lowBound
         return Vec
+
+
+    ## new method
+    
+    def getGaussNewtonVars(self, HX, X, Xpr, XP, XP0, Obs,nextEndTime):
+
+        """ Function is to generate observation and get Gauss-Newton gradient
+
+        Args:
+            HX: ensemble matrix of whole state in observation space
+            X:  ensemble state matrix
+            Xpr: Prior ensemble state matrix
+            XP:  ensemble anomaly of X
+            XP0: ensemble anomaly of prior X
+            Obs: Observation
+            nextEndTime: next DA interval
+
+        Returns:
+            Obs: state matrix of observation
+            Penalty: 
+            GNGainMatrix
+        """
+        DAstep = (nextEndTime - self.DAInterval) / self.DAInterval
+        if self.pseudoObs == 0:
+        #TO implement experiment observation
+            #Obs = self.Observe(nextEndTime) #with non-fixed obs
+            #pdb.set_trace()
+            H = self._constructHMatrix()
+            HXP = H.dot(XP)
+            Cxy = (1.0 / (self.Ns - 1.0)) *XP.dot(HXP.T)   
+            Cxxi= (1.0 / (self.Ns - 1.0)) *XP.dot(XP.T)
+           #pdb.set_trace()
+            Cxxe= (1.0 / (self.Ns - 1.0)) *XP0.dot(XP0.T) 
+            #pdb.set_trace()
+            Gen = np.dot(H.dot(XP), la.pinv(XP))
+            #pdb.set_trace()
+            senmat = Cxxe.dot(Gen.T)
+            #Cyyi = (1.0 / (self.Ns - 1.0)) * HXP.dot(HXP.T)
+            Cyyi = np.dot(np.dot(Gen, Cxxe),Gen.T)
+           #pdb.set_trace()
+            conInv = la.cond(Cyyi + self.Robs)
+            print "conditional number of (Cyyi + R) is " + str(conInv)
+            if (conInv > 1e16):
+                print "!!! warning: the matrix (Cyyi + R) are singular, inverse would be failed"
+            INV = la.inv(Cyyi + self.Robs)
+            INV = INV.A #convert np.matrix to np.ndarray
+            #pdb.set_trace()
+            GNGainMatrix = senmat.dot(INV)
+            penalty= np.dot(senmat.dot(INV),Gen.dot(X-Xpr)) 
+            #pdb.set_trace()
+            if (self._iDebug):
+                #pdb.set_trace()
+                dotXP_HXPT = np.dot(XP, HXP.T)
+                coeff =  (1.0 / (self.Ns - 1.0))
+                np.savetxt(self._debugFolderName+'dotXP_HXPT_'+str(DAstep), dotXP_HXPT)
+                np.savetxt(self._debugFolderName+'XP_'+str(DAstep), XP)
+                np.savetxt(self._debugFolderName+'H_'+str(DAstep), H.todense())
+                np.savetxt(self._debugFolderName+'HXP_'+str(DAstep), HXP)
+                np.savetxt(self._debugFolderName+'HXPT_'+str(DAstep), HXP.T)
+                np.savetxt(self._debugFolderName+'dotXP_HXPT_'+str(DAstep), dotXP_HXPT)
+                np.savetxt(self._debugFolderName+'Senmat_'+str(DAstep), senmat)
+                np.savetxt(self._debugFolderName+'HPHT_'+str(DAstep), Cyyi)
+                np.savetxt(self._debugFolderName+'INV_'+str(DAstep), INV)
+                np.savetxt(self._debugFolderName+'R_'+str(DAstep), self.Robs.todense())
+            #pdb.set_trace()    
+                
+        elif self.pseudoObs == 1:
+            pass
+            #pdb.set_trace()
+        else:
+            assert self.pseudoObs == 0|1, "pseudoObs should be 0 or 1"
+        return GNGainMatrix, penalty
+    
+    def getBackgroundVarsMDA(self, Nmda, HX, XP, nextEndTime):
+
+        """ Function is to generate observation and get kalman Gain Matrix for EnKF-MDA
+
+        Args:
+        Nmda: coeffcient to split likehood function
+        HX: ensemble matrix of whole state in observation space
+        P: covariance matrix of ensemble
+        nextEndTime: next DA interval
+
+        Returns:
+        Obs: state matrix of observation
+        KalmanGainMatrix
+        """
+        DAstep = (nextEndTime - self.DAInterval) / self.DAInterval
+        if self.pseudoObs == 0:
+            #TO implement experiment observation
+            Obs, pertObs = self.ObservePertObs(nextEndTime)
+            #pdb.set_trace()
+            H = self._constructHMatrix()
+            #pdb.set_trace()
+            HXP = H.dot(XP)
+            #pdb.set_trace()
+            PHT = (1.0 / (self.Ns - 1.0)) * np.dot(XP, HXP.T)
+            #pdb.set_trace()
+            HPHT = (1.0 / (self.Ns - 1.0)) * HXP.dot(HXP.T)
+            #pdb.set_trace()
+            conInv = la.cond(HPHT + Nmda*self.Robs)
+            print "conditional number of (HPHT + R) is " + str(conInv)
+            if (conInv > 1e16):
+                print "!!! warning: the matrix (HPHT + R) are singular, inverse would be failed"
+            INV = la.inv(HPHT + Nmda*self.Robs)
+            INV = INV.A #convert np.matrix to np.ndarray
+            #pdb.set_trace()
+            KalmanGainMatrix = PHT.dot(INV)
+            #pdb.set_trace()
+            if (self._iDebug):
+                #pdb.set_trace()
+                dotXP_HXPT = np.dot(XP, HXP.T)
+                coeff =  (1.0 / (self.Ns - 1.0))
+                np.savetxt(self._debugFolderName+'dotXP_HXPT_'+str(DAstep), dotXP_HXPT)
+                np.savetxt(self._debugFolderName+'XP_'+str(DAstep), XP)
+                np.savetxt(self._debugFolderName+'H_'+str(DAstep), H.todense())
+                np.savetxt(self._debugFolderName+'HXP_'+str(DAstep), HXP)
+                np.savetxt(self._debugFolderName+'HXPT_'+str(DAstep), HXP.T)
+                np.savetxt(self._debugFolderName+'dotXP_HXPT_'+str(DAstep), dotXP_HXPT)
+                np.savetxt(self._debugFolderName+'PHT_'+str(DAstep), PHT)
+                np.savetxt(self._debugFolderName+'HPHT_'+str(DAstep), HPHT)
+                np.savetxt(self._debugFolderName+'INV_'+str(DAstep), INV)
+                np.savetxt(self._debugFolderName+'R_'+str(DAstep), self.Robs.todense())
+            #pdb.set_trace()    
+        elif self.pseudoObs == 1:
+            pass
+            #pdb.set_trace()
+        else:
+            assert self.pseudoObs == 0|1, "pseudoObs should be 0 or 1"
+        return Obs,pertObs, KalmanGainMatrix
+    
+    def getControlVec(self, beta, XP0, HX, nextEndTime,bundlevar):
+        """ 
+        Function is to generate observation and get updated control vector
+
+            Args:
+        beta: control vector
+            HX: ensemble matrix of whole state in observation space
+            XP0: prior ensemble anomalies
+            nextEndTime: next DA interval
+
+            Returns:
+            Obs: state matrix of observation
+        Hess: Hessian of cost function
+            beta
+            """
+        DAstep = (nextEndTime - self.DAInterval) / self.DAInterval
+        if self.pseudoObs == 0:
+            #TO implement experiment observation
+            Obs = self.Observe(nextEndTime)
+            H = self._constructHMatrix()
+            HXM = np.mean(HX,axis=1)
+            #pdb.set_trace()
+            Jac = self.Grad_J(beta,XP0,HX,HXM,Obs,bundlevar)
+            Hess = self.Hes_J(beta,XP0,HX,HXM,bundlevar)
+            beta  = beta - 0.5 * la.inv(Hess).dot(Jac) #Todo: tunable Parameter Move to EnsembleMethodInputFile
+            return Obs, beta,Hess
+
+    def ObservePertObs(self, nextEndTime):
+        """ Function is to get observation Data from experiment
+        
+        Arg:
+        
+        Returns:
+        Obs: nonperturbed observation matrix
+        pertObs: perturbation of Observation
+        """
+        if self.TauOnFlag:
+            ObsFile = 'obsX'
+            absErr = np.zeros(9)
+            absErrSigma = np.zeros(9)
+            relErr = np.zeros(9)
+            relErrSigma = np.zeros(9)
+        else:
+            ObsFile = 'obsVelocity'
+            absErr = np.zeros(3)
+            absErrSigma = np.zeros(3)
+            relErr = np.zeros(3)
+            relErrSigma = np.zeros(3)
+
+        ObsVec = np.loadtxt(ospt.join(self.caseNameObservation, 'observationData/' + ObsFile))
+        pertObsVec = np.zeros(ObsVec.shape)
+        pertObs = np.zeros([self.Nvariable * self.NcellObs, self.Ns])
+        iobs = 0
+        smallVal = 1e-10
+        rSigmaVec = np.zeros(self.NstateObs)
+        if self.TauOnFlag:
+            for i in range(self.NstateObs/9):
+                for j in range(9):
+                    # absolute error
+                    absErrSigma[j] = self.ObsSigmaFixedVec[j]
+                    absErr[j] = (np.random.normal(self.rmu, absErrSigma[j], 1))[0]
+
+                    # relative error
+                    relErrSigma[j] = abs(self.ObsRelCoeffVec[j]*ObsVec[iobs])+smallVal
+                    relErr[j] = (np.random.normal(self.rmu, relErrSigma[j], 1))[0]
+
+                    ObsVec[iobs+j] = ObsVec[iobs+j]
+                    pertObsVec[iobs+j] = (absErr[j] + relErr[j])*self.ObsErrCoeff
+                    rSigmaVec[iobs+j] = (relErrSigma[j] + absErrSigma[j])**2
+                iobs = iobs + 9
+        else:
+            for i in range(self.NstateObs/3):
+                for j in range(3):
+                    # absolute error
+                    absErrSigma[j] = self.ObsSigmaFixedVec[j]
+                    absErr[j] = (np.random.normal(self.rmu, absErrSigma[j], 1))[0]
+
+                    # relative error
+                    relErrSigma[j] = abs(self.ObsRelCoeffVec[j]*ObsVec[iobs])+smallVal
+                    relErr[j] = (np.random.normal(self.rmu, relErrSigma[j], 1))[0]
+
+                    ObsVec[iobs+j] = ObsVec[iobs+j]
+                    pertObsVec[iobs+j] = (absErr[j] + relErr[j])*self.ObsErrCoeff
+                    rSigmaVec[iobs+j] = (relErrSigma[j] + absErrSigma[j])**2
+                iobs = iobs + 3
+
+        rSigmaVec = self.ObsRmaCoeff * rSigmaVec
+        if self.TauOnFlag:
+            UObs, TauObs = self._splitUTauObs(ObsVec)
+            USigma, TauSigma = self._splitUTauObs(rSigmaVec)
+            if self.normalizeFlag:
+                UObs = UObs/self.U0
+                TauObs = TauObs/self.K0
+                USigma = USigma/self.U0/self.U0
+                TauSigma = TauSigma/self.K0/self.K0
+                ObsVec = np.hstack((UObs, TauObs))
+                pertObsVec = pertObsVec/self.U0
+                rSigmaVec = np.hstack((USigma, TauSigma))
+        else:
+            if self.normalizeFlag:
+                ObsVec = ObsVec/self.U0
+                pertObsVec = pertObsVec/self.U0
+                rSigmaVec = rSigmaVec/self.U0/self.U0
+
+        self.Robs = sp.diags(rSigmaVec, 0)
+
+        # Assemble vector to matrix ObsU
+        irow = 0
+        while 1:
+            self.ObsX[:, irow] = ObsVec
+            pertObs[:,irow] = pertObsVec
+            irow = irow + 1
+            if irow == self.Ns:
+                break
+            Obs = self.ObsX
+        return Obs, pertObs
