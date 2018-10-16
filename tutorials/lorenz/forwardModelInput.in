@@ -1,0 +1,29 @@
+caseName	    Lorenz
+caseSolver          Ode
+DtInterval 0.025
+# determine which variable will be perturbed
+perturbx           True
+perturby           True
+perturbz           True
+perturbrho         True
+perturbbeta        False
+perturbsigma       False
+
+ObsSigma  0.1
+
+x 1.
+y 1.2
+z 1.
+rho 33.
+
+beta 2.66667
+sigma 10.
+xsigma 0.1
+ysigma 0.12
+zsigma 0.1
+rhosigma 2.8
+
+# parameters for observation
+ObsSigma      1e-1
+
+OutputControlDict  ./OutputControlDict.in

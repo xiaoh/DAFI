@@ -1,60 +1,85 @@
 #!/usr/bin/env python
-# copyright: Jianxun Wang (vtwjx@vt.edu)
-# Mar. 31, 2015
-# Modified by Carlos Michelen-Strofer 2018
-#
-# Inverse modeling main code
+# Copyright 2018 Virginia Polytechnic Institute and State University.
+""" Inverse modeling main executable. """
 
-## system modules
+# standard library imports
 import sys
 import os
 import time
-import numpy as np
+import ast
 import importlib
 
-## local modules
-from DAInverse import DAFiltering
-from utilities import readInputData
+# third party imports
+import numpy as np
 
-## functions used in main code
-def _printUsage():
-    """ Print usage of the program.
-    """
-    print("Usage: mfuMain.py <MainInput.in>")
+# local imports
+from dainv.utilities import read_input_data
+# user-specified inverse model filter imported later with importlib
+# user-specified dynamic model imported later with importlib
 
-def _parseInput():
-    ''' Parse the input file.
-    '''
+def print_usage():
+    """ Print usage of the program. """
+    print("Usage: mfu_main.py <input_file>")
+
+def parse_input():
+    """ Parse the input file. """
     try:
-        DAInputFile = sys.argv[1]
+        input_file = sys.argv[1]
     except IndexError, e:
         print(e)
-        printUsage()
+        print_usage()
         sys.exit(1)
-    return DAInputFile
+    return input_file
 
-## main code
-DAInputFile = _parseInput()
+# parse input file
+# required inputs
+input_file_da = parse_input()
+param_dict = read_input_data(input_file_da)
+dyn_model = param_dict['dyn_model']
+input_file_dm = param_dict['dyn_model_input']
+da_filter = param_dict['da_filter']
+t_end = float(param_dict['t_end'])
+da_interval = float(param_dict['da_interval'])
+nsamples = int(param_dict['nsamples'])
+# optional inputs - set default if missing.
+try: report_flag = ast.literal_eval(param_dict['report_flag'])
+except: report_flag = False
+try: plot_flag = ast.literal_eval(param_dict['plot_flag'])
+except: plot_flag = False
+try: save_flag = ast.literal_eval(param_dict['save_flag'])
+except: save_flag = False
+# remove all the inputs meant for this file, mfu_main.py.
+# what is left are inputs meant for the specific DA filter method used.
+main_inputs = [
+    'dyn_model', 'dyn_model_input', 'da_filter', 't_end', 'da_interval',
+    'nsamples', 'report_flag', 'plot_flag', 'save_flag']
+for inp in main_inputs:
+    try: param_dict.pop(inp);
+    except: pass
 
-# initilize which Filtering you will use
-np.random.seed(2000)
-paramDict = readInputData(DAInputFile)
-try:
-    EnsembleMethod = paramDict['EnsembleMethod']
-except KeyError, e:
-    EnsembleMethod = 'EnKF'
+# import dynamic model & initialize
+DynModel = getattr(
+    importlib.import_module('dyn_models.' + dyn_model), 'Solver')
+forward_model = DynModel(nsamples, da_interval, t_end, input_file_dm)
 
-print EnsembleMethod+' will be used as ensemble method'
-inverseModel = getattr(importlib.import_module('DAFiltering'), EnsembleMethod)
-inverseModel = inverseModel(DAInputFile)
+# initilize filter
+InvFilter = getattr(importlib.import_module('dainv.da_filtering'), da_filter)
+inverse_model = InvFilter(
+    nsamples, da_interval, t_end, forward_model, param_dict)
 
+# solve the inverse problem
+print(
+    "Solving the inverse problem:\n  Model:  {}".format(forward_model.name) +
+    "\n  Filter: {}\n".format(inverse_model.name) )
+start_time = time.time()
+inverse_model.solve()
+print("Time spent on solver: {}s".format(time.time() - start_time))
 
-# solving the inverse problem
-startTime = time.time()
-inverseModel.solve()
-inverseModel.clean()
-print("Time spent on solver: {}".format(time.time() - startTime))
-
-# report and plots
-# inverseModel.report()
-# inverseModel.plot()
+# report and plot
+if report_flag:
+    inverse_model.report()
+if plot_flag:
+    inverse_model.plot()
+if save_flag:
+    inverse_model.save()
+inverse_model.clean()

@@ -1,0 +1,89 @@
+# Copyright 2018 Virginia Polytechnic Institute and State University.
+""" Collection of I/O functions and other utilities. """
+
+
+# standard library imports
+import tempfile
+import os
+import shutil
+import sys
+
+def replace(file, pattern, subst):
+    """ Replace all instances of a pattern in a file with a new pattern.
+
+    Args:
+        file: The file to modify
+        pattern: The old character string which you want replace
+        subst: The new character string
+    """
+    #Create temp file
+    fh, abs_path = tempfile.mkstemp()
+    new_file = open(abs_path,'w')
+    old_file = open(file)
+    for line in old_file:
+        new_file.write(line.replace(pattern, subst))
+    #close temp file
+    new_file.close()
+    os.close(fh)
+    old_file.close()
+    #Remove original file
+    os.remove(file)
+    #Move new file
+    shutil.move(abs_path, file)
+
+def read_input_data(input_file):
+    """Parse an input file into a dictionary.
+
+    The input file should contain two entries per line separated by any
+    number of white space characters or ':' or '='. Comments are
+    indicated with '#'. Each non-empty, non-comment, line is stored in
+    the output dictionary with the first entry as the key (input name)
+    and the second as the argument(input value). Both keys and
+    arguments are strings.
+
+    Args:
+        input_file: Path to input file
+
+    Return:
+        param_dict: Dictionary containing input names and values.
+
+    """
+    param_dict = {}
+    try:
+        f = open(input_file, 'r')
+    except IOError:
+        print 'Cannot open file: ', input_file
+        sys.exit(1)
+    else:
+        finDA = open(input_file, "r")
+        for line in finDA:
+            line = line.strip()
+            # ignore empty or comment lines
+            if not line or line.startswith("#"):
+                continue
+            # allow ":" and "=" in input file
+            line = line.replace(':',' ').replace('=',' ')
+            # parse into dictionary
+            param, value = line.split(None,1)
+            param_dict[param] = value
+            f.close()
+    return param_dict
+
+def extract_list_from_string(string, sep=',', type_func=str):
+    """ Extract a list from a string.
+
+    Args:
+        string: String containing the list
+        sep: The separator in the string
+        type_func: Function to convert the string to desired type.
+
+    Returns:
+        value_list: List of sub-strings extracted from input string.
+
+    Example:
+        >>> extract_list_from_string('1; 2;3.6 ; 10', ';', int)
+        [1, 2, 3, 10]
+    """
+    value_list_ = string.split(sep)
+    value_list = [type_func(pn.strip()) for pn in value_list]
+    return value_list

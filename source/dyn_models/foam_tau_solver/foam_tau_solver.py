@@ -11,37 +11,38 @@ It  consist of 3 founctions:
     3 getBackgroundVars: Get observations and Kalman Gain Matrix
 
 """
-# system import
+# standard library imports
 import sys
 import os
 import os.path as ospt
+import pdb
+import ast
+import time
+
+# third party imports
 import matplotlib.pyplot as plt
 import numpy as np
 from numpy import linalg as la
 import scipy.sparse as sp
-import pdb
-import ast
-import time
 try:
     import pp
     hasPP = True
     print "Parallel Python imported successfully"
 except ImportError, e:
-    print e, 'I will not use parallel python in the simulation!'
+    print e, 'I will not use parallel python in this simulation!'
     hasPP = False
     pass
 
-# local import
-import foamFileOperation as foamOp
-import KLReducedModel as kl
-import ReynoldsStressRF as ReRF
-from utilities import readInputData, replace, extractListFromDict
-from sigmaFieldOperations import computeSigmaField
-import deltaTauRandomField as ranF
-from dynModel import dynModel
+# local imports
+from dainv.dyn_model import DynModel
+from dainv.utilities import read_input_data, replace, extract_list_from_string
+from random_field import deltaTauRandomField as ranF
+from random_field import KLReducedModel as kl
+from dyn_models.foam_tau_solver import foamFileOperation as foamOp
+from dyn_models.foam_tau_solver import ReynoldsStressRF as ReRF
+from dyn_models.foam_tau_solver.sigmaFieldOperations import computeSigmaField
 
-
-class FoamTauSolver(dynModel):
+class FoamTauSolver(DynModel):
     """
     A particular dynamic forward-model interface: OpenFOAM Tau solver
     The state variable include: U (velocity)
@@ -60,8 +61,9 @@ class FoamTauSolver(dynModel):
         """
         Initialization
         """
+        self.name = 'FoamTauSolver'
         ## Extract forward Model Input parameters
-        paramDict = readInputData(ModelInput)
+        paramDict = read_input_data(ModelInput)
         # baseline case folder name
         self.caseName = paramDict['caseName']
         # name of case that generate observation
@@ -92,10 +94,10 @@ class FoamTauSolver(dynModel):
             # --- length scales
             lenConstFlag = ast.literal_eval(paramDict['lenConstFlag'])
             if lenConstFlag:
-                lenVecXi = extractListFromDict(paramDict, 'lenVecXi')
-                lenVecEta = extractListFromDict(paramDict, 'lenVecEta')
-                lenVecK = extractListFromDict(paramDict, 'lenVecK')
-                lenVecV = extractListFromDict(paramDict, 'lenVecV')
+                lenVecXi = extract_list_from_string(paramDict['lenVecXi'])
+                lenVecEta = extract_list_from_string(paramDict['lenVecEta'])
+                lenVecK = extract_list_from_string(paramDict['lenVecK'])
+                lenVecV = extract_list_from_string(paramDict['lenVecV'])
                 self.lenVecXi = np.array([[float(pn) for pn in lenVecXi]])
                 self.lenVecEta = np.array([[float(pn) for pn in lenVecEta]])
                 self.lenVecK = np.array([[float(pn) for pn in lenVecK]])
@@ -103,7 +105,7 @@ class FoamTauSolver(dynModel):
         # --- variance field (for self.perturbation in Xi, Eta, K, VA, VB, VC)
         sigmaConstFlag = ast.literal_eval(paramDict['sigmaConstFlag'])
         if sigmaConstFlag:
-            sigmaVec = extractListFromDict(paramDict, 'sigmaVec')
+            sigmaVec = extract_list_from_string(paramDict['sigmaVec'])
             self.sigmaVec = np.array([[float(pn) for pn in sigmaVec]])
         else:
             self.sigmaVec = np.array([[0.0, 0.0, 0.0, 0.0]]) #CM: cleanup. No need to initialize KL if V not perturbed.
@@ -135,7 +137,7 @@ class FoamTauSolver(dynModel):
 
         # Output control levels
         outPutControl = paramDict['OutputControlDict']
-        outputDict = readInputData(outPutControl)
+        outputDict = read_input_data(outPutControl)
         self.screenOutput = ast.literal_eval(outputDict['screenOutput'])
         self.figureOutput = ast.literal_eval(outputDict['figureOutput'])
         self.txtfileOutput = ast.literal_eval(outputDict['txtfileOutput'])
@@ -706,10 +708,10 @@ class FoamTauSolver(dynModel):
             #self.Robs = sp.coo_matrix(Robs)
 
             self.rmu = float(paramDict['ObserveMean'])
-            ObsSigmaFixedVec = extractListFromDict(paramDict, 'ObsSigmaFixedVec')
+            ObsSigmaFixedVec = extract_list_from_string(paramDict['ObsSigmaFixedVec'])
             self.ObsSigmaFixedVec = [float(pn) for pn in ObsSigmaFixedVec]
 
-            ObsRelCoeffVec = extractListFromDict(paramDict, 'ObsRelCoeffVec')
+            ObsRelCoeffVec = extract_list_from_string(paramDict['ObsRelCoeffVec'])
             self.ObsRelCoeffVec = [float(pn) for pn in ObsRelCoeffVec]
 
             self.ObsRmaCoeff = float(paramDict['ObsRmaCoeff'])
@@ -722,10 +724,10 @@ class FoamTauSolver(dynModel):
 
         if self.pseudoObs == 1:
             self.rmu = float(paramDict['ObserveMean'])
-            ObsSigmaFixedVec = extractListFromDict(paramDict, 'ObsSigmaFixedVec')
+            ObsSigmaFixedVec = extract_list_from_string(paramDict['ObsSigmaFixedVec'])
             self.ObsSigmaFixedVec = [float(pn) for pn in ObsSigmaFixedVec]
 
-            ObsRelCoeffVec = extractListFromDict(paramDict, 'ObsRelCoeffVec')
+            ObsRelCoeffVec = extract_list_from_string(paramDict['ObsRelCoeffVec'])
             self.ObsRelCoeffVec = [float(pn) for pn in ObsRelCoeffVec]
 
             self.ObsRmaCoeff = float(paramDict['ObsRmaCoeff'])
@@ -1078,6 +1080,9 @@ class FoamTauSolver(dynModel):
         os.remove('Utemp')
         os.remove('UM.txt')
         os.remove('tau.txt')
+
+    def plot(self):
+        pass
 
     ## public methods
 
@@ -1725,8 +1730,8 @@ class FoamTauSolver(dynModel):
         return Vec
 
 
-    ## new method
-    
+    ## new methods
+
     def getGaussNewtonVars(self, HX, X, Xpr, XP, XP0, Obs,nextEndTime):
 
         """ Function is to generate observation and get Gauss-Newton gradient
@@ -1742,7 +1747,7 @@ class FoamTauSolver(dynModel):
 
         Returns:
             Obs: state matrix of observation
-            Penalty: 
+            Penalty:
             GNGainMatrix
         """
         DAstep = (nextEndTime - self.DAInterval) / self.DAInterval
@@ -1752,10 +1757,10 @@ class FoamTauSolver(dynModel):
             #pdb.set_trace()
             H = self._constructHMatrix()
             HXP = H.dot(XP)
-            Cxy = (1.0 / (self.Ns - 1.0)) *XP.dot(HXP.T)   
+            Cxy = (1.0 / (self.Ns - 1.0)) *XP.dot(HXP.T)
             Cxxi= (1.0 / (self.Ns - 1.0)) *XP.dot(XP.T)
            #pdb.set_trace()
-            Cxxe= (1.0 / (self.Ns - 1.0)) *XP0.dot(XP0.T) 
+            Cxxe= (1.0 / (self.Ns - 1.0)) *XP0.dot(XP0.T)
             #pdb.set_trace()
             Gen = np.dot(H.dot(XP), la.pinv(XP))
             #pdb.set_trace()
@@ -1771,7 +1776,7 @@ class FoamTauSolver(dynModel):
             INV = INV.A #convert np.matrix to np.ndarray
             #pdb.set_trace()
             GNGainMatrix = senmat.dot(INV)
-            penalty= np.dot(senmat.dot(INV),Gen.dot(X-Xpr)) 
+            penalty= np.dot(senmat.dot(INV),Gen.dot(X-Xpr))
             #pdb.set_trace()
             if (self._iDebug):
                 #pdb.set_trace()
@@ -1787,15 +1792,15 @@ class FoamTauSolver(dynModel):
                 np.savetxt(self._debugFolderName+'HPHT_'+str(DAstep), Cyyi)
                 np.savetxt(self._debugFolderName+'INV_'+str(DAstep), INV)
                 np.savetxt(self._debugFolderName+'R_'+str(DAstep), self.Robs.todense())
-            #pdb.set_trace()    
-                
+            #pdb.set_trace()
+
         elif self.pseudoObs == 1:
             pass
             #pdb.set_trace()
         else:
             assert self.pseudoObs == 0|1, "pseudoObs should be 0 or 1"
         return GNGainMatrix, penalty
-    
+
     def getBackgroundVarsMDA(self, Nmda, HX, XP, nextEndTime):
 
         """ Function is to generate observation and get kalman Gain Matrix for EnKF-MDA
@@ -1846,16 +1851,16 @@ class FoamTauSolver(dynModel):
                 np.savetxt(self._debugFolderName+'HPHT_'+str(DAstep), HPHT)
                 np.savetxt(self._debugFolderName+'INV_'+str(DAstep), INV)
                 np.savetxt(self._debugFolderName+'R_'+str(DAstep), self.Robs.todense())
-            #pdb.set_trace()    
+            #pdb.set_trace()
         elif self.pseudoObs == 1:
             pass
             #pdb.set_trace()
         else:
             assert self.pseudoObs == 0|1, "pseudoObs should be 0 or 1"
         return Obs,pertObs, KalmanGainMatrix
-    
+
     def getControlVec(self, beta, XP0, HX, nextEndTime,bundlevar):
-        """ 
+        """
         Function is to generate observation and get updated control vector
 
             Args:
@@ -1883,9 +1888,9 @@ class FoamTauSolver(dynModel):
 
     def ObservePertObs(self, nextEndTime):
         """ Function is to get observation Data from experiment
-        
+
         Arg:
-        
+
         Returns:
         Obs: nonperturbed observation matrix
         pertObs: perturbation of Observation

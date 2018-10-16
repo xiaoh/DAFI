@@ -1,16 +1,13 @@
-# inverse-modeling-dev
-Ensemble based inverse modeling, for internal development
-
+VT DA-Inv
+Copyright 2018 Virginia Polytechnic Institute and State University
 
 Developed by Dr. Heng Xiao's group at Virginia Tech.
 Data-Enabled Computational Mechanics Laboratory at Virgnia Tech.
 https://www.aoe.vt.edu/people/faculty/xiaoheng/personal-page.html
 
 Contributors:
-        Jianxun Wang
-        Rui Sun
-        Jinlong Wu
-        Carlos A. Michelén Ströfer
-        Xinlei Zhang
-
-
+	Jianxun Wang
+	Rui Sun
+	Jinlong Wu
+	Carlos A. Michelén Ströfer
+	Xinlei Zhang

@@ -1,0 +1,10 @@
+
+dyn_model lorenz
+dyn_model_input ./forwardModelInput.in
+da_filter EnKF
+t_end 19.75
+da_interval 0.25
+nsamples 50
+
+debug_flag           True
+debug_folder         ./debugData
