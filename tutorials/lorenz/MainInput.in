@@ -1,10 +1,21 @@
-
+#specify dynamic model
 dyn_model lorenz
+
+#specify dynamic model input file
 dyn_model_input ./forwardModelInput.in
+
+#specify data assimilation method
 da_filter EnKF
+
+#specify the end time
 t_end 19.75
+
+#specify the data assimilation inverval
 da_interval 0.25
+
+#specify the ensemble samples
 nsamples 50
 
+#specify the debug flag and folder name
 debug_flag           True
 debug_folder         ./debugData

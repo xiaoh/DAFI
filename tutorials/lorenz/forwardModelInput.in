@@ -1,29 +1,29 @@
+# specify the case name
 caseName	    Lorenz
+
+# specify the dynamic model solver
 caseSolver          Ode
-DtInterval 0.025
+
+# specify the time interval
+dt_interval 0.025
+
 # determine which variable will be perturbed
-perturbx           True
-perturby           True
-perturbz           True
-perturbrho         True
-perturbbeta        False
-perturbsigma       False
+perturb_rho         True
+perturb_beta        True
+perturb_sigma       True
 
-ObsSigma  0.1
-
+# set initial value for state variables
 x 1.
 y 1.2
 z 1.
 rho 33.
-
 beta 2.66667
 sigma 10.
-xsigma 0.1
-ysigma 0.12
-zsigma 0.1
-rhosigma 2.8
+
+# set the relative standard deviation for state variables
+x_rel_std 0.1
 
 # parameters for observation
-ObsSigma      1e-1
+obs_rel_std      1e-1
 
 OutputControlDict  ./OutputControlDict.in
