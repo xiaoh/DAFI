@@ -10,29 +10,26 @@ class DynModel(object):
     Use this as a template to write new dynamic models.
     The required attributes and methods are summarized below.
 
-    attributes:
+    Attributes
+    ----------
         name: Name of the forward model for reporting.
         nstate: Number of states in the state vector.
         nstate_obs: Number of states in the observation vector.
-
-    methods:
-        X, HX  = generate_ensemble()
-        X, HX  = forecast_to_time(X, next_end_time)
-        obs, R_obs = get_obs(next_end_time)
-        report()
-        plot()
-        clean()
     """
 
     def __init__(self, nsamples, da_interval, t_end,  input_file):
         """ Parse input file and assign values to class attributes.
 
-        Args:
-            nsamples: Ensemble size. [int]
-            da_interval: Iteration interval between data assimilation
-                        steps. [float]
-            t_end: Final time. [float]
-            input_file: Input file name. [string]
+        Parameters
+        ----------
+        nsamples : int
+            Ensemble size.
+        da_interval : float
+            Iteration interval between data assimilation steps.
+        t_end : float
+            Final time.
+        input_file : str
+            Input file name.
         """
         self.name = 'DynModel'
         self.nstate = 0
@@ -47,44 +44,66 @@ class DynModel(object):
     def generate_ensemble(self):
         """ Return states at the first data assimilation time-step.
 
-        Returns:
-            X: Ensemble matrix of states. [nstate x nsamples]
-            HX: Ensemble matrix of states in observation space.
-                [nstate_obs x nsamples]
+        Returns
+        -------
+        state_vec : ndarray
+            Ensemble matrix of states.
+            ``dtype=float``, ``ndim=2``, ``shape=(nstate, nsamples)``
+        model_obs : ndarray
+            Ensemble matrix of states in observation space.
+            ``dtype=float``, ``ndim=2``,
+            ``shape=(nstate_obs, nsamples)``
         """
-        X = np.zeros([self.nstate, self.nsamples])
-        HX = np.zeros([self.nstate_obs, self._nsamples])
-        return X, HX
+        state_vec = np.zeros([self.nstate, self.nsamples])
+        model_obs = np.zeros([self.nstate_obs, self._nsamples])
+        return state_vec, model_obs
 
-    def forecast_to_time(self, X, next_end_time):
+    def forecast_to_time(self, state_vec, next_end_time):
         """ Return states at the next end time.
 
-        Args:
-            X: Current ensemble matrix of states. [nstate x nsamples]
-            next_end_time: Next end time. [float]
+        Parameters
+        ----------
+        state_vec : ndarray
+            Current ensemble matrix of states. [nstate x nsamples]
+        next_end_time : float
+            Next end time.
 
-        Returns:
-            X: Updated ensemble matrix of states. [nstate x nsamples]
-            HX: Updated ensemble matrix of states in observation
-                space. [nstate_obs x nsamples]
+        Returns
+        -------
+        state_vec : ndarray
+            Updated ensemble matrix of states.
+            ``dtype=float``, ``ndim=2``, ``shape=(nstate, nsamples)``
+        model_obs : ndarray
+            Updated ensemble matrix of states in observation space.
+            ``dtype=float``, ``ndim=2``,
+            ``shape=(nstate_obs, nsamples)``
         """
-        X = np.zeros([self.nstate, self._nsamples])
-        HX = np.zeros([self.nstate_obs, self._nsamples])
-        return X, HX
+        state_vec = np.zeros([self.nstate, self._nsamples])
+        model_obs = np.zeros([self.nstate_obs, self._nsamples])
+        return state_vec, model_obs
 
     def get_obs(next_end_time):
         """ Return the observation and error matrix.
 
-        Args:
-            next_end_time: Next end time. [float]
+        Parameters
+        ----------
+        next_end_time : float
+            Next end time.
 
-        Returns:
-            obs: Observations. [nstate_obs x nsamples]
-            R_obs: Observation error. [nstate_obs x nstate_obs]
+        Returns
+        -------
+        obs : ndarray
+            Observations.
+            ``dtype=float``, ``ndim=2``,
+            ``shape=(nstate_obs, nsamples)``
+        obs_error : ndarray
+            Observation error.
+            ``dtype=float``, ``ndim=2``,
+            ``shape=(nstate_obs, nstate_obs)``
         """
         obs = np.zeros([self.nstate_obs, self._nsamples])
-        R_obs = np.zeros([nstate_obs, nstate_obs])
-        return obs, R_obs
+        obs_error = np.zeros([nstate_obs, nstate_obs])
+        return obs, obs_error
 
     def report(self):
         """ Report summary information. """

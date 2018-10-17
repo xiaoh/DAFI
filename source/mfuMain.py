@@ -2,7 +2,8 @@
 # Copyright 2018 Virginia Polytechnic Institute and State University.
 """ Inverse modeling main executable.
 
-Usage: mfu_main.py <input_file>
+Usage:
+    >>> mfu_main.py <input_file>
 
 Required inputs:
     dyn_model: (string)
@@ -31,8 +32,6 @@ Optional inputs:
         seed for numpy.random
 
 Other inputs:  as required by the chosen filter.
-
-Additional information: see documentation.
 """
 
 # standard library imports

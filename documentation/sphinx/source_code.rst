@@ -3,6 +3,12 @@ Source Code
 ===========
 This section contains the auto-documentation for the source code of the different packages.
 
+mfuMain
+-------
+.. automodule:: mfuMain
+       :members:
+
+
 dainv
 -----
 
