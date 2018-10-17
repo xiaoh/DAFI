@@ -101,17 +101,17 @@ class DAFilter2(DAFilter):
         Inputs in ``input_dict``:
             * **convergence_residual** (``float``) -
               Residual value for convergence.
-            * **save_folder** (``string``, ./results_da) -
+            * **save_folder** (``string``, ``./results_da``) -
               Folder where to save results.
-            * **debug_flag** (``bool``, False) -
+            * **debug_flag** (``bool``, ``False``) -
               Save extra information for debugging.
-            * **debug_folder** (``string``, ./debug) -
+            * **debug_folder** (``string``, ``./debug``) -
               Folder where to save debugging information
-            * **verbosity** (``int``, 1) -
+            * **verbosity** (``int``, ``1``) -
               Amount of information to print to screen.
-            * **sensitivity_only** (``bool``, False) -
+            * **sensitivity_only** (``bool``, ``False``) -
               Perform initial perturbation but no data assimilation).
-            * **reach_max_flag** (``bool``, True) -
+            * **reach_max_flag** (``bool``, ``True``) -
               Do not terminate simulation when converged.
         """
         self.name = 'Generic DA filtering technique'
@@ -415,7 +415,7 @@ class EnKF(DAFilter2):
 
     def _correct_forecasts(self):
         """ Correct the propagated ensemble (filtering step) using EnKF
-        
+
         **Updates:**
             * self.state_vec
         """

@@ -148,7 +148,7 @@
 <span class="c1"># third party imports</span>
 <span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
 
-<div class="viewcode-block" id="DynModel"><a class="viewcode-back" href="../../source_code.html#dainv.dyn_model.DynModel">[docs]</a><span class="k">class</span> <span class="nc">DynModel</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
+<div class="viewcode-block" id="DynModel"><a class="viewcode-back" href="../../dainv_dyn_model.html#dainv.dyn_model.DynModel">[docs]</a><span class="k">class</span> <span class="nc">DynModel</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
     <span class="sd">&quot;&quot;&quot; Parent class for dynamic models.</span>
 
 <span class="sd">    Use this as a template to write new dynamic models.</span>
@@ -161,7 +161,7 @@
 <span class="sd">        nstate_obs: Number of states in the observation vector.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
 
-<div class="viewcode-block" id="DynModel.__init__"><a class="viewcode-back" href="../../source_code.html#dainv.dyn_model.DynModel.__init__">[docs]</a>    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">nsamples</span><span class="p">,</span> <span class="n">da_interval</span><span class="p">,</span> <span class="n">t_end</span><span class="p">,</span>  <span class="n">input_file</span><span class="p">):</span>
+<div class="viewcode-block" id="DynModel.__init__"><a class="viewcode-back" href="../../dainv_dyn_model.html#dainv.dyn_model.DynModel.__init__">[docs]</a>    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">nsamples</span><span class="p">,</span> <span class="n">da_interval</span><span class="p">,</span> <span class="n">t_end</span><span class="p">,</span>  <span class="n">input_file</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot; Parse input file and assign values to class attributes.</span>
 
 <span class="sd">        Parameters</span>
@@ -185,7 +185,7 @@
         <span class="n">s</span> <span class="o">=</span> <span class="s1">&#39;An empty dynamic model.&#39;</span>
         <span class="k">return</span> <span class="n">s</span>
 
-<div class="viewcode-block" id="DynModel.generate_ensemble"><a class="viewcode-back" href="../../source_code.html#dainv.dyn_model.DynModel.generate_ensemble">[docs]</a>    <span class="k">def</span> <span class="nf">generate_ensemble</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<div class="viewcode-block" id="DynModel.generate_ensemble"><a class="viewcode-back" href="../../dainv_dyn_model.html#dainv.dyn_model.DynModel.generate_ensemble">[docs]</a>    <span class="k">def</span> <span class="nf">generate_ensemble</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot; Return states at the first data assimilation time-step.</span>
 
 <span class="sd">        Returns</span>
@@ -202,7 +202,7 @@
         <span class="n">model_obs</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">([</span><span class="bp">self</span><span class="o">.</span><span class="n">nstate_obs</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_nsamples</span><span class="p">])</span>
         <span class="k">return</span> <span class="n">state_vec</span><span class="p">,</span> <span class="n">model_obs</span></div>
 
-<div class="viewcode-block" id="DynModel.forecast_to_time"><a class="viewcode-back" href="../../source_code.html#dainv.dyn_model.DynModel.forecast_to_time">[docs]</a>    <span class="k">def</span> <span class="nf">forecast_to_time</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">state_vec</span><span class="p">,</span> <span class="n">next_end_time</span><span class="p">):</span>
+<div class="viewcode-block" id="DynModel.forecast_to_time"><a class="viewcode-back" href="../../dainv_dyn_model.html#dainv.dyn_model.DynModel.forecast_to_time">[docs]</a>    <span class="k">def</span> <span class="nf">forecast_to_time</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">state_vec</span><span class="p">,</span> <span class="n">next_end_time</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot; Return states at the next end time.</span>
 
 <span class="sd">        Parameters</span>
@@ -226,7 +226,7 @@
         <span class="n">model_obs</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">([</span><span class="bp">self</span><span class="o">.</span><span class="n">nstate_obs</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_nsamples</span><span class="p">])</span>
         <span class="k">return</span> <span class="n">state_vec</span><span class="p">,</span> <span class="n">model_obs</span></div>
 
-<div class="viewcode-block" id="DynModel.get_obs"><a class="viewcode-back" href="../../source_code.html#dainv.dyn_model.DynModel.get_obs">[docs]</a>    <span class="k">def</span> <span class="nf">get_obs</span><span class="p">(</span><span class="n">next_end_time</span><span class="p">):</span>
+<div class="viewcode-block" id="DynModel.get_obs"><a class="viewcode-back" href="../../dainv_dyn_model.html#dainv.dyn_model.DynModel.get_obs">[docs]</a>    <span class="k">def</span> <span class="nf">get_obs</span><span class="p">(</span><span class="n">next_end_time</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot; Return the observation and error matrix.</span>
 
 <span class="sd">        Parameters</span>
@@ -249,15 +249,15 @@
         <span class="n">obs_error</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">([</span><span class="n">nstate_obs</span><span class="p">,</span> <span class="n">nstate_obs</span><span class="p">])</span>
         <span class="k">return</span> <span class="n">obs</span><span class="p">,</span> <span class="n">obs_error</span></div>
 
-<div class="viewcode-block" id="DynModel.report"><a class="viewcode-back" href="../../source_code.html#dainv.dyn_model.DynModel.report">[docs]</a>    <span class="k">def</span> <span class="nf">report</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<div class="viewcode-block" id="DynModel.report"><a class="viewcode-back" href="../../dainv_dyn_model.html#dainv.dyn_model.DynModel.report">[docs]</a>    <span class="k">def</span> <span class="nf">report</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot; Report summary information. &quot;&quot;&quot;</span>
         <span class="k">pass</span></div>
 
-<div class="viewcode-block" id="DynModel.plot"><a class="viewcode-back" href="../../source_code.html#dainv.dyn_model.DynModel.plot">[docs]</a>    <span class="k">def</span> <span class="nf">plot</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<div class="viewcode-block" id="DynModel.plot"><a class="viewcode-back" href="../../dainv_dyn_model.html#dainv.dyn_model.DynModel.plot">[docs]</a>    <span class="k">def</span> <span class="nf">plot</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot; Plot relevant model results. &quot;&quot;&quot;</span>
         <span class="k">pass</span></div>
 
-<div class="viewcode-block" id="DynModel.clean"><a class="viewcode-back" href="../../source_code.html#dainv.dyn_model.DynModel.clean">[docs]</a>    <span class="k">def</span> <span class="nf">clean</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<div class="viewcode-block" id="DynModel.clean"><a class="viewcode-back" href="../../dainv_dyn_model.html#dainv.dyn_model.DynModel.clean">[docs]</a>    <span class="k">def</span> <span class="nf">clean</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot; Cleanup before exiting. &quot;&quot;&quot;</span>
         <span class="k">pass</span></div></div>
 </pre></div>

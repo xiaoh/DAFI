@@ -156,14 +156,14 @@
 <span class="kn">from</span> <span class="nn">numpy</span> <span class="k">import</span> <span class="n">linalg</span> <span class="k">as</span> <span class="n">la</span>
 
 <span class="c1"># parent classes (templates)</span>
-<div class="viewcode-block" id="DAFilter"><a class="viewcode-back" href="../../source_code.html#dainv.da_filtering.DAFilter">[docs]</a><span class="k">class</span> <span class="nc">DAFilter</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
+<div class="viewcode-block" id="DAFilter"><a class="viewcode-back" href="../../dainv_da_filtering.html#dainv.da_filtering.DAFilter">[docs]</a><span class="k">class</span> <span class="nc">DAFilter</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
     <span class="sd">&quot;&quot;&quot; Parent class for data assimilation filtering techniques.</span>
 
 <span class="sd">    Use this as a template to write new filtering classes.</span>
 <span class="sd">    The required methods are summarized below.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
 
-<div class="viewcode-block" id="DAFilter.__init__"><a class="viewcode-back" href="../../source_code.html#dainv.da_filtering.DAFilter.__init__">[docs]</a>    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span>
+<div class="viewcode-block" id="DAFilter.__init__"><a class="viewcode-back" href="../../dainv_da_filtering.html#dainv.da_filtering.DAFilter.__init__">[docs]</a>    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">,</span> <span class="n">nsamples</span><span class="p">,</span> <span class="n">da_interval</span><span class="p">,</span> <span class="n">t_end</span><span class="p">,</span> <span class="n">forward_model</span><span class="p">,</span> <span class="n">input_dict</span>
         <span class="p">):</span>
         <span class="sd">&quot;&quot;&quot; Parse input file and assign values to class attributes.</span>
@@ -187,31 +187,31 @@
         <span class="n">str_info</span> <span class="o">=</span> <span class="s1">&#39;An empty data assimilation filtering technique.&#39;</span>
         <span class="k">return</span> <span class="n">str_info</span>
 
-<div class="viewcode-block" id="DAFilter.solve"><a class="viewcode-back" href="../../source_code.html#dainv.da_filtering.DAFilter.solve">[docs]</a>    <span class="k">def</span> <span class="nf">solve</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<div class="viewcode-block" id="DAFilter.solve"><a class="viewcode-back" href="../../dainv_da_filtering.html#dainv.da_filtering.DAFilter.solve">[docs]</a>    <span class="k">def</span> <span class="nf">solve</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot; Implement the filtering technique. &quot;&quot;&quot;</span>
         <span class="k">pass</span></div>
 
-<div class="viewcode-block" id="DAFilter.report"><a class="viewcode-back" href="../../source_code.html#dainv.da_filtering.DAFilter.report">[docs]</a>    <span class="k">def</span> <span class="nf">report</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<div class="viewcode-block" id="DAFilter.report"><a class="viewcode-back" href="../../dainv_da_filtering.html#dainv.da_filtering.DAFilter.report">[docs]</a>    <span class="k">def</span> <span class="nf">report</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot; Report summary information. &quot;&quot;&quot;</span>
         <span class="k">try</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">dyn_model</span><span class="o">.</span><span class="n">report</span><span class="p">()</span>
         <span class="k">except</span><span class="p">:</span> <span class="k">pass</span></div>
 
-<div class="viewcode-block" id="DAFilter.plot"><a class="viewcode-back" href="../../source_code.html#dainv.da_filtering.DAFilter.plot">[docs]</a>    <span class="k">def</span> <span class="nf">plot</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<div class="viewcode-block" id="DAFilter.plot"><a class="viewcode-back" href="../../dainv_da_filtering.html#dainv.da_filtering.DAFilter.plot">[docs]</a>    <span class="k">def</span> <span class="nf">plot</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot; Create any relevant plots. &quot;&quot;&quot;</span>
         <span class="k">try</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">dyn_model</span><span class="o">.</span><span class="n">plot</span><span class="p">()</span>
         <span class="k">except</span><span class="p">:</span> <span class="k">pass</span></div>
 
-<div class="viewcode-block" id="DAFilter.clean"><a class="viewcode-back" href="../../source_code.html#dainv.da_filtering.DAFilter.clean">[docs]</a>    <span class="k">def</span> <span class="nf">clean</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<div class="viewcode-block" id="DAFilter.clean"><a class="viewcode-back" href="../../dainv_da_filtering.html#dainv.da_filtering.DAFilter.clean">[docs]</a>    <span class="k">def</span> <span class="nf">clean</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot; Perform any necessary cleanup at completion. &quot;&quot;&quot;</span>
         <span class="k">try</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">dyn_model</span><span class="o">.</span><span class="n">clean</span><span class="p">()</span>
         <span class="k">except</span><span class="p">:</span> <span class="k">pass</span></div>
 
-<div class="viewcode-block" id="DAFilter.save"><a class="viewcode-back" href="../../source_code.html#dainv.da_filtering.DAFilter.save">[docs]</a>    <span class="k">def</span> <span class="nf">save</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<div class="viewcode-block" id="DAFilter.save"><a class="viewcode-back" href="../../dainv_da_filtering.html#dainv.da_filtering.DAFilter.save">[docs]</a>    <span class="k">def</span> <span class="nf">save</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot; Save any important results to text files. &quot;&quot;&quot;</span>
         <span class="k">try</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">dyn_model</span><span class="o">.</span><span class="n">save</span><span class="p">()</span>
         <span class="k">except</span><span class="p">:</span> <span class="k">pass</span></div></div>
 
-<div class="viewcode-block" id="DAFilter2"><a class="viewcode-back" href="../../source_code.html#dainv.da_filtering.DAFilter2">[docs]</a><span class="k">class</span> <span class="nc">DAFilter2</span><span class="p">(</span><span class="n">DAFilter</span><span class="p">):</span>
+<div class="viewcode-block" id="DAFilter2"><a class="viewcode-back" href="../../dainv_da_filtering.html#dainv.da_filtering.DAFilter2">[docs]</a><span class="k">class</span> <span class="nc">DAFilter2</span><span class="p">(</span><span class="n">DAFilter</span><span class="p">):</span>
     <span class="sd">&quot;&quot;&quot; Parent class for DA filtering techniques.</span>
 
 <span class="sd">    This class includes more methods than the DAFilter class.</span>
@@ -222,7 +222,7 @@
 <span class="sd">    are desired.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
 
-<div class="viewcode-block" id="DAFilter2.__init__"><a class="viewcode-back" href="../../source_code.html#dainv.da_filtering.DAFilter2.__init__">[docs]</a>    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span>
+<div class="viewcode-block" id="DAFilter2.__init__"><a class="viewcode-back" href="../../dainv_da_filtering.html#dainv.da_filtering.DAFilter2.__init__">[docs]</a>    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">,</span> <span class="n">nsamples</span><span class="p">,</span> <span class="n">da_interval</span><span class="p">,</span> <span class="n">t_end</span><span class="p">,</span> <span class="n">forward_model</span><span class="p">,</span> <span class="n">input_dict</span>
         <span class="p">):</span>
         <span class="sd">&quot;&quot;&quot; Parse input file and assign values to class attributes.</span>
@@ -245,17 +245,17 @@
 <span class="sd">        Inputs in ``input_dict``:</span>
 <span class="sd">            * **convergence_residual** (``float``) -</span>
 <span class="sd">              Residual value for convergence.</span>
-<span class="sd">            * **save_folder** (``string``, ./results_da) -</span>
+<span class="sd">            * **save_folder** (``string``, ``./results_da``) -</span>
 <span class="sd">              Folder where to save results.</span>
-<span class="sd">            * **debug_flag** (``bool``, False) -</span>
+<span class="sd">            * **debug_flag** (``bool``, ``False``) -</span>
 <span class="sd">              Save extra information for debugging.</span>
-<span class="sd">            * **debug_folder** (``string``, ./debug) -</span>
+<span class="sd">            * **debug_folder** (``string``, ``./debug``) -</span>
 <span class="sd">              Folder where to save debugging information</span>
-<span class="sd">            * **verbosity** (``int``, 1) -</span>
+<span class="sd">            * **verbosity** (``int``, ``1``) -</span>
 <span class="sd">              Amount of information to print to screen.</span>
-<span class="sd">            * **sensitivity_only** (``bool``, False) -</span>
+<span class="sd">            * **sensitivity_only** (``bool``, ``False``) -</span>
 <span class="sd">              Perform initial perturbation but no data assimilation).</span>
-<span class="sd">            * **reach_max_flag** (``bool``, True) -</span>
+<span class="sd">            * **reach_max_flag** (``bool``, ``True``) -</span>
 <span class="sd">              Do not terminate simulation when converged.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">name</span> <span class="o">=</span> <span class="s1">&#39;Generic DA filtering technique&#39;</span>
@@ -299,8 +299,8 @@
 
         <span class="c1"># initialize states: these change at every iteration</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">time</span> <span class="o">=</span> <span class="mf">0.0</span> <span class="c1"># current time</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">iter</span> <span class="o">=</span> <span class="mf">0.0</span> <span class="c1"># current iteration</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">da_step</span> <span class="o">=</span> <span class="mf">0.0</span> <span class="c1"># current DA step</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">iter</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span> <span class="c1"># current iteration</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">da_step</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span> <span class="c1"># current DA step</span>
         <span class="c1"># ensemble matrix (nsamples, nstate)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">state_vec</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">([</span><span class="bp">self</span><span class="o">.</span><span class="n">dyn_model</span><span class="o">.</span><span class="n">nstate</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">nsamples</span><span class="p">])</span>
         <span class="c1"># ensemble matrix projected to observed space (nsamples, nstateSample)</span>
@@ -327,7 +327,7 @@
             <span class="s1">&#39;</span><span class="se">\n</span><span class="s1">   Forward model:     </span><span class="si">{}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">dyn_model</span><span class="o">.</span><span class="n">name</span><span class="p">)</span>
         <span class="k">return</span> <span class="n">str_info</span>
 
-<div class="viewcode-block" id="DAFilter2.solve"><a class="viewcode-back" href="../../source_code.html#dainv.da_filtering.DAFilter2.solve">[docs]</a>    <span class="k">def</span> <span class="nf">solve</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<div class="viewcode-block" id="DAFilter2.solve"><a class="viewcode-back" href="../../dainv_da_filtering.html#dainv.da_filtering.DAFilter2.solve">[docs]</a>    <span class="k">def</span> <span class="nf">solve</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot; Solve the parameter estimation problem.</span>
 
 <span class="sd">        This is the main method for the filter. It solves the inverse</span>
@@ -392,24 +392,24 @@
             <span class="k">else</span><span class="p">:</span>
                 <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;</span><span class="se">\n\n</span><span class="s2">DA Filtering completed: Max iteration reached.&quot;</span><span class="p">)</span></div>
 
-<div class="viewcode-block" id="DAFilter2.plot"><a class="viewcode-back" href="../../source_code.html#dainv.da_filtering.DAFilter2.plot">[docs]</a>    <span class="k">def</span> <span class="nf">plot</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<div class="viewcode-block" id="DAFilter2.plot"><a class="viewcode-back" href="../../dainv_da_filtering.html#dainv.da_filtering.DAFilter2.plot">[docs]</a>    <span class="k">def</span> <span class="nf">plot</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot; Plot iteration convergence. &quot;&quot;&quot;</span>
         <span class="c1"># TODO: os.system(&#39;plotIterationConvergence.py&#39;)</span>
         <span class="k">try</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">dyn_model</span><span class="o">.</span><span class="n">plot</span><span class="p">()</span>
         <span class="k">except</span><span class="p">:</span> <span class="k">pass</span></div>
 
-<div class="viewcode-block" id="DAFilter2.report"><a class="viewcode-back" href="../../source_code.html#dainv.da_filtering.DAFilter2.report">[docs]</a>    <span class="k">def</span> <span class="nf">report</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<div class="viewcode-block" id="DAFilter2.report"><a class="viewcode-back" href="../../dainv_da_filtering.html#dainv.da_filtering.DAFilter2.report">[docs]</a>    <span class="k">def</span> <span class="nf">report</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot; Report summary information. &quot;&quot;&quot;</span>
         <span class="c1"># TODO: Report DA results</span>
         <span class="k">try</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">dyn_model</span><span class="o">.</span><span class="n">report</span><span class="p">()</span>
         <span class="k">except</span><span class="p">:</span> <span class="k">pass</span></div>
 
-<div class="viewcode-block" id="DAFilter2.clean"><a class="viewcode-back" href="../../source_code.html#dainv.da_filtering.DAFilter2.clean">[docs]</a>    <span class="k">def</span> <span class="nf">clean</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<div class="viewcode-block" id="DAFilter2.clean"><a class="viewcode-back" href="../../dainv_da_filtering.html#dainv.da_filtering.DAFilter2.clean">[docs]</a>    <span class="k">def</span> <span class="nf">clean</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot; Cleanup before exiting. &quot;&quot;&quot;</span>
         <span class="k">try</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">dyn_model</span><span class="o">.</span><span class="n">clean</span><span class="p">()</span>
         <span class="k">except</span><span class="p">:</span> <span class="k">pass</span></div>
 
-<div class="viewcode-block" id="DAFilter2.save"><a class="viewcode-back" href="../../source_code.html#dainv.da_filtering.DAFilter2.save">[docs]</a>    <span class="k">def</span> <span class="nf">save</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<div class="viewcode-block" id="DAFilter2.save"><a class="viewcode-back" href="../../dainv_da_filtering.html#dainv.da_filtering.DAFilter2.save">[docs]</a>    <span class="k">def</span> <span class="nf">save</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot; Saves results to text files. &quot;&quot;&quot;</span>
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_save_flag</span><span class="p">:</span>
             <span class="n">np</span><span class="o">.</span><span class="n">savetxt</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_save_folder</span> <span class="o">+</span> <span class="n">os</span><span class="o">.</span><span class="n">sep</span> <span class="o">+</span> <span class="s1">&#39;misfit_L1&#39;</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span>
@@ -538,12 +538,12 @@
 
 <span class="c1"># child classes (specific filtering techniques</span>
 
-<div class="viewcode-block" id="EnKF"><a class="viewcode-back" href="../../source_code.html#dainv.da_filtering.EnKF">[docs]</a><span class="k">class</span> <span class="nc">EnKF</span><span class="p">(</span><span class="n">DAFilter2</span><span class="p">):</span>
+<div class="viewcode-block" id="EnKF"><a class="viewcode-back" href="../../dainv_da_filtering.html#dainv.da_filtering.EnKF">[docs]</a><span class="k">class</span> <span class="nc">EnKF</span><span class="p">(</span><span class="n">DAFilter2</span><span class="p">):</span>
     <span class="sd">&quot;&quot;&quot; Implementation of the ensemble Kalman Filter (EnKF).</span>
 <span class="sd">    &quot;&quot;&quot;</span>
     <span class="c1"># TODO: add more detail to the docstring. E.g. what is EnKF.</span>
 
-<div class="viewcode-block" id="EnKF.__init__"><a class="viewcode-back" href="../../source_code.html#dainv.da_filtering.EnKF.__init__">[docs]</a>    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span>
+<div class="viewcode-block" id="EnKF.__init__"><a class="viewcode-back" href="../../dainv_da_filtering.html#dainv.da_filtering.EnKF.__init__">[docs]</a>    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">,</span> <span class="n">nsamples</span><span class="p">,</span> <span class="n">da_interval</span><span class="p">,</span> <span class="n">t_end</span><span class="p">,</span> <span class="n">forward_model</span><span class="p">,</span> <span class="n">input_dict</span>
         <span class="p">):</span>
         <span class="sd">&quot;&quot;&quot; Parse input file and assign values to class attributes.</span>
@@ -559,7 +559,7 @@
 
     <span class="k">def</span> <span class="nf">_correct_forecasts</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot; Correct the propagated ensemble (filtering step) using EnKF</span>
-<span class="sd">        </span>
+
 <span class="sd">        **Updates:**</span>
 <span class="sd">            * self.state_vec</span>
 <span class="sd">        &quot;&quot;&quot;</span>
