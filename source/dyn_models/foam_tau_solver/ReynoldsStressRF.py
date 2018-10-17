@@ -4,7 +4,7 @@ import matplotlib.pylab as plt
 import os.path as osp
 import pdb
 from mpl_toolkits.mplot3d import Axes3D
-from foamFileOperation import *
+from dyn_models.foam_tau_solver.foamFileOperation import *
 
 class ReynoldsStressRF:
 
@@ -56,7 +56,7 @@ class ReynoldsStressRF:
             self.correctInitTau = False
         else:
             self.correctInitTau = True
-        
+
         #TODO: the path here may cause some problem
         if casePath == 'None':
             self.tau = tauFile
@@ -65,7 +65,7 @@ class ReynoldsStressRF:
 
         self.nMesh = self.tau.shape[0]  # number of cells
 
-        self.nSample = nSample          # number of samples 
+        self.nSample = nSample          # number of samples
         self.deltaXi = np.zeros((self.nMesh,self.nSample))
         self.deltaEta = np.zeros((self.nMesh,self.nSample))
         self.xcs = np.array([[1,0],[0,0],[0.5,(3**0.5/2.0)]])
@@ -121,7 +121,6 @@ class ReynoldsStressRF:
             tau = tau*numpy.exp2(deltaKT[0])
         return tau
 
-
     def perturbTauInBary(self,deltaXbary,deltaYbary,*deltaKT):
 
         """
@@ -137,7 +136,7 @@ class ReynoldsStressRF:
         X = self._C2X(self.COrg)
         XNew = X
         XNew[:,0] = X[:,0] + deltaXbary.T
-        XNew[:,1] = X[:,1] + deltaYbary.T       
+        XNew[:,1] = X[:,1] + deltaYbary.T
         Cs = self._X2C(XNew)
         if len(deltaKT) == 2:
             tau = self._C2Tau(Cs,deltaKT[1:])
@@ -147,7 +146,6 @@ class ReynoldsStressRF:
         if len(deltaKT) > 0:
             tau = tau*numpy.exp2(deltaKT[0])
         return tau
-
 
     def getXiFactor(self):
         """
@@ -327,7 +325,7 @@ class ReynoldsStressRF:
 
         if np.shape(indexList)[0] > 0:
             indexList = indexList[0][0]
-        
+
         for i in range(self.nMesh):
 
             # The rotation matrix for each basis is themself
@@ -339,7 +337,7 @@ class ReynoldsStressRF:
                 VMatrix = np.dot(VMatrixNew,np.transpose(VMatrixOrg))
             #ThetaVB = np.arccos(VMatrix[2,2])
             ThetaVB = np.arccos(np.min([1,VMatrix[2,2]]))
-            
+
             if np.sin(ThetaVB) < 1e-6:
                 aAndC = np.arctan2(VMatrix[0,1],VMatrix[0,0])
                 if aAndC < 0:
@@ -374,8 +372,6 @@ class ReynoldsStressRF:
 
         return ThetaVAList, ThetaVBList, ThetaVCList
 
-
-
     def getThetaVABC(self,tau, *indexList):
 
         """
@@ -393,7 +389,7 @@ class ReynoldsStressRF:
 
         if np.shape(indexList)[0] > 0:
             indexList = indexList[0][0]
-        
+
         for i in range(self.nMesh):
 
             # The rotation matrix for each basis is themself
@@ -407,7 +403,7 @@ class ReynoldsStressRF:
                                     VMatrixOrg[indexDict[int(indexList[i])][1]], \
                                     VMatrixOrg[indexDict[int(indexList[i])][2]]])
             ThetaVB = np.arccos(VMatrix[2,2])
-            
+
             if np.sin(ThetaVB) < 1e-6:
                 aAndC = np.arctan2(VMatrix[0,1],VMatrix[0,0])
                 if aAndC < 0:
@@ -444,13 +440,12 @@ class ReynoldsStressRF:
 
         return deltaV
 
-
     def deltaVec(self, tauOld, tauNew):
 
         """
         Get the minimum rotation pattern from old eigenvectors system to the new one.
         """
-        
+
         kOld,V1Old,V2Old,V3Old,COld,NPOld = self._tau2PhysParams(tauOld)
         kNew,V1New,V2New,V3New,CNew,NPNew = self._tau2PhysParams(tauNew)
 
@@ -474,7 +469,6 @@ class ReynoldsStressRF:
 
         return deltaVecList, indexList
 
-
     def plotEigenSystem(self, rotM):
 
         colorList = ['r', 'b', 'k']
@@ -485,7 +479,6 @@ class ReynoldsStressRF:
             ax.plot([0, rotM[iterN,0]], [0, rotM[iterN,1]], [0, rotM[iterN,2]], colorList[iterN])
         plt.show()
         return 0
-
 
     def getDeltaCosine(self, tauOld, tauNew, indexList):
 
@@ -633,7 +626,7 @@ class ReynoldsStressRF:
                            2*bb*cc*ee/(hh**2), \
                            cc**2 + (bb*cc)**2/(hh**2) - 1])
             ii = bb*cc + ee*ff / hh
-            ii = np.sqrt(1 - cc**2 - ff**2) 
+            ii = np.sqrt(1 - cc**2 - ff**2)
             #for iterN in range(2):
             #    if abs(bb*cc+ee*ff[iterN]+hh*ii[iterN]) > abs(bb*cc+ee*ff[iterN]-hh*ii[iterN]):
             #        ii[iterN] = -1*ii[iterN]
@@ -647,7 +640,7 @@ class ReynoldsStressRF:
         return ff, ii
 
     def checkOrthogonal(self, e11, e12, e13, e21List, e22, e23List, e31List, e32, e33List):
-        
+
         innerPro = 1
         indexColumn1 = 0
         indexColumn2 = 0
@@ -690,11 +683,11 @@ class ReynoldsStressRF:
     #        rotM[1, 1] = e22[i]
     #        if 1 - rotM[0, 0]**2 -rotM[0, 1]**2 > 0:
     #            rotM[0, 2] = np.sqrt(1 - rotM[0, 0]**2 -rotM[0, 1]**2)
-    #        else: 
+    #        else:
     #            rotM[0, 2] = 0.0
     #        if 1 - rotM[0, 1]**2 -rotM[1, 1]**2 > 0:
     #            rotM[2, 1] = np.sqrt(1 - rotM[0, 1]**2 -rotM[1, 1]**2)
-    #        else: 
+    #        else:
     #            rotM[2, 1] = 0.0
     #        #rotM[1, 2], rotM[2, 2] = self.quadraticSolver(rotM[0, 1], rotM[1, 1], \
     #        #                                              rotM[2, 1], rotM[0, 2])
@@ -718,12 +711,12 @@ class ReynoldsStressRF:
     #    return RMatrix
 
     def crossSolver(self, rotM, e23, e33):
-        
+
         rotM_copy = np.zeros(rotM.shape)
         rotM_copy[:,:] = rotM[:,:]
         innerProduct = 1
         for iterN in range(2):
-            rotM_C1 = np.cross(rotM[:,1],[rotM[0,2],e23[iterN],e33[iterN]]) 
+            rotM_C1 = np.cross(rotM[:,1],[rotM[0,2],e23[iterN],e33[iterN]])
             rotM_C1 = rotM_C1 / np.sign(rotM_C1[0]) * np.sign(rotM[0,0])
             rotM_copy[:,0] = rotM_C1
             rotM_copy[1,2] = e23[iterN]
@@ -748,12 +741,12 @@ class ReynoldsStressRF:
     #        if 1 - rotM[0, 0]**2 -rotM[0, 1]**2 > 0:
     #            rotM[0, 2] = np.sqrt(1 - rotM[0, 0]**2 -rotM[0, 1]**2)
     #            #rotM[0, 2] = -1*np.sqrt(1 - rotM[0, 0]**2 -rotM[0, 1]**2)
-    #        else: 
+    #        else:
     #            rotM[0, 2] = 0.0
     #        if 1 - rotM[0, 1]**2 -rotM[1, 1]**2 > 0:
     #            rotM[2, 1] = np.sqrt(1 - rotM[0, 1]**2 -rotM[1, 1]**2)
     #            #rotM[2, 1] = -1*np.sqrt(1 - rotM[0, 1]**2 -rotM[1, 1]**2)
-    #        else: 
+    #        else:
     #            rotM[2, 1] = 0.0
     #        #rotM[1, 2], rotM[2, 2] = self.quadraticSolver(rotM[0, 1], rotM[1, 1], \
     #        #                                              rotM[2, 1], rotM[0, 2])
@@ -803,17 +796,17 @@ class ReynoldsStressRF:
     #        if 1 - rotM[0, 0]**2 -rotM[0, 1]**2 > 0:
     #            rotM[0, 2] = np.sqrt(1 - rotM[0, 0]**2 -rotM[0, 1]**2)
     #            #rotM[0, 2] = -1*np.sqrt(1 - rotM[0, 0]**2 -rotM[0, 1]**2)
-    #        else: 
+    #        else:
     #            rotM[0, 2] = 0.0
     #        if 1 - rotM[0, 1]**2 -rotM[1, 1]**2 > 0:
     #            rotM[2, 1] = np.sqrt(1 - rotM[0, 1]**2 -rotM[1, 1]**2)
     #            #rotM[2, 1] = -1*np.sqrt(1 - rotM[0, 1]**2 -rotM[1, 1]**2)
-    #        else: 
+    #        else:
     #            rotM[2, 1] = 0.0
     #        if 1 - rotM[0, 2]**2 -rotM[2, 2]**2 > 0:
     #            rotM[1, 2] = np.sqrt(1 - rotM[0, 2]**2 -rotM[2, 2]**2)
     #            #rotM[2, 1] = -1*np.sqrt(1 - rotM[0, 1]**2 -rotM[1, 1]**2)
-    #        else: 
+    #        else:
     #            rotM[1, 2] = 0.0
     #        rotM[:,0] = np.cross(rotM[:,1], rotM[:,2])
     #        self.plotEigenSystem(rotM)
@@ -849,7 +842,7 @@ class ReynoldsStressRF:
                 det = abs(np.linalg.det(np.linalg.inv(rotM_copy)-np.transpose(rotM_copy)))
                 if det < detRef:
                     signIndex = iterN
-                    detRef = det 
+                    detRef = det
 
         rotM[0,2] = rotM[0,2] * sign02List[signIndex]
         rotM[2,1] = rotM[2,1] * sign21List[signIndex]
@@ -874,13 +867,13 @@ class ReynoldsStressRF:
     #        if 1 - rotM[0, 0]**2 -rotM[0, 1]**2 > 0:
     #            rotM[0, 2] = np.sqrt(1 - rotM[0, 0]**2 -rotM[0, 1]**2)
     #            #rotM[0, 2] = -1*np.sqrt(1 - rotM[0, 0]**2 -rotM[0, 1]**2)
-    #        else: 
+    #        else:
     #            #rotM[0, 2] = 0.0
     #            rotM[0, 2] = 1e-20
     #        if 1 - rotM[0, 1]**2 -rotM[1, 1]**2 > 0:
     #            rotM[2, 1] = np.sqrt(1 - rotM[0, 1]**2 -rotM[1, 1]**2)
     #            #rotM[2, 1] = -1*np.sqrt(1 - rotM[0, 1]**2 -rotM[1, 1]**2)
-    #        else: 
+    #        else:
     #            #rotM[2, 1] = 0.0
     #            rotM[2, 1] = 1e-20
     #        #self.plotEigenSystem(rotM)
@@ -909,7 +902,7 @@ class ReynoldsStressRF:
                 det = abs(np.linalg.det(np.linalg.inv(rotM_copy)-np.transpose(rotM_copy)))
                 if det < detRef:
                     signIndex = iterN
-                    detRef = det 
+                    detRef = det
 
         rotM[2,1] = rotM[2,1] * sign21List[signIndex]
         rotM[:,0] = np.cross(rotM[:,1], rotM[:,2])
@@ -936,17 +929,17 @@ class ReynoldsStressRF:
             if 1 - rotM[0, 0]**2 -rotM[0, 1]**2 > 0:
                 rotM[0, 2] = e13Sign[i] * np.sqrt(1 - rotM[0, 0]**2 -rotM[0, 1]**2)
                 #rotM[0, 2] = -1*np.sqrt(1 - rotM[0, 0]**2 -rotM[0, 1]**2)
-            else: 
+            else:
                 rotM[0, 2] = 0.0
             if 1 - rotM[0, 1]**2 -rotM[1, 1]**2 > 0:
                 rotM[2, 1] = np.sqrt(1 - rotM[0, 1]**2 -rotM[1, 1]**2)
                 #rotM[2, 1] = -1*np.sqrt(1 - rotM[0, 1]**2 -rotM[1, 1]**2)
-            else: 
+            else:
                 rotM[2, 1] = 0.0
             if 1 - rotM[0, 2]**2 -rotM[2, 2]**2 > 0:
                 rotM[1, 2] = e23Sign[i] * np.sqrt(1 - rotM[0, 2]**2 -rotM[2, 2]**2)
                 #rotM[2, 1] = -1*np.sqrt(1 - rotM[0, 1]**2 -rotM[1, 1]**2)
-            else: 
+            else:
                 rotM[1, 2] = 0.0
             rotM[:,0] = np.cross(rotM[:,1], rotM[:,2])
             #pdb.set_trace()
@@ -1062,11 +1055,11 @@ class ReynoldsStressRF:
         if deltaLog2K is activated, k will be treated as k*(2**deltaLog2K)
         where deltaLog2K = log2(K.new/K.old)
         """
-        
+
         X = self._C2X(self.COrg)
         XNew = X
         XNew[:,0] = X[:,0] + deltaXbary.T
-        XNew[:,1] = X[:,1] + deltaYbary.T               
+        XNew[:,1] = X[:,1] + deltaYbary.T
         Cs = self._X2C(XNew)
 
         #V1Old, V2Old, V3Old = self._eigenVectors(TauOld)
@@ -1099,15 +1092,14 @@ class ReynoldsStressRF:
             tau = tau*numpy.exp2(deltaKT)
         return tau
 
-
     def _quat2transform(self, q):
         """
         Transform a unit quaternion into its corresponding rotation matrix (to
         be applied on the right side).
-        
+
         :returns: transform matrix
         :rtype: numpy array
-        
+
         """
         x, y, z, w = q
         xx2 = 2 * x * x
@@ -1119,7 +1111,7 @@ class ReynoldsStressRF:
         wy2 = 2 * w * y
         yz2 = 2 * y * z
         wx2 = 2 * w * x
-        
+
         rmat = np.empty((3, 3), float)
         rmat[0,0] = 1. - yy2 - zz2
         rmat[0,1] = xy2 - wz2
@@ -1130,7 +1122,7 @@ class ReynoldsStressRF:
         rmat[2,0] = zx2 - wy2
         rmat[2,1] = yz2 + wx2
         rmat[2,2] = 1. - xx2 - yy2
-        
+
         return rmat
 
     def plotTauOnBaycentric(self,tau, tauComp = 'None', tauPerturb = 'None', sampleLS = 'o-'):
@@ -1223,7 +1215,7 @@ class ReynoldsStressRF:
         """
         k,V1,V2,V3,C,NP = self._tau2PhysParams(tau)
         X = self._C2X(C)
- 
+
         p, = plt.plot(X[0,0],X[0,1], 'o', color = cl, alpha = alpha)
         return p, X[0,0], X[0,1]
 
@@ -1238,7 +1230,7 @@ class ReynoldsStressRF:
         """
         self.deltaXi = deltaXi
         self.deltaEta = deltaEta
-    
+
     ##############################  Priviate  #################################
     def _eigenVectors(self,tauArray):
         """
@@ -1385,7 +1377,7 @@ class ReynoldsStressRF:
 
             Cs[i,:] = np.array([c1,c2,c3])
             #pdb.set_trace()
-            
+
         if self.correctInitTau == True:
             X = self._C2X(Cs)
 
@@ -1394,7 +1386,6 @@ class ReynoldsStressRF:
             Cs = self._X2C(XNew)
 
         return ks,V1s,V2s,V3s,Cs,NPs
-
 
     def _C2Tau(self,Cs,*deltaThetaV):
         """
@@ -1447,13 +1438,12 @@ class ReynoldsStressRF:
                 V[0,:] = self.V1[i,:]
                 V[1,:] = self.V2[i,:]
                 V[2,:] = self.V3[i,:]
-                
+
 
             t = 2*self.k[i][0]\
                 *(np.eye(3)/3.0 + np.dot(np.dot(np.transpose(V),Lambda),V))
             taus[i,:] = np.array([t[0,0],t[0,1],t[0,2],t[1,1],t[1,2],t[2,2]])
         return taus
-
 
     def _C2X(self,Cs):
         """
@@ -1467,7 +1457,6 @@ class ReynoldsStressRF:
                       + Cs[i,2]*self.xcs[2,:]
 
         return Xs
-
 
     def _X2C(self,Xs):
 
@@ -1588,9 +1577,9 @@ class ReynoldsStressRF:
         Adjust the theta angle to [0, pi)
 
         """
-        
+
         angleAdjusted = angle
-        if angle >= np.pi: 
+        if angle >= np.pi:
             angleAdjusted = angle - np.pi
         elif angle < 0:
             angleAdjusted = angle + np.pi
@@ -1603,9 +1592,9 @@ class ReynoldsStressRF:
         Adjust the theta angle to [-pi/2, pi/2)
 
         """
-        
+
         angleAdjusted = angle
-        if angle >= np.pi/2.0: 
+        if angle >= np.pi/2.0:
             while angleAdjusted >= np.pi/2.0:
                 angleAdjusted = angleAdjusted - np.pi
         elif angle < -np.pi/2.0:
@@ -1615,67 +1604,67 @@ class ReynoldsStressRF:
         return angleAdjusted
 
     def _transform2quat( self, T ):
-       """Construct quaternion from the transform/rotation matrix 
+       """Construct quaternion from the transform/rotation matrix
        :returns: quaternion formed from transform matrix
        :rtype: numpy array
        """
 
        # Code was copied from perl PDL code that uses backwards index ordering
-       T = T.transpose()  
+       T = T.transpose()
        den = np.array([ 1.0 + T[0,0] - T[1,1] - T[2,2],
                         1.0 - T[0,0] + T[1,1] - T[2,2],
                         1.0 - T[0,0] - T[1,1] + T[2,2],
                         1.0 + T[0,0] + T[1,1] + T[2,2]])
-       
+
        max_idx = np.flatnonzero(den == max(den))[0]
 
        q = np.zeros(4)
        q[max_idx] = 0.5 * np.sqrt(max(den))
        denom = 4.0 * q[max_idx]
        if (max_idx == 0):
-          q[1] =  (T[1,0] + T[0,1]) / denom 
-          q[2] =  (T[2,0] + T[0,2]) / denom 
-          q[3] = -(T[2,1] - T[1,2]) / denom 
+          q[1] =  (T[1,0] + T[0,1]) / denom
+          q[2] =  (T[2,0] + T[0,2]) / denom
+          q[3] = -(T[2,1] - T[1,2]) / denom
        if (max_idx == 1):
-          q[0] =  (T[1,0] + T[0,1]) / denom 
-          q[2] =  (T[2,1] + T[1,2]) / denom 
-          q[3] = -(T[0,2] - T[2,0]) / denom 
+          q[0] =  (T[1,0] + T[0,1]) / denom
+          q[2] =  (T[2,1] + T[1,2]) / denom
+          q[3] = -(T[0,2] - T[2,0]) / denom
        if (max_idx == 2):
-          q[0] =  (T[2,0] + T[0,2]) / denom 
-          q[1] =  (T[2,1] + T[1,2]) / denom 
-          q[3] = -(T[1,0] - T[0,1]) / denom 
+          q[0] =  (T[2,0] + T[0,2]) / denom
+          q[1] =  (T[2,1] + T[1,2]) / denom
+          q[3] = -(T[1,0] - T[0,1]) / denom
        if (max_idx == 3):
-          q[0] = -(T[2,1] - T[1,2]) / denom 
-          q[1] = -(T[0,2] - T[2,0]) / denom 
-          q[2] = -(T[1,0] - T[0,1]) / denom 
+          q[0] = -(T[2,1] - T[1,2]) / denom
+          q[1] = -(T[0,2] - T[2,0]) / denom
+          q[2] = -(T[1,0] - T[0,1]) / denom
 
        return q
 
     def _mat2quat(self, M):
         ''' Calculate quaternion corresponding to given rotation matrix
-    
+
         Parameters
         ----------
         M : array-like
           3x3 rotation matrix
-    
+
         Returns
         -------
         q : (4,) array
           closest quaternion to input matrix, having positive q[0]
-    
+
         Notes
         -----
         Method claimed to be robust to numerical errors in M
-    
+
         Constructs quaternion by calculating maximum eigenvector for matrix
         K (constructed from input `M`).  Although this is not tested, a
         maximum eigenvalue of 1 corresponds to a valid rotation.
-    
+
         A quaternion q*-1 corresponds to the same rotation as q; thus the
         sign of the reconstructed quaternion is arbitrary, and we return
         quaternions with positive w (q[0]).
-    
+
         References
         ----------
         * http://en.wikipedia.org/wiki/Rotation_matrix#Quaternion
@@ -1683,7 +1672,7 @@ class ReynoldsStressRF:
           quaternion from a rotation matrix", AIAA Journal of Guidance,
           Control and Dynamics 23(6):1085-1087 (Engineering Note), ISSN
           0731-5090
-    
+
         Examples
         --------
         >>> import numpy as np
@@ -1693,7 +1682,7 @@ class ReynoldsStressRF:
         >>> q = mat2quat(np.diag([1, -1, -1]))
         >>> np.allclose(q, [0, 1, 0, 0]) # 180 degree rotn around axis 0
         True
-    
+
         '''
         # Qyx refers to the contribution of the y input vector component to
         # the x output vector component.  Qyx is therefore the same as

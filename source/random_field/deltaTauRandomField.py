@@ -23,17 +23,17 @@ import os
 import matplotlib.pyplot as plt  # for plotting
 
 ## Import local modules
-import StochasticProcess as StP
-import KLExpansion as KL
+from random_field import StochasticProcess as StP
+from random_field import KLExpansion as KL
 
 class randomField:
     """Generate a random field (Kernel generation, KL Expansion, reconstruction of field).
 
     Description:
         XXX
-    
+
     Arg:
-        XXX          :XXX     
+        XXX          :XXX
 
     """
 
@@ -47,12 +47,12 @@ class randomField:
         self.Arg_covGen = Arg_covGen # arguments for non-stationary covariance generation
 
         self.Arg_calModes = Arg_calModes # arguments for KL Modes
-        
-        self.rfFolderName = 'randomData_'+instanceName 
+
+        self.rfFolderName = 'randomData_'+instanceName
         if not os.path.exists(self.rfFolderName):
-            print "creat klExpansionData3D folder for the data related with KL"    
+            print "creat klExpansionData3D folder for the data related with KL"
             os.system('mkdir ' + self.rfFolderName)
-                        
+
     def KLExpansion(self):
         """calculate the eigenvalues and KL modes (normalized eigen-vectors)
 
@@ -62,9 +62,9 @@ class randomField:
                 weightField :weightField array (N by 1)
 
         Return:
-            KLModes         :sqrt(eigenvalues_i) * eigenvectors/weight (N by nKL)    
+            KLModes         :sqrt(eigenvalues_i) * eigenvectors/weight (N by nKL)
 
-        """            
+        """
         tic = time.time()
         # initial a GP class
         gp = StP.GaussianProcess(self.coord)
@@ -80,39 +80,39 @@ class randomField:
         np.savetxt(self.rfFolderName+'/KLModes.dat', KLModes)
         toc = time.time()
         print "elapse time for generate modes = ", toc - tic
-        
-        return KLModes 
-       
+
+        return KLModes
+
     def uncorrUniRandom(self, n, distType = "Gaussian"):
         """
         Generate Uncorrelated random variables (Vector) with unit variance
-        
+
         Args:
             n:          length of the vector (1 by 1 scalar)
-            distType:   type of distribution (Char) 
+            distType:   type of distribution (Char)
                         (default is normal distribution)
         Return:
-            RandomVec: vector with uncorrelated random variables (N by 1) 
-        """ 
-        
+            RandomVec: vector with uncorrelated random variables (N by 1)
+        """
+
         # Default distribution type
         #np.random.seed(1000);
         if distType == "Gaussian":
             RandomVec = np.random.randn(n, 1)
-        
-        return RandomVec     
-        
+
+        return RandomVec
+
     def reconstructField(self, omegaVec, KLModes):
         """reconstruct a random field with truncated KL modes
 
-        Args:            
+        Args:
             omegaVec    :the coefficients for KL modes (nKL by 1)
-            KLModes     :sqrt(eigenvalues_i) * eigenvectors/weight (N by nKL) 
+            KLModes     :sqrt(eigenvalues_i) * eigenvectors/weight (N by nKL)
         Return:
             recField    :reconstructed field (N by 1)
 
         """
         self.kl = KL.klExpansion()
         recField = self.kl.reconstructField_Reduced(omegaVec, KLModes)
-        
-        return recField                
+
+        return recField

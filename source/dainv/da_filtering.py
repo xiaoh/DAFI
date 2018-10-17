@@ -41,8 +41,8 @@ class DAFilter(object):
         self.dyn_model = forward_model
 
     def __str__(self):
-        s = 'An empty data assimilation filtering technique.'
-        return s
+        str_info = 'An empty data assimilation filtering technique.'
+        return str_info
 
     def solve(self):
         """ Implement the filtering technique. """
@@ -71,11 +71,12 @@ class DAFilter(object):
 class DAFilter2(DAFilter):
     """ Parent class for DA filtering techniques.
 
-    Includes more methods than the DAFilter class. The DAFilter class
-    is a barebones template. DAFilter2 contains several methods (e.g
-    error checking, plotting, reporting) as well as a framework for the
-    main self.solve() method. This can be used to quickly create new
-    filter classes if all the same methods are desired.
+    This class includes more methods than the DAFilter class.
+    The DAFilter class is a barebones template. DAFilter2 contains
+    several methods (e.g error checking, plotting, reporting) as well
+    as a framework for the main self.solve() method. This can be used
+    to quickly create new filter classes if some of the same methods
+    are desired.
     """
 
     def __init__(
@@ -128,57 +129,63 @@ class DAFilter2(DAFilter):
         except: self._verb = 1
 
         # initialize iteration array
-        self.time_array = np.arange(0, self.t_end, self.da_interval)
+        self.time_array = np.arange(0.0, self.t_end, self.da_interval)
 
         # initialize states: these change at every iteration
-        self.time = 0 # current time
-        self.iter = 0 # current iteration
-        self.da_step = 0 # current DA step
+        self.time = 0.0 # current time
+        self.iter = 0.0 # current iteration
+        self.da_step = 0.0 # current DA step
         # ensemble matrix (nsamples, nstate)
-        self.X = np.zeros([self.dyn_model.nstate, self.nsamples])
+        self.state_vec = np.zeros([self.dyn_model.nstate, self.nsamples])
         # ensemble matrix projected to observed space (nsamples, nstateSample)
-        self.HX = np.zeros([self.dyn_model.nstate_obs, self.nsamples])
+        self.model_obs = np.zeros([self.dyn_model.nstate_obs, self.nsamples])
         # observation matrix (nstate_obs, nsamples)
         self.obs = np.zeros([self.dyn_model.nstate_obs, self.nsamples])
         # observation covariance matrix (nstate_obs, nstate_obs)
-        self.R_obs = np.zeros(
+        self.obs_error = np.zeros(
             [self.dyn_model.nstate_obs, self.dyn_model.nstate_obs])
 
         # initialize misfit: these grow each iteration, but all values stored.
-        self._misfit_X_L1 = []
-        self._misfit_X_L2 = []
-        self._misfit_X_inf = []
+        self._misfit_x_l1norm = []
+        self._misfit_x_l2norm = []
+        self._misfit_x_inf = []
         self._obs_sigma = []
-        self._sigma_HX = []
+        self._sigma_hx = []
         self._misfit_max = []
 
     def __str__(self):
-        s = self.name + \
+        str_info = self.name + \
             '\n   Number of samples: {}'.format(self.nsamples) + \
             '\n   Run time:          {}'.format(self.t_end) +  \
             '\n   DA interval:       {}'.format(self.da_interval) + \
             '\n   Forward model:     {}'.format(self.dyn_model.name)
-        return s
+        return str_info
 
     def solve(self):
         """ Solve the parameter estimation problem.
+
+        This is the main method for the filter. It solves the inverse
+        problem. It has options for sensitivity analysis, early
+        stopping, and output debugging information. At each iteration
+        it calculates misfits using various norms, and checks for
+        convergence.
 
         Updates:
             time
             iter
             da_step
-            X
-            HX
+            state_vec
+            model_obs
             obs
-            R_obs
+            obs_error
         """
         # Generate initial state Ensemble
-        self.X, self.HX = self.dyn_model.generate_ensemble()
+        self.state_vec, self.model_obs = self.dyn_model.generate_ensemble()
         # sensitivity only
         if self._sensitivity_only:
-            next_end_time = 2 * self.da_interval + self.time_array[0]
-            self.X, self.HX = self.dyn_model.forecast_to_time(
-                self.X, next_end_time)
+            next_end_time = 2.0 * self.da_interval + self.time_array[0]
+            self.state_vec, self.model_obs = self.dyn_model.forecast_to_time(
+                self.state_vec, next_end_time)
             if self.ver>=1:
                 print "\nSensitivity study completed."
             sys.exit(0)
@@ -186,23 +193,24 @@ class DAFilter2(DAFilter):
         early_stop = False
         for time in self.time_array:
             self.time = time
-            next_end_time = 2 * self.da_interval + self.time
+            next_end_time = 2.0 * self.da_interval + self.time
             self.da_step = (next_end_time - self.da_interval) / \
                 self.da_interval
             if self._verb>=1:
                 print("\nData Assimilation step: {}".format(self.da_step))
             # dyn_model: propagate the state ensemble to next DA time
             # and get observations at next DA time.
-            self.X, self.HX = self.dyn_model.forecast_to_time(
-                self.X, next_end_time)
-            self.obs, self.R_obs = self.dyn_model.get_obs(next_end_time)
+            self.state_vec, self.model_obs = self.dyn_model.forecast_to_time(
+                self.state_vec, next_end_time)
+            self.obs, self.obs_error = self.dyn_model.get_obs(next_end_time)
             # data assimilation
             debug_dict = {
-                'Xf':self.X, 'HX':self.HX, 'obs':self.obs, 'R':self.R_obs}
+                'Xf':self.state_vec, 'HX':self.model_obs, 'obs':self.obs,
+                'R':self.obs_error}
             self._save_debug(debug_dict)
             self._correct_forecasts()
             self._calc_misfits()
-            debug_dict = {'Xa':self.X}
+            debug_dict = {'Xa':self.state_vec}
             self._save_debug(debug_dict)
             # check convergence and report
             conv, conv_all = self._check_convergence()
@@ -225,7 +233,7 @@ class DAFilter2(DAFilter):
         except: pass
 
     def report(self):
-        """ Report summary information at completion. """
+        """ Report summary information. """
         # TODO: Report DA results
         try: self.dyn_model.report()
         except: pass
@@ -235,18 +243,19 @@ class DAFilter2(DAFilter):
         try: self.dyn_model.clean()
         except: pass
 
-    def save(self,save_dir):
+    def save(self):
+        """ Saves results to text files. """
         if self._save_flag:
-            np.savetxt(elf._debug_folder + os.sep + 'misfit_L1', np.array(
-                self._misfit_X_L1))
-            np.savetxt(elf._debug_folder + os.sep + 'misfit_L2', np.array(
-                self._misfit_X_L2))
-            np.savetxt(elf._debug_folder + os.sep + 'misfit_inf', np.array(
-                self._misfit_X_inf))
-            np.savetxt(elf._debug_folder + os.sep + '_obs_sigma', np.array(
+            np.savetxt(self._save_folder + os.sep + 'misfit_L1', np.array(
+                self._misfit_x_l1norm))
+            np.savetxt(self._save_folder + os.sep + 'misfit_L2', np.array(
+                self._misfit_x_l2norm))
+            np.savetxt(self._save_folder + os.sep + 'misfit_inf', np.array(
+                self._misfit_x_inf))
+            np.savetxt(self._save_folder + os.sep + '_obs_sigma', np.array(
                 self._obs_sigma))
-            np.savetxt(elf._debug_folder + os.sep + '_sigma_HX', np.array(
-                self._sigma_HX))
+            np.savetxt(self._save_folder + os.sep + 'sigma_HX', np.array(
+                self._sigma_hx))
         try: self.dyn_model.save()
         except: pass
 
@@ -255,7 +264,7 @@ class DAFilter2(DAFilter):
         # Correct the propagated ensemble (filtering step).
         #
         # Updates:
-        #     self.X
+        #     self.state_vec
         raise NotImplementedError(
             "Needs to be implemented in the child class!")
 
@@ -271,29 +280,30 @@ class DAFilter2(DAFilter):
         # Calculate the misfit.
         #
         # Updates:
-        #     _misfit_X_L1
-        #     _misfit_X_L2
-        #     _misfit_X_inf
-        #     _sigma_HX
+        #     _misfit_x_l1norm
+        #     _misfit_x_l2norm
+        #     _misfit_x_inf
+        #     _sigma_hx
         #     _misfit_max
         #     _obs_sigma
         #
 
         # calculate misfits
-        Nnorm = self.dyn_model.nstate_obs * self.nsamples
-        diff = abs(self.obs - self.HX)
-        misFit_L1 = np.sum(diff) / Nnorm
-        misFit_L2 = np.sqrt(np.sum(diff**2)) / Nnorm
-        misFit_Inf = la.norm(diff, np.inf)
-        misfit_max = np.max([misFit_L1, misFit_L2, misFit_Inf])
-        _sigma_HX = np.std(self.HX, axis=1)
-        _sigma_HX_norm = la.norm(_sigma_HX) / self.dyn_model.nstate_obs
-        sigma = (la.norm(np.sqrt(np.diag(self.R_obs))) / self.dyn_model.nstate_obs)
+        nnorm = self.dyn_model.nstate_obs * self.nsamples
+        diff = abs(self.obs - self.model_obs)
+        misfit_l1norm = np.sum(diff) / nnorm
+        misfit_l2norm = np.sqrt(np.sum(diff**2.0)) / nnorm
+        misfit_inf = la.norm(diff, np.inf)
+        misfit_max = np.max([misfit_l1norm, misfit_l2norm, misfit_inf])
+        sigma_hx = np.std(self.model_obs, axis=1)
+        sigma_hx_norm = la.norm(sigma_hx) / self.dyn_model.nstate_obs
+        sigma = (la.norm(np.sqrt(np.diag(self.obs_error))) / \
+            self.dyn_model.nstate_obs)
 
-        self._misfit_X_L1.append(misFit_L1)
-        self._misfit_X_L2.append(misFit_L2)
-        self._misfit_X_inf.append(misFit_Inf)
-        self._sigma_HX.append(_sigma_HX_norm)
+        self._misfit_x_l1norm.append(misfit_l1norm)
+        self._misfit_x_l2norm.append(misfit_l2norm)
+        self._misfit_x_inf.append(misfit_inf)
+        self._sigma_hx.append(sigma_hx_norm)
         self._misfit_max.append(misfit_max)
         self._obs_sigma.append(sigma)
 
@@ -303,9 +313,9 @@ class DAFilter2(DAFilter):
         def _convergence_1():
             if self.iter>0:
                 iterative_residual = \
-                    (abs(self._misfit_X_L2[self.iter]
-                    - self._misfit_X_L2[self.iter-1])) \
-                    / abs(self._misfit_X_L2[0])
+                    (abs(self._misfit_x_l2norm[self.iter]
+                    - self._misfit_x_l2norm[self.iter-1])) \
+                    / abs(self._misfit_x_l2norm[0])
                 conv = iterative_residual  < self.convergence_residual
             else:
                 iterative_residual = None
@@ -313,7 +323,7 @@ class DAFilter2(DAFilter):
             return iterative_residual, conv
 
         def _convergence_2():
-            sigma_inf = np.max(np.diag(np.sqrt(self.R_obs)))
+            sigma_inf = np.max(np.diag(np.sqrt(self.obs_error)))
             conv = self._misfit_max[self.iter] > sigma_inf
             return sigma_inf, conv
 
@@ -327,45 +337,44 @@ class DAFilter2(DAFilter):
         # report at each iteration
         (iterative_residual, conv1, sigma_inf, conv2) = info
 
-        s = '\n' + "#"*80
-        s += "\nStandard deviation of ensemble: {}".format(
-            self._sigma_HX[self.iter]) + \
+        str_report = '\n' + "#"*80
+        str_report += "\nStandard deviation of ensemble: {}".format(
+            self._sigma_hx[self.iter]) + \
             "\nStandard deviation of observation error: {}".format(
             self._obs_sigma[self.iter])
-        s += "\n\nMisfit between the predicted QoI and the observed QoI." + \
-            "\nL1 norm = {}\nL2 norm = {}\nInf norm = {}\n\n".format(
-            self._misfit_X_L1[self.iter], self._misfit_X_L2[self.iter],
-            self._misfit_X_inf[self.iter])
+        str_report += "\n\nMisfit between the predicted Q and observed " + \
+            "quantities of interest (QoI)." + \
+            "\n  L1 norm = {}\n  L2 norm = {}\n  Inf norm = {}\n\n".format(
+            self._misfit_x_l1norm[self.iter], self._misfit_x_l2norm[self.iter],
+            self._misfit_x_inf[self.iter])
 
-        s += "\n\nConvergence criteria 1:" + \
+        str_report += "\n\nConvergence criteria 1:" + \
             "\n  Relative iterative residual: {}".format(iterative_residual) \
             + "\n  Relative convergence criterion: {}".format(
             self.convergence_residual)
         if conv1:
-            s += "\n  Status: Not yet converged."
+            str_report += "\n  Status: Not yet converged."
         else:
-            s += "\n  Status: Converged."
+            str_report += "\n  Status: Converged."
 
-        s += "\n\nConvergence criteria 2:" + \
+        str_report += "\n\nConvergence criteria 2:" + \
             "\n  Infinite misfit: {}".format(self._misfit_max[self.iter]) + \
             "\n  Infinite norm  of observation error: {}".format(
                 sigma_inf)
         if  conv2:
-            s += "\n  Status: Not yet converged."
+            str_report += "\n  Status: Not yet converged."
         else:
-            s += "\n  Status: Converged."
+            str_report += "\n  Status: Converged."
 
-        s += '\n\n'
-        print(s)
+        str_report += '\n\n'
+        print(str_report)
 
 # child classes (specific filtering techniques
 
 class EnKF(DAFilter2):
     """ Implementation of the ensemble Kalman Filter (EnKF).
-
-
     """
-    # TODO: add more detail to the docstring
+    # TODO: add more detail to the docstring. E.g. what is EnKF.
 
     def __init__(
         self, nsamples, da_interval, t_end, forward_model, input_dict
@@ -383,14 +392,14 @@ class EnKF(DAFilter2):
         # Correct the propagated ensemble (filtering step) using EnKF
         #
         # Updates:
-        #     self.X
+        #     self.state_vec
 
-        def _check_condition_number(HPHT):
-            conInv = la.cond(HPHT + self.R_obs)
-            print("Conditional number of (HPHT + R) is {}".format(conInv))
+        def _check_condition_number(hpht):
+            conInv = la.cond(hpht + self.obs_error)
+            print("Conditional number of (hpht + R) is {}".format(conInv))
             if (conInv > 1e16):
                 warnings.warn(
-                    "The matrix (HPHT + R) is singular, inverse will fail."
+                    "The matrix (hpht + R) is singular, inverse will fail."
                     ,RuntimeWarning)
 
         def _mean_subtracted_matrix(mat, samps=self.nsamples):
@@ -401,20 +410,20 @@ class EnKF(DAFilter2):
             return mean_sub_mat
 
         # calculate the Kalman gain matrix
-        XP = _mean_subtracted_matrix(self.X)
-        HXP = _mean_subtracted_matrix(self.HX)
+        xp = _mean_subtracted_matrix(self.state_vec)
+        hxp = _mean_subtracted_matrix(self.model_obs)
         coeff =  (1.0 / (self.nsamples - 1.0))
-        PHT = coeff * np.dot(XP, HXP.T)
-        HPHT = coeff * HXP.dot(HXP.T)
-        _check_condition_number(HPHT)
-        inv = la.inv(HPHT + self.R_obs)
+        pht = coeff * np.dot(xp, hxp.T)
+        hpht = coeff * hxp.dot(hxp.T)
+        _check_condition_number(hpht)
+        inv = la.inv(hpht + self.obs_error)
         inv = inv.A #convert np.matrix to np.ndarray
-        kalman_gain_matrix = PHT.dot(inv)
+        kalman_gain_matrix = pht.dot(inv)
         # analysis step
-        dX = np.dot(kalman_gain_matrix, self.obs - self.HX)
-        self.X += dX
+        dx = np.dot(kalman_gain_matrix, self.obs - self.model_obs)
+        self.state_vec += dx
         # debug
         debug_dict = {
-            'K':kalman_gain_matrix, 'inv':inv, 'HPHT':HPHT, 'PHT':PHT,
-            'HXP':HXP, 'XP':XP}
+            'K':kalman_gain_matrix, 'inv':inv, 'HPHT':hpht, 'PHT':pht,
+            'HXP':hxp, 'XP':xp}
         self._save_debug(debug_dict)

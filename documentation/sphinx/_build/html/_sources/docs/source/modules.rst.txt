@@ -1,0 +1,8 @@
+sphinx
+======
+
+.. toctree::
+   :maxdepth: 4
+
+   conf
+   sphinx_numpy_template

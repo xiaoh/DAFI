@@ -1,9 +1,5 @@
 #!/usr/bin/env bash
 
 DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null && pwd )"
-
-export PYTHONPATH=${PYTHONPATH}:$DIR/dainv
-export PYTHONPATH=${PYTHONPATH}:$DIR/dyn_models
-export PYTHONPATH=${PYTHONPATH}:$DIR/random_field
-
-export PATH=${PATH}:$DIR
+export PYTHONPATH="$DIR:$PYTHONPATH"
+export PATH="$DIR:$PATH"

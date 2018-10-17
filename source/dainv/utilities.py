@@ -11,10 +11,14 @@ import sys
 def replace(file, pattern, subst):
     """ Replace all instances of a pattern in a file with a new pattern.
 
-    Args:
-        file: The file to modify
-        pattern: The old character string which you want replace
-        subst: The new character string
+    Parameters
+    ----------
+    file : str
+        The file to modify.
+    pattern : str
+        The old character string which you want replace.
+    subst : str
+        The new character string.
     """
     #Create temp file
     fh, abs_path = tempfile.mkstemp()
@@ -41,22 +45,24 @@ def read_input_data(input_file):
     and the second as the argument(input value). Both keys and
     arguments are strings.
 
-    Args:
-        input_file: Path to input file
+    Parameters
+    ----------
+    input_file : str
+        Name of the input file.
 
-    Return:
-        param_dict: Dictionary containing input names and values.
-
+    Returns
+    -------
+    param_dict : dict
+        Dictionary containing input names and values.
     """
     param_dict = {}
     try:
-        f = open(input_file, 'r')
+        file = open(input_file, "r")
     except IOError:
         print 'Cannot open file: ', input_file
         sys.exit(1)
     else:
-        finDA = open(input_file, "r")
-        for line in finDA:
+        for line in file:
             line = line.strip()
             # ignore empty or comment lines
             if not line or line.startswith("#"):
@@ -66,24 +72,30 @@ def read_input_data(input_file):
             # parse into dictionary
             param, value = line.split(None,1)
             param_dict[param] = value
-            f.close()
+        file.close()
     return param_dict
 
 def extract_list_from_string(string, sep=',', type_func=str):
     """ Extract a list from a string.
 
-    Args:
-        string: String containing the list
-        sep: The separator in the string
+    Parameters
+    ----------
+        string: str
+            String containing the list.
+        sep: str
+            The separator in the string.
         type_func: Function to convert the string to desired type.
 
-    Returns:
-        value_list: List of sub-strings extracted from input string.
+    Returns
+    -------
+        value_list : list
+            List of sub-strings extracted from input string.
 
-    Example:
+    Example
+    -------
         >>> extract_list_from_string('1; 2;3.6 ; 10', ';', int)
         [1, 2, 3, 10]
     """
-    value_list_ = string.split(sep)
+    value_list = string.split(sep)
     value_list = [type_func(pn.strip()) for pn in value_list]
     return value_list

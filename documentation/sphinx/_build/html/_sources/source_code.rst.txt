@@ -1,0 +1,13 @@
+
+Source Code
+===========
+This section contains the auto-documentation for the source code of the different packages.
+
+dainv
+-----
+.. automodule:: dainv.utilities
+
+dainv.utilities
+~~~~~~~~~~~~~~~
+.. automodule:: dainv.utilities
+    :members:

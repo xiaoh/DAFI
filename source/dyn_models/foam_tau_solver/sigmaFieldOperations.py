@@ -1,12 +1,12 @@
 #! /usr/bin/env python
 
-import numpy as np 
+import numpy as np
 from scipy import interpolate
 import matplotlib.pylab as plt
 import os
 import os.path as ospt
 
-import foamFileOperation as foamOp  # OpenFOAM file operator
+from dyn_models.foam_tau_solver import foamFileOperation as foamOp  # OpenFOAM file operator
 
 def computeSigmaField(scatteredSigmaFile, cellCenters, kernel, lengthScale):
     """
@@ -50,20 +50,19 @@ def computeSigmaField(scatteredSigmaFile, cellCenters, kernel, lengthScale):
     #plt.show()
 
     return sigmaField
-    
 
 def checkSigmaField():
     # A utility that can called on an openFoam case to generate sigma field in
     # the constant dir, which can then examined further with paraview
     # Assume that the current dir is an openfoam case
-    
+
     baseCaseDir = ospt.join('0/')
     scatteredSigmaFile = ospt.join('constant', \
                          'scatSigma.dat')
 
     meshCoord3D = foamOp.readTurbCoordinateFromFile(baseCaseDir)
 
-    rbfLengthScale = 0.6 
+    rbfLengthScale = 0.6
     rbfKernel = 'gaussian'
     sigma = computeSigmaField(scatteredSigmaFile, meshCoord3D, \
                                        rbfKernel, rbfLengthScale)

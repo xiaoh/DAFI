@@ -670,8 +670,8 @@ class FoamTauSolver(DynModel):
         else:
             self.Npara = self.nModesXi + self.nModesEta + self.nModesK
         # Specify # of state variable and observed state
-        self.Nstate = (self.Ncell * self.Nvariable) + self.Npara # size of state variables
-        self.NstateObs = self.Nvariable * self.NcellObs # size of observed state variables
+        self.nstate = (self.Ncell * self.Nvariable) + self.Npara # size of state variables
+        self.nstate_obs = self.Nvariable * self.NcellObs # size of observed state variables
 
         # output perturbation of physical compoents
         self.outputDeltaComponents()
@@ -745,7 +745,7 @@ class FoamTauSolver(DynModel):
         self.iDAStep = 0
         self.TotalDASteps = np.int_(np.ceil(Tend/DAInterval))
         self.tPlot = np.zeros(self.TotalDASteps)
-        self.XPlot = np.zeros([self.TotalDASteps, self.Nstate, Ns])
+        self.XPlot = np.zeros([self.TotalDASteps, self.nstate, Ns])
         self.XCMeanPlot = np.zeros([self.TotalDASteps, self.Npara])
         #pdb.set_trace()
 
@@ -758,7 +758,7 @@ class FoamTauSolver(DynModel):
         s = 'FoamTauSolver instance'
         return s
 
-    def generateEnsemble(self):
+    def generate_ensemble(self):
         """ Generate OF case folders and X, HX
 
         Args:
@@ -776,8 +776,8 @@ class FoamTauSolver(DynModel):
         #pdb.set_trace()
         writeInterval = "%.6f"%self.DAInterval # make value of DAInterval to e-6 string
 
-        X = np.zeros([self.Nstate, self.Ns])
-        HX = np.zeros([self.NstateObs, self.Ns])
+        X = np.zeros([self.nstate, self.Ns])
+        HX = np.zeros([self.nstate_obs, self.Ns])
 
         # generate initial X
         caseCount = np.linspace(1,self.Ns,self.Ns)
@@ -880,7 +880,7 @@ class FoamTauSolver(DynModel):
             np.savetxt(self._debugFolderName+'init-propagate/'+'HX_init',HX)
         return (X, HX)
 
-    def forecastToTime(self, X, nextEndTime):
+    def forecast_to_time(self, X, nextEndTime):
         """ Call the dynamic core to evolve the ensemble states to time $tDest$
 
         Args:
@@ -998,70 +998,75 @@ class FoamTauSolver(DynModel):
 
         return (X, HX)
 
-    def getBackgroundVars(self, HX, XP, nextEndTime):
+    def get_obs(self, next_end_time):
+        obs = self.Observe(next_end_time)
+        R_obs = self.get_Robs()
+        return obs, R_obs
 
-        """ Function is to generate observation and get kalman Gain Matrix
-
-        Args:
-        HX: ensemble matrix of whole state in observation space
-        P: covariance matrix of ensemble
-        nextEndTime: next DA interval
-
-        Returns:
-        Obs: state matrix of observation
-        KalmanGainMatrix
-        """
-        DAstep = (nextEndTime - self.DAInterval) / self.DAInterval
-        if self.pseudoObs == 0:
-            #TO implement experiment observation
-            Obs = self.Observe(nextEndTime)
-            #pdb.set_trace()
-            H = self._constructHMatrix()
-            #pdb.set_trace()
-            #print "H", H.shape
-            #print "XP", XP.shape
-            HXP = H.dot(XP)
-            #pdb.set_trace()
-            #PHT = (1.0 / (self.Ns - 1.0)) * XP.dot(HXP.T)
-            PHT = (1.0 / (self.Ns - 1.0)) * np.dot(XP, HXP.T)
-            #pdb.set_trace()
-            HPHT = (1.0 / (self.Ns - 1.0)) * HXP.dot(HXP.T)
-            #pdb.set_trace()
-            conInv = la.cond(HPHT + self.Robs)
-            print "conditional number of (HPHT + R) is " + str(conInv)
-            if (conInv > 1e16):
-                print "!!! warning: the matrix (HPHT + R) are singular, inverse would be failed"
-            INV = la.inv(HPHT + self.Robs)
-            INV = INV.A #convert np.matrix to np.ndarray
-            #pdb.set_trace()
-            KalmanGainMatrix = PHT.dot(INV)
-            #pdb.set_trace()
-            if (self._iDebug):
-                #pdb.set_trace()
-                dotXP_HXPT = np.dot(XP, HXP.T)
-                coeff =  (1.0 / (self.Ns - 1.0))
-                np.savetxt(self._debugFolderName+'dotXP_HXPT_'+str(DAstep), dotXP_HXPT)
-                np.savetxt(self._debugFolderName+'XP_'+str(DAstep), XP)
-                np.savetxt(self._debugFolderName+'H_'+str(DAstep), H.todense())
-                np.savetxt(self._debugFolderName+'HXP_'+str(DAstep), HXP)
-                np.savetxt(self._debugFolderName+'HXPT_'+str(DAstep), HXP.T)
-                np.savetxt(self._debugFolderName+'dotXP_HXPT_'+str(DAstep), dotXP_HXPT)
-                np.savetxt(self._debugFolderName+'PHT_'+str(DAstep), PHT)
-                np.savetxt(self._debugFolderName+'HPHT_'+str(DAstep), HPHT)
-                np.savetxt(self._debugFolderName+'INV_'+str(DAstep), INV)
-                np.savetxt(self._debugFolderName+'R_'+str(DAstep), self.Robs.todense())
-            #pdb.set_trace()
-
-
-
-        elif self.pseudoObs == 1:
-            pass
-            #pdb.set_trace()
-        else:
-            assert self.pseudoObs == 0|1, "pseudoObs should be 0 or 1"
-
-
-        return Obs, KalmanGainMatrix
+    # def getBackgroundVars(self, HX, XP, nextEndTime):
+    #
+    #     """ Function is to generate observation and get kalman Gain Matrix
+    #
+    #     Args:
+    #     HX: ensemble matrix of whole state in observation space
+    #     P: covariance matrix of ensemble
+    #     nextEndTime: next DA interval
+    #
+    #     Returns:
+    #     Obs: state matrix of observation
+    #     KalmanGainMatrix
+    #     """
+    #     DAstep = (nextEndTime - self.DAInterval) / self.DAInterval
+    #     if self.pseudoObs == 0:
+    #         #TO implement experiment observation
+    #         Obs = self.Observe(nextEndTime)
+    #         #pdb.set_trace()
+    #         H = self._constructHMatrix()
+    #         #pdb.set_trace()
+    #         #print "H", H.shape
+    #         #print "XP", XP.shape
+    #         HXP = H.dot(XP)
+    #         #pdb.set_trace()
+    #         #PHT = (1.0 / (self.Ns - 1.0)) * XP.dot(HXP.T)
+    #         PHT = (1.0 / (self.Ns - 1.0)) * np.dot(XP, HXP.T)
+    #         #pdb.set_trace()
+    #         HPHT = (1.0 / (self.Ns - 1.0)) * HXP.dot(HXP.T)
+    #         #pdb.set_trace()
+    #         conInv = la.cond(HPHT + self.Robs)
+    #         print "conditional number of (HPHT + R) is " + str(conInv)
+    #         if (conInv > 1e16):
+    #             print "!!! warning: the matrix (HPHT + R) are singular, inverse would be failed"
+    #         INV = la.inv(HPHT + self.Robs)
+    #         INV = INV.A #convert np.matrix to np.ndarray
+    #         #pdb.set_trace()
+    #         KalmanGainMatrix = PHT.dot(INV)
+    #         #pdb.set_trace()
+    #         if (self._iDebug):
+    #             #pdb.set_trace()
+    #             dotXP_HXPT = np.dot(XP, HXP.T)
+    #             coeff =  (1.0 / (self.Ns - 1.0))
+    #             np.savetxt(self._debugFolderName+'dotXP_HXPT_'+str(DAstep), dotXP_HXPT)
+    #             np.savetxt(self._debugFolderName+'XP_'+str(DAstep), XP)
+    #             np.savetxt(self._debugFolderName+'H_'+str(DAstep), H.todense())
+    #             np.savetxt(self._debugFolderName+'HXP_'+str(DAstep), HXP)
+    #             np.savetxt(self._debugFolderName+'HXPT_'+str(DAstep), HXP.T)
+    #             np.savetxt(self._debugFolderName+'dotXP_HXPT_'+str(DAstep), dotXP_HXPT)
+    #             np.savetxt(self._debugFolderName+'PHT_'+str(DAstep), PHT)
+    #             np.savetxt(self._debugFolderName+'HPHT_'+str(DAstep), HPHT)
+    #             np.savetxt(self._debugFolderName+'INV_'+str(DAstep), INV)
+    #             np.savetxt(self._debugFolderName+'R_'+str(DAstep), self.Robs.todense())
+    #         #pdb.set_trace()
+    #
+    #
+    #
+    #     elif self.pseudoObs == 1:
+    #         pass
+    #         #pdb.set_trace()
+    #     else:
+    #         assert self.pseudoObs == 0|1, "pseudoObs should be 0 or 1"
+    #
+    #
+    #     return Obs, KalmanGainMatrix
 
     def get_Robs(self):
         ''' Return the observation covariance.
@@ -1082,6 +1087,9 @@ class FoamTauSolver(DynModel):
         os.remove('tau.txt')
 
     def plot(self):
+        pass
+
+    def report(self):
         pass
 
     ## public methods
@@ -1572,9 +1580,9 @@ class FoamTauSolver(DynModel):
 
         iobs = 0
         smallVal = 1e-10
-        rSigmaVec = np.zeros(self.NstateObs)
+        rSigmaVec = np.zeros(self.nstate_obs)
         if self.TauOnFlag:
-            for i in range(self.NstateObs/9):
+            for i in range(self.nstate_obs/9):
                 for j in range(9):
                     # absolute error
                     absErrSigma[j] = self.ObsSigmaFixedVec[j]
@@ -1588,7 +1596,7 @@ class FoamTauSolver(DynModel):
                     rSigmaVec[iobs+j] = (relErrSigma[j] + absErrSigma[j])**2
                 iobs = iobs + 9
         else:
-            for i in range(self.NstateObs/3):
+            for i in range(self.nstate_obs/3):
                 for j in range(3):
                     # absolute error
                     absErrSigma[j] = self.ObsSigmaFixedVec[j]
@@ -1715,9 +1723,9 @@ class FoamTauSolver(DynModel):
             idx6[:, 1] = idx6[:, 1] + idx6base_2
             idx9 = np.append(idx3, idx6, axis=0)
             weight9 = np.append(weight3, weight6, axis=0)
-            H = sp.coo_matrix((weight9.flatten(1),(idx9[:,0],idx9[:,1])), shape=(self.NstateObs, self.Nstate))
+            H = sp.coo_matrix((weight9.flatten(1),(idx9[:,0],idx9[:,1])), shape=(self.nstate_obs, self.nstate))
         else:
-            H = sp.coo_matrix((weight3.flatten(1),(idx3[:,0],idx3[:,1])), shape=(self.NstateObs, self.Nstate))
+            H = sp.coo_matrix((weight3.flatten(1),(idx3[:,0],idx3[:,1])), shape=(self.nstate_obs, self.nstate))
         return H
 
     def _cap(self, upBound, lowBound, Vec):
@@ -1913,9 +1921,9 @@ class FoamTauSolver(DynModel):
         pertObs = np.zeros([self.Nvariable * self.NcellObs, self.Ns])
         iobs = 0
         smallVal = 1e-10
-        rSigmaVec = np.zeros(self.NstateObs)
+        rSigmaVec = np.zeros(self.nstate_obs)
         if self.TauOnFlag:
-            for i in range(self.NstateObs/9):
+            for i in range(self.nstate_obs/9):
                 for j in range(9):
                     # absolute error
                     absErrSigma[j] = self.ObsSigmaFixedVec[j]
@@ -1930,7 +1938,7 @@ class FoamTauSolver(DynModel):
                     rSigmaVec[iobs+j] = (relErrSigma[j] + absErrSigma[j])**2
                 iobs = iobs + 9
         else:
-            for i in range(self.NstateObs/3):
+            for i in range(self.nstate_obs/3):
                 for j in range(3):
                     # absolute error
                     absErrSigma[j] = self.ObsSigmaFixedVec[j]
