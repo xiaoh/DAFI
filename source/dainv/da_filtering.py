@@ -133,8 +133,8 @@ class DAFilter2(DAFilter):
 
         # initialize states: these change at every iteration
         self.time = 0.0 # current time
-        self.iter = 0.0 # current iteration
-        self.da_step = 0.0 # current DA step
+        self.iter = int(0) # current iteration
+        self.da_step = int(0) # current DA step
         # ensemble matrix (nsamples, nstate)
         self.state_vec = np.zeros([self.dyn_model.nstate, self.nsamples])
         # ensemble matrix projected to observed space (nsamples, nstateSample)
