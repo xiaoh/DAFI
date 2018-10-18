@@ -6,7 +6,7 @@ This module is dynamic model for solving the Lorenz attractor
 It  consist of 3 functions:
     1 generateEnsemble: generate ensemble
     2 forcastToTime: evolve ensemble to next time using forward model
-    3 Observe: Get observations and observation error covariance
+    3 observe: Get observations and observation error covariance
 
 """
 
@@ -31,21 +31,20 @@ class Solver(DynModel):
         The parameters need to be augmented: coefficients for rho, beta, sigma
         The Observation include: x, y, z
     """
-    #TODO: Fix docstrings
 
-    def __init__(self, Ns, DAInterval, Tend,  ModelInput):
+    def __init__(self, nsamples, da_interval, t_end,  model_input):
         """
             Initialization
         """
         self.name = 'Lorenz63'
         # number of samples in the ensemble
-        self.Ns = Ns
+        self.nsamples = nsamples
         # Data assimilation inverval
-        self.da_interval = DAInterval
+        self.da_interval = da_interval
         # End time
-        self.Tend = Tend
+        self.t_end = t_end
         # Extract forward Model Input parameters
-        paramDict = read_input_data(ModelInput)
+        paramDict = read_input_data(model_input)
         # case folder name
         self.caseName = paramDict['caseName']
         # forward time inverval
@@ -90,23 +89,27 @@ class Solver(DynModel):
         return s
 
     def generate_ensemble(self):
-        """ Generate initial ensemble X, HX
+        """ Generate initial ensemble state X and observation HX
 
         Args:
+        -----
         DAInterval: DA step interval
 
-        Returns:
-        X: ensemble matrix of whole states
-        HX: ensemble matrix of whole states in observation space
+        Returns
+        -------
+        X: ndarray
+            ensemble of whole states
+        HX: ndarray
+            ensemble of whole states in observation space
         """
 
-        X = np.zeros([self.nstate, self.Ns])
-        HX = np.zeros([self.nstate_obs, self.Ns])
+        X = np.zeros([self.nstate, self.nsamples])
+        HX = np.zeros([self.nstate_obs, self.nsamples])
 
         # generate initial X
         for iDim in np.arange(self.nstate):
             dxStd = self.x_rel_std * self.x_init[iDim]
-            X[iDim, :] = self.x_init[iDim] + np.random.normal(0, dxStd, self.Ns)
+            X[iDim, :] = self.x_init[iDim] + np.random.normal(0, dxStd, self.nsamples)
         # operation operator
         H = self._constructHMatrix()
         #H = np.array([[1, 0, 0], [0, 1, 0], [0, 0, 1], [0, 0, 0]]).T
@@ -114,7 +117,20 @@ class Solver(DynModel):
         return X, HX
 
     def lorenz63(self, t, x):
-        """ Define Lorenz 63 system """
+        """ 
+        Define Lorenz 63 system 
+        
+        Parameters
+        ----------
+        t: float
+            current time
+        x: adrray
+            state variables at current time
+
+        Returns
+        -------
+        dx: differential value for each state varible
+        """
         
         # intial system parameters
         rho = self.rho
@@ -149,8 +165,23 @@ class Solver(DynModel):
         return dx
 
     def forecast_to_time(self, X, next_end_time):
-        """ Returns states at the next end time. """
+        """
+        Returns states at the next end time.
+        
+        Parameters
+        ----------
+        X: ndarray
+            current state variables
+        next_end_time: float
+            next end time
 
+        Returns
+        -------
+        X: ndarray
+            forwarded ensemble state variables by forward model
+        HX: ndarray
+            ensemble in observation space
+        """
         # Set start time
         new_start_time = next_end_time - self.da_interval
         # Make time series from start time to end time
@@ -159,7 +190,7 @@ class Solver(DynModel):
         self.solver = ode(self.lorenz63)
         self.solver.set_integrator('dopri5')
         # Solve ode for each sample
-        for i in range(self.Ns):
+        for i in range(self.nsamples):
             # Set initial value for ode solver
             self.solver.set_initial_value(X[:,i], new_start_time)
             x = np.empty([len(time_series), self.nstate])
@@ -169,20 +200,34 @@ class Solver(DynModel):
                     sys.exit(1)
                 self.solver.integrate(time_series[t])
                 x[t] = self.solver.y
-            # save current state in state matrix X
+            # Save current state in state matrix X
             X[:,i] = x[-1]
-        # construct observation operator
+        # Construct observation operator
         H = self._constructHMatrix()
         HX = H.dot(X)
 
         return X, HX
 
     def get_obs(self, next_end_time):
-        ''' Return the observation and observation error covariance'''
+        """ 
+        Return the observation and observation error covariance
+        
+        Parameters
+        ----------
+        next_end_time: float
+            next end time
 
+        Returns
+        -------
+        obs: ndarray
+            ensemble observations
+        R_obs: ndarray
+            observation error covariance
+        """
         da_step = (next_end_time - self.da_interval) / self.da_interval
-        obs = self.Observe(next_end_time)
+        obs = self.observe(next_end_time)
         R_obs = self.get_Robs()
+
         return obs, R_obs
 
     def get_Robs(self):
@@ -194,15 +239,20 @@ class Solver(DynModel):
         """ Perform any necessary cleanup before exiting. """
         pass
 
-    def Observe(self, next_end_time):
-        """ Function is to get observation Data from experiment
+    def observe(self, next_end_time):
+        """ 
+        Return the observation data
+        
+        Parameters
+        ----------
+        next_end_time: float
+            next end time
 
-        Arg:
-
-        Returns:
-        obs: observation matrix
+        Returns
+        -------
+        obsM: ndarray
+            ensemble observations
         """
-
         # initial observation and observation standard deviation 
         obs = np.empty(self.nstate_obs)
         obs_std_vec = np.empty(self.nstate_obs)
@@ -216,8 +266,8 @@ class Solver(DynModel):
             obs_std_vec[iDim] = obs_std
             obs[iDim] = obs_vec[iDim] + np.random.normal(0, obs_std, 1)
         # construct ensemble observation
-        obsM = np.empty([self.nstate_obs, self.Ns])
-        for i in np.arange(self.Ns):
+        obsM = np.empty([self.nstate_obs, self.nsamples])
+        for i in np.arange(self.nsamples):
             obsM[:, i] = obs
         # construct the observation error covariance
         self.Robs = sp.diags(obs_std_vec**2,0)
