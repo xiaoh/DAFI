@@ -315,9 +315,9 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">_misfit_x_l1norm</span> <span class="o">=</span> <span class="p">[]</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_misfit_x_l2norm</span> <span class="o">=</span> <span class="p">[]</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_misfit_x_inf</span> <span class="o">=</span> <span class="p">[]</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">_obs_sigma</span> <span class="o">=</span> <span class="p">[]</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">_sigma_hx</span> <span class="o">=</span> <span class="p">[]</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">_misfit_max</span> <span class="o">=</span> <span class="p">[]</span></div>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_misfit_max</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_sigma_obs</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_sigma_hx</span> <span class="o">=</span> <span class="p">[]</span></div>
 
     <span class="k">def</span> <span class="nf">__str__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="n">str_info</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">name</span> <span class="o">+</span> \
@@ -418,8 +418,8 @@
                 <span class="bp">self</span><span class="o">.</span><span class="n">_misfit_x_l2norm</span><span class="p">))</span>
             <span class="n">np</span><span class="o">.</span><span class="n">savetxt</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_save_folder</span> <span class="o">+</span> <span class="n">os</span><span class="o">.</span><span class="n">sep</span> <span class="o">+</span> <span class="s1">&#39;misfit_inf&#39;</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span>
                 <span class="bp">self</span><span class="o">.</span><span class="n">_misfit_x_inf</span><span class="p">))</span>
-            <span class="n">np</span><span class="o">.</span><span class="n">savetxt</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_save_folder</span> <span class="o">+</span> <span class="n">os</span><span class="o">.</span><span class="n">sep</span> <span class="o">+</span> <span class="s1">&#39;_obs_sigma&#39;</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span>
-                <span class="bp">self</span><span class="o">.</span><span class="n">_obs_sigma</span><span class="p">))</span>
+            <span class="n">np</span><span class="o">.</span><span class="n">savetxt</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_save_folder</span> <span class="o">+</span> <span class="n">os</span><span class="o">.</span><span class="n">sep</span> <span class="o">+</span> <span class="s1">&#39;_sigma_obs&#39;</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_sigma_obs</span><span class="p">))</span>
             <span class="n">np</span><span class="o">.</span><span class="n">savetxt</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_save_folder</span> <span class="o">+</span> <span class="n">os</span><span class="o">.</span><span class="n">sep</span> <span class="o">+</span> <span class="s1">&#39;sigma_HX&#39;</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span>
                 <span class="bp">self</span><span class="o">.</span><span class="n">_sigma_hx</span><span class="p">))</span>
         <span class="k">try</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">dyn_model</span><span class="o">.</span><span class="n">save</span><span class="p">()</span>
@@ -452,14 +452,17 @@
 <span class="sd">            * self._misfit_x_inf</span>
 <span class="sd">            * self._sigma_hx</span>
 <span class="sd">            * self._misfit_max</span>
-<span class="sd">            * self._obs_sigma</span>
+<span class="sd">            * self._sigma_obs</span>
 <span class="sd">        &quot;&quot;&quot;</span>
 
         <span class="c1"># calculate misfits</span>
         <span class="n">nnorm</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">dyn_model</span><span class="o">.</span><span class="n">nstate_obs</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">nsamples</span>
+        <span class="c1"># TODO: Why are we dividing the norm by this? And why not the inf norm?</span>
         <span class="n">diff</span> <span class="o">=</span> <span class="nb">abs</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">obs</span> <span class="o">-</span> <span class="bp">self</span><span class="o">.</span><span class="n">model_obs</span><span class="p">)</span>
-        <span class="n">misfit_l1norm</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">diff</span><span class="p">)</span> <span class="o">/</span> <span class="n">nnorm</span>
-        <span class="n">misfit_l2norm</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">diff</span><span class="o">**</span><span class="mf">2.0</span><span class="p">))</span> <span class="o">/</span> <span class="n">nnorm</span>
+        <span class="c1"># np.sum(diff) / nnorm</span>
+        <span class="c1"># np.sqrt(np.sum(diff**2.0)) / nnorm</span>
+        <span class="n">misfit_l1norm</span> <span class="o">=</span> <span class="n">la</span><span class="o">.</span><span class="n">norm</span><span class="p">(</span><span class="n">diff</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span> <span class="o">/</span> <span class="n">nnorm</span>
+        <span class="n">misfit_l2norm</span> <span class="o">=</span> <span class="n">la</span><span class="o">.</span><span class="n">norm</span><span class="p">(</span><span class="n">diff</span><span class="p">,</span> <span class="mi">2</span><span class="p">)</span> <span class="o">/</span> <span class="n">nnorm</span>
         <span class="n">misfit_inf</span> <span class="o">=</span> <span class="n">la</span><span class="o">.</span><span class="n">norm</span><span class="p">(</span><span class="n">diff</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">inf</span><span class="p">)</span>
         <span class="n">misfit_max</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">max</span><span class="p">([</span><span class="n">misfit_l1norm</span><span class="p">,</span> <span class="n">misfit_l2norm</span><span class="p">,</span> <span class="n">misfit_inf</span><span class="p">])</span>
         <span class="n">sigma_hx</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">std</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">model_obs</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
@@ -472,7 +475,7 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">_misfit_x_inf</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">misfit_inf</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_sigma_hx</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">sigma_hx_norm</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_misfit_max</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">misfit_max</span><span class="p">)</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">_obs_sigma</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">sigma</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_sigma_obs</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">sigma</span><span class="p">)</span>
 
     <span class="k">def</span> <span class="nf">_check_convergence</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="c1"># Check iteration convergence.</span>
@@ -508,7 +511,7 @@
         <span class="n">str_report</span> <span class="o">+=</span> <span class="s2">&quot;</span><span class="se">\n</span><span class="s2">Standard deviation of ensemble: </span><span class="si">{}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">_sigma_hx</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">iter</span><span class="p">])</span> <span class="o">+</span> \
             <span class="s2">&quot;</span><span class="se">\n</span><span class="s2">Standard deviation of observation error: </span><span class="si">{}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">_obs_sigma</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">iter</span><span class="p">])</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_sigma_obs</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">iter</span><span class="p">])</span>
         <span class="n">str_report</span> <span class="o">+=</span> <span class="s2">&quot;</span><span class="se">\n\n</span><span class="s2">Misfit between the predicted Q and observed &quot;</span> <span class="o">+</span> \
             <span class="s2">&quot;quantities of interest (QoI).&quot;</span> <span class="o">+</span> \
             <span class="s2">&quot;</span><span class="se">\n</span><span class="s2">  L1 norm = </span><span class="si">{}</span><span class="se">\n</span><span class="s2">  L2 norm = </span><span class="si">{}</span><span class="se">\n</span><span class="s2">  Inf norm = </span><span class="si">{}</span><span class="se">\n\n</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span>

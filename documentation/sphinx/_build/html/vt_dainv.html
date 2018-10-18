@@ -8,7 +8,7 @@
   
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   
-  <title>mfuMain &mdash; vt_dainv  documentation</title>
+  <title>vt_dainv.py (exec) &mdash; vt_dainv  documentation</title>
   
 
   
@@ -81,7 +81,7 @@
               <p class="caption"><span class="caption-text">Contents:</span></p>
 <ul class="current">
 <li class="toctree-l1 current"><a class="reference internal" href="source_code.html">Source Code</a><ul class="current">
-<li class="toctree-l2 current"><a class="current reference internal" href="#">mfuMain</a></li>
+<li class="toctree-l2 current"><a class="current reference internal" href="#">vt_dainv.py (exec)</a></li>
 <li class="toctree-l2"><a class="reference internal" href="dainv.html">dainv</a></li>
 </ul>
 </li>
@@ -132,13 +132,13 @@
         
           <li><a href="source_code.html">Source Code</a> &raquo;</li>
         
-      <li>mfuMain</li>
+      <li>vt_dainv.py (exec)</li>
     
     
       <li class="wy-breadcrumbs-aside">
         
             
-            <a href="_sources/mfuMain.rst.txt" rel="nofollow"> View page source</a>
+            <a href="_sources/vt_dainv.rst.txt" rel="nofollow"> View page source</a>
           
         
       </li>
@@ -151,84 +151,63 @@
           <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
            <div itemprop="articleBody">
             
-  <div class="section" id="mfumain">
-<h1>mfuMain<a class="headerlink" href="#mfumain" title="Permalink to this headline">¶</a></h1>
+  <div class="section" id="vt-dainv-py-exec">
+<h1>vt_dainv.py (exec)<a class="headerlink" href="#vt-dainv-py-exec" title="Permalink to this headline">¶</a></h1>
 <p>Inverse modeling main executable.</p>
-<dl class="docutils">
-<dt>Example:</dt>
-<dd><div class="first last highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">mfu_main</span><span class="o">.</span><span class="n">py</span> <span class="o">&lt;</span><span class="n">input_file</span><span class="o">&gt;</span>
+<p class="rubric">Example</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">vt_dainv</span><span class="o">.</span><span class="n">py</span> <span class="o">&lt;</span><span class="n">input_file</span><span class="o">&gt;</span>
 </pre></div>
 </div>
-</dd>
+<div class="admonition note">
+<p class="first admonition-title">Note</p>
+<dl class="last docutils">
 <dt>Required inputs:</dt>
 <dd><ul class="first last simple">
-<li><dl class="first docutils">
-<dt><strong>dyn_model</strong> (<code class="docutils literal notranslate"><span class="pre">str</span></code>) -</dt>
-<dd>Name of dynamic model module/package.</dd>
-</dl>
-</li>
-<li><dl class="first docutils">
-<dt><strong>dyn_model_input</strong> (<code class="docutils literal notranslate"><span class="pre">str</span></code>) -</dt>
-<dd>Path to input file for the dynamic model.</dd>
-</dl>
-</li>
-<li><dl class="first docutils">
-<dt><strong>da_filter</strong> (<code class="docutils literal notranslate"><span class="pre">str</span></code>) -</dt>
-<dd>Name of filter from dainv.da_filtering module.</dd>
-</dl>
-</li>
-<li><dl class="first docutils">
-<dt><strong>t_end</strong> (<code class="docutils literal notranslate"><span class="pre">float</span></code>) -</dt>
-<dd>Final time step.</dd>
-</dl>
-</li>
-<li><dl class="first docutils">
-<dt><strong>da_interval</strong> (<code class="docutils literal notranslate"><span class="pre">float</span></code>) -</dt>
-<dd>Time interval to perform data assimilation.</dd>
-</dl>
-</li>
-<li><dl class="first docutils">
-<dt><strong>nsamples</strong> (<code class="docutils literal notranslate"><span class="pre">int</span></code>) -</dt>
-<dd>Number of samples for ensemble.</dd>
-</dl>
-</li>
+<li><strong>dyn_model</strong> (<code class="docutils literal notranslate"><span class="pre">str</span></code>) -
+Name of dynamic model module/package.</li>
+<li><strong>dyn_model_input</strong> (<code class="docutils literal notranslate"><span class="pre">str</span></code>) -
+Path to input file for the dynamic model.</li>
+<li><strong>da_filter</strong> (<code class="docutils literal notranslate"><span class="pre">str</span></code>) -
+Name of filter from dainv.da_filtering module.</li>
+<li><strong>t_end</strong> (<code class="docutils literal notranslate"><span class="pre">float</span></code>) -
+Final time step.</li>
+<li><strong>da_interval</strong> (<code class="docutils literal notranslate"><span class="pre">float</span></code>) -
+Time interval to perform data assimilation.</li>
+<li><strong>nsamples</strong> (<code class="docutils literal notranslate"><span class="pre">int</span></code>) -
+Number of samples for ensemble.</li>
 </ul>
 </dd>
+</dl>
+</div>
+<div class="admonition note">
+<p class="first admonition-title">Note</p>
+<dl class="last docutils">
 <dt>Optional inputs:</dt>
 <dd><ul class="first last simple">
-<li><dl class="first docutils">
-<dt><strong>report_flag</strong> (<code class="docutils literal notranslate"><span class="pre">bool</span></code>, <code class="docutils literal notranslate"><span class="pre">False</span></code>) -</dt>
-<dd>Call the filter’s report method.</dd>
-</dl>
-</li>
-<li><dl class="first docutils">
-<dt><strong>plot_flag</strong> (<code class="docutils literal notranslate"><span class="pre">bool</span></code>, <code class="docutils literal notranslate"><span class="pre">False</span></code>) -</dt>
-<dd>Call the filter’s plot method.</dd>
-</dl>
-</li>
-<li><dl class="first docutils">
-<dt><strong>save_flag</strong> (<code class="docutils literal notranslate"><span class="pre">bool</span></code>, <code class="docutils literal notranslate"><span class="pre">False</span></code>) -</dt>
-<dd>Call the filter’s save method.</dd>
-</dl>
-</li>
-<li><dl class="first docutils">
-<dt><strong>rand_seed_flag</strong> (<code class="docutils literal notranslate"><span class="pre">bool</span></code>, <code class="docutils literal notranslate"><span class="pre">False</span></code>) -</dt>
-<dd>Use fixed random seed, for debugging.</dd>
-</dl>
-</li>
-<li><dl class="first docutils">
-<dt><strong>rand_seed</strong> (<code class="docutils literal notranslate"><span class="pre">float</span></code>, <code class="docutils literal notranslate"><span class="pre">1</span></code>) -</dt>
-<dd>Seed for numpy.random.</dd>
-</dl>
-</li>
+<li><strong>report_flag</strong> (<code class="docutils literal notranslate"><span class="pre">bool</span></code>, <code class="docutils literal notranslate"><span class="pre">False</span></code>) -
+Call the filter’s report method.</li>
+<li><strong>plot_flag</strong> (<code class="docutils literal notranslate"><span class="pre">bool</span></code>, <code class="docutils literal notranslate"><span class="pre">False</span></code>) -
+Call the filter’s plot method.</li>
+<li><strong>save_flag</strong> (<code class="docutils literal notranslate"><span class="pre">bool</span></code>, <code class="docutils literal notranslate"><span class="pre">False</span></code>) -
+Call the filter’s save method.</li>
+<li><strong>rand_seed_flag</strong> (<code class="docutils literal notranslate"><span class="pre">bool</span></code>, <code class="docutils literal notranslate"><span class="pre">False</span></code>) -
+Use fixed random seed, for debugging.</li>
+<li><strong>rand_seed</strong> (<code class="docutils literal notranslate"><span class="pre">float</span></code>, <code class="docutils literal notranslate"><span class="pre">1</span></code>) -
+Seed for numpy.random.</li>
 </ul>
 </dd>
+</dl>
+</div>
+<div class="admonition note">
+<p class="first admonition-title">Note</p>
+<dl class="last docutils">
 <dt>Other inputs:</dt>
 <dd><ul class="first last simple">
 <li>As required by the chosen filter.</li>
 </ul>
 </dd>
 </dl>
+</div>
 </div>
 
 

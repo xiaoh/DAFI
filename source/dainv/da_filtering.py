@@ -171,9 +171,9 @@ class DAFilter2(DAFilter):
         self._misfit_x_l1norm = []
         self._misfit_x_l2norm = []
         self._misfit_x_inf = []
-        self._obs_sigma = []
-        self._sigma_hx = []
         self._misfit_max = []
+        self._sigma_obs = []
+        self._sigma_hx = []
 
     def __str__(self):
         str_info = self.name + \
@@ -274,8 +274,8 @@ class DAFilter2(DAFilter):
                 self._misfit_x_l2norm))
             np.savetxt(self._save_folder + os.sep + 'misfit_inf', np.array(
                 self._misfit_x_inf))
-            np.savetxt(self._save_folder + os.sep + '_obs_sigma', np.array(
-                self._obs_sigma))
+            np.savetxt(self._save_folder + os.sep + '_sigma_obs', np.array(
+                self._sigma_obs))
             np.savetxt(self._save_folder + os.sep + 'sigma_HX', np.array(
                 self._sigma_hx))
         try: self.dyn_model.save()
@@ -308,14 +308,17 @@ class DAFilter2(DAFilter):
             * self._misfit_x_inf
             * self._sigma_hx
             * self._misfit_max
-            * self._obs_sigma
+            * self._sigma_obs
         """
 
         # calculate misfits
         nnorm = self.dyn_model.nstate_obs * self.nsamples
+        # TODO: Why are we dividing the norm by this? And why not the inf norm?
         diff = abs(self.obs - self.model_obs)
-        misfit_l1norm = np.sum(diff) / nnorm
-        misfit_l2norm = np.sqrt(np.sum(diff**2.0)) / nnorm
+        # np.sum(diff) / nnorm
+        # np.sqrt(np.sum(diff**2.0)) / nnorm
+        misfit_l1norm = la.norm(diff, 1) / nnorm
+        misfit_l2norm = la.norm(diff, 2) / nnorm
         misfit_inf = la.norm(diff, np.inf)
         misfit_max = np.max([misfit_l1norm, misfit_l2norm, misfit_inf])
         sigma_hx = np.std(self.model_obs, axis=1)
@@ -328,7 +331,7 @@ class DAFilter2(DAFilter):
         self._misfit_x_inf.append(misfit_inf)
         self._sigma_hx.append(sigma_hx_norm)
         self._misfit_max.append(misfit_max)
-        self._obs_sigma.append(sigma)
+        self._sigma_obs.append(sigma)
 
     def _check_convergence(self):
         # Check iteration convergence.
@@ -364,7 +367,7 @@ class DAFilter2(DAFilter):
         str_report += "\nStandard deviation of ensemble: {}".format(
             self._sigma_hx[self.iter]) + \
             "\nStandard deviation of observation error: {}".format(
-            self._obs_sigma[self.iter])
+            self._sigma_obs[self.iter])
         str_report += "\n\nMisfit between the predicted Q and observed " + \
             "quantities of interest (QoI)." + \
             "\n  L1 norm = {}\n  L2 norm = {}\n  Inf norm = {}\n\n".format(
