@@ -124,6 +124,11 @@ class DAFilter2(DAFilter):
         self.t_end = t_end # total run time
 
         # filter-specific inputs
+        try: self.beta = float(input_dict['beta'])
+        except: self.beta = 0.5
+        try: self.const_beta_flag = ast.literal_eval(
+                input_dict['const_beta_flag'])
+        except: self.const_beta_flag = False 
         try:
             self.reach_max_flag = ast.literal_eval(
                 input_dict['reach_max_flag'])
@@ -158,7 +163,8 @@ class DAFilter2(DAFilter):
         self.iter = int(0) # current iteration
         self.da_step = int(0) # current DA step
         # ensemble matrix (nsamples, nstate)
-        self.state_vec = np.zeros([self.dyn_model.nstate, self.nsamples])
+        self.state_vec_forecast = np.zeros([self.dyn_model.nstate, self.nsamples])
+        self.state_vec_analysis = np.zeros([self.dyn_model.nstate, self.nsamples])
         # ensemble matrix projected to observed space (nsamples, nstateSample)
         self.model_obs = np.zeros([self.dyn_model.nstate_obs, self.nsamples])
         # observation matrix (nstate_obs, nsamples)
@@ -202,12 +208,12 @@ class DAFilter2(DAFilter):
             * self.obs_error
         """
         # Generate initial state Ensemble
-        self.state_vec, self.model_obs = self.dyn_model.generate_ensemble()
+        self.state_vec_analysis, self.model_obs = self.dyn_model.generate_ensemble()
         # sensitivity only
         if self._sensitivity_only:
             next_end_time = 2.0 * self.da_interval + self.time_array[0]
-            self.state_vec, self.model_obs = self.dyn_model.forecast_to_time(
-                self.state_vec, next_end_time)
+            self.state_vec_forecast, self.model_obs = self.dyn_model.forecast_to_time(
+                self.state_vec_analysis, next_end_time)
             if self.ver>=1:
                 print "\nSensitivity study completed."
             sys.exit(0)
@@ -222,17 +228,15 @@ class DAFilter2(DAFilter):
                 print("\nData Assimilation step: {}".format(self.da_step))
             # dyn_model: propagate the state ensemble to next DA time
             # and get observations at next DA time.
-            self.state_vec, self.model_obs = self.dyn_model.forecast_to_time(
-                self.state_vec, next_end_time)
+            self.state_vec_forecast, self.model_obs = self.dyn_model.forecast_to_time(
+                self.state_vec_analysis, next_end_time)
             self.obs, self.obs_error = self.dyn_model.get_obs(next_end_time)
             # data assimilation
-            debug_dict = {
-                'Xf':self.state_vec, 'HX':self.model_obs, 'obs':self.obs,
-                'R':self.obs_error}
-            self._save_debug(debug_dict)
             self._correct_forecasts()
             self._calc_misfits()
-            debug_dict = {'Xa':self.state_vec}
+            debug_dict = {
+                'Xf':self.state_vec_forecast, 'Xa':self.state_vec_analysis, 'HX':self.model_obs, 
+                'obs':self.obs, 'R':self.obs_error}
             self._save_debug(debug_dict)
             # check convergence and report
             conv, conv_all = self._check_convergence()
@@ -395,7 +399,7 @@ class DAFilter2(DAFilter):
         str_report += '\n\n'
         print(str_report)
 
-# child classes (specific filtering techniques
+# child classes (specific filtering techniques)
 
 class EnKF(DAFilter2):
     """ Implementation of the ensemble Kalman Filter (EnKF).
@@ -439,7 +443,7 @@ class EnKF(DAFilter2):
             return mean_sub_mat
 
         # calculate the Kalman gain matrix
-        xp = _mean_subtracted_matrix(self.state_vec)
+        xp = _mean_subtracted_matrix(self.state_vec_forecast)
         hxp = _mean_subtracted_matrix(self.model_obs)
         coeff =  (1.0 / (self.nsamples - 1.0))
         pht = coeff * np.dot(xp, hxp.T)
@@ -450,9 +454,245 @@ class EnKF(DAFilter2):
         kalman_gain_matrix = pht.dot(inv)
         # analysis step
         dx = np.dot(kalman_gain_matrix, self.obs - self.model_obs)
-        self.state_vec += dx
+        self.state_vec_analysis += dx
         # debug
         debug_dict = {
             'K':kalman_gain_matrix, 'inv':inv, 'HPHT':hpht, 'PHT':pht,
             'HXP':hxp, 'XP':xp}
         self._save_debug(debug_dict)
+
+
+# ensemble randomized maximum likelihood techniques (child classes)
+class EnRML(DAFilter):
+    """ Implementation of Ensemble Randomized Maximum Likelihood(EnRML).
+
+    """
+
+    def __init__(
+        self, nsamples, da_interval, t_end, forward_model, input_dict
+        ):
+        """ Parse input file and assign values to class attributes.
+
+        See DAFilter2.__init__ for details.
+        """
+        super(self.__class__, self).__init__(
+            nsamples, da_interval, t_end, forward_model, input_dict)
+        self.name = 'Ensemble Randomized Maximum Likelihood'
+        self.short_name = 'EnRML'
+        
+        # EnRML inputs
+        self.Tend = float(paramDict["Tend"]) # total run time     
+        self.DAInterval = float(paramDict['DAInterval']) # DA time step interval                 
+        self.Ns = int(paramDict['Ns']) # number of sample
+        self.beta = float(paramDict["beta"])
+        self.constbeta = ast.literal_eval(paramDict['constbeta'])
+        self.convergenceResi = float(paramDict['convergenceResi'])
+        self.reachmaxiteration = ast.literal_eval(paramDict['reachmaxiteration'])
+        # EnRML private variables
+        self._sensitivityOnly = ast.literal_eval(paramDict['sensitivityOnly'])
+        self._iDebug = paramDict['iDebug']
+        self._debugFolderName = paramDict['debugFolderName']
+        if not os.path.exists(self._debugFolderName):
+            os.makedirs(self._debugFolderName) 
+        # Create instance of dynamic model class 
+        self.forwardModel = paramDict['forwardModel']
+        self.forwarModelInput = paramDict['forwardModelInput']
+        dynModel = getattr(importlib.import_module('dynModels.' + self.forwardModel), self.forwardModel)
+        self.dynModel = dynModel(self.Ns, self.DAInterval, self.Tend, self.forwarModelInput)
+    
+        ## Initialize time
+        self.time = 0 # current time
+        self.T = np.arange(0, self.Tend, self.DAInterval)
+        
+        ## Initialize states 
+        self.Xpr = np.zeros([self.dynModel.Nstate, self.Ns]) # prior ensemble matrix (Ns, Nstate)
+        self.Xf = np.zeros([self.dynModel.Nstate, self.Ns]) # forcast ensemble matrix (Ns, Nstate)
+        self.Xa = np.zeros([self.dynModel.Nstate, self.Ns]) # analysis ensemble matrix (Ns, Nstate)
+        self.HX = np.zeros([self.dynModel.NstateObs, self.Ns]) # ensemble matrix projected to observed space (Ns, NstateSample)
+        self.Obs = np.zeros([self.dynModel.NstateObs, self.Ns]) # observation matrix (Ns, NstateSample)
+        
+        ## Initialize misfit       
+        self.misfitX_L1 = []; 
+        self.misfitX_L2 = [];
+        self.misfitX_inf = [];
+        self.obsSigma = [];
+        self.obsSigmaInf = [];
+        self.sigmaHX = [];
+        self.steplength = [];
+
+    def __str__(self):
+        """ Print basic summary information of the ensemble, e.g.,
+            model name, number of samples, DA interval
+        """
+        s = 'Ensemble Randomized Maximum Likelihood Method' + \
+            '\n   Number of samples: {}'.format(self.Ns) + \
+            '\n   Run time:          {}'.format(self.Tend) +  \
+            '\n   DA interval:       {}'.format(self.DAInterval) + \
+            '\n   Forward model:     {}'.format(self.forwardModel)
+        return s
+
+    def solve(self):
+        """ Solves the parameter estimation problem.
+        """
+        # Generate initial state Ensemble
+        (self.Xa, self.HX) = self.dynModel.generateEnsemble()
+        if(self._sensitivityOnly):
+            print "Sensitivity study completed."
+            sys.exit(0)
+        ii = 0
+        self.Xpr = self.Xa
+        Obs = self.dynModel.Observe(self.DAInterval)
+
+        for t in self.T:
+            nextEndTime = 2 * self.DAInterval + t
+            DAstep = (nextEndTime - self.DAInterval) / self.DAInterval
+            print "#######################################################################"
+            print "\n Data Assimilation step = ", DAstep, "\n"   
+            
+            # propagate the state ensemble to next DA time
+            self.Xf, self.HX = self.dynModel.forecastToTime(self.Xa, nextEndTime)
+            if (self._iDebug):
+                np.savetxt(self._debugFolderName+'X_'+ str(DAstep) + '.txt', self.Xf)
+                np.savetxt(self._debugFolderName+'HX_'+ str(DAstep) + '.txt', self.HX)
+            
+            # correct the propagated results
+            self.Xa, sigmaHXNorm, misfitMax = self._correctForecasts(self.Xpr, self.Xf, self.HX,Obs, nextEndTime)
+            #Check iteration convergence and report misfits (Todo:move to report function)                      
+            Robs = self.dynModel.get_Robs()
+            sigmaInf = np.max(np.diag(np.sqrt(Robs)));
+            sigma = ( LA.norm(np.sqrt(np.diag(Robs))) / self.dynModel.NstateObs)
+            print "Std of ensemble = ", sigmaHXNorm
+            print "Std of observation error", sigma
+            self.obsSigma.append(sigma)
+            self.obsSigmaInf.append(sigmaInf)
+            if  misfitMax > sigmaInf:
+                print "infinit misfit(", misfitMax, ") is larger than Inf norm of observation error(", sigmaInf, "), so iteration continuing\n\n"
+            else:
+                print "infinit misfit of ensemble reaches Inf norm of observation error, considering converge\n\n"
+                self.misfitX_L1 = np.array(self.misfitX_L1)
+                self.misfitX_L2 = np.array(self.misfitX_L2)
+                self.misfitX_inf = np.array(self.misfitX_inf)
+                self.obsSigma = np.array(self.obsSigma)
+            if ii > 0:
+                iterativeResidual = (abs(self.misfitX_L2[ii] - self.misfitX_L2[ii-1])) /abs(self.misfitX_L2[0])    
+                print "relative Iterative residual = ", iterativeResidual
+                print "relative Convergence criterion = ", self.convergenceResi 
+        
+                if iterativeResidual  < self.convergenceResi:
+                    if self.reachmaxiteration:
+                        pass
+                    else:
+                        print "Iteration converges, finished \n\n"
+                        break
+                
+                np.savetxt('./misfit_L1.txt', self.misfitX_L1)
+                np.savetxt('./misfit_L2.txt', self.misfitX_L2)
+                np.savetxt('./misfit_inf.txt', self.misfitX_inf)
+                np.savetxt('./obsSigma.txt', self.obsSigma)
+                np.savetxt('./obsSigmaInf.txt', self.obsSigmaInf)
+                if self.constbeta:
+                    print "Use constont step length beta = " ,self.beta
+                    pass
+                else:
+                    print "Use self-adjusting step length \n"
+                    if self.misfitX_L2[ii] < self.misfitX_L2[ii-1]:
+                        self.beta = 1.2*self.beta
+                        print "Iteration Converging, increase step length beta = ", self.beta
+                    else:
+                        self.beta = 0.8*self.beta
+                        self.Xa = self.Xf
+                        print "Iteration Diverging, reduce step length beta = ", self.beta
+            self.steplength.append(self.beta)
+            ii = ii + 1
+        # Save misfits
+        self.misfitX_L1 = np.array(self.misfitX_L1)
+        self.misfitX_L2 = np.array(self.misfitX_L2)
+        self.misfitX_inf = np.array(self.misfitX_inf)
+        self.obsSigma = np.array(self.obsSigma)
+        self.sigmaHX = np.array(self.sigmaHX)
+        self.steplength = np.array(self.steplength)
+
+        np.savetxt('./misfit_L1.txt', self.misfitX_L1)
+        np.savetxt('./misfit_L2.txt', self.misfitX_L2)
+        np.savetxt('./misfit_inf.txt', self.misfitX_inf)
+        np.savetxt('./obsSigma.txt', self.obsSigma)
+        np.savetxt('./sigmaHX.txt', self.sigmaHX)
+        np.savetxt('./steplength.txt',self.steplength)
+
+    def report(self):
+        """ Report summary information at each step
+        """
+        raise NotImplementedError
+
+    def clean(self):
+        """ Call the dynamic model to do any necessary cleanup before exiting.
+        """
+        self.dynModel.clean()
+
+    ############################ Priviate function ################################    
+    def _correctForecasts(self, Xpr, X, HX, Obs,nextEndTime):
+
+        """ Filtering step: Correct the propagated ensemble X 
+            via EnRML filtering procedure
+            
+            Arg:
+            Xpr: Prior state ensemble matrix (Nstate by Ns)
+            X: state ensemble matrix (Nstate by Ns)
+            HX: state ensemble matrix projected to observed space
+            Obs: Observation
+            nextEndTime: next DA time spot
+            
+            Return:
+            X: state ensemble matrix
+        """
+        DAstep = (nextEndTime - self.DAInterval) / self.DAInterval
+        # get XMean and tile XMeanVec to a full matrix (Nsate by Ns)
+        XMeanVec = np.mean(X, axis=1) # vector mean of X
+        XMeanVec = np.array([XMeanVec])
+        XMeanVec = XMeanVec.T
+        XMean = np.tile(XMeanVec, (1, self.Ns))
+        # get prior XMean and tile XMeanVec to a full matrix (Nsate by Ns)
+        XprMeanVec = np.mean(Xpr, axis=1) # vector mean of X
+        XprMeanVec = np.array([XprMeanVec])
+        XprMeanVec = XprMeanVec.T
+        XprMean = np.tile(XprMeanVec, (1, self.Ns))
+        # get coveriance matrix
+        XP0 = Xpr - XprMean
+        XP =  X - XMean
+        
+        (GNGainMatrix, penalty) = self.dynModel.getGaussNewtonVars(HX, X,Xpr,XP, XP0, Obs,nextEndTime)
+
+        # analyze step
+        Robs = self.dynModel.get_Robs()
+        Cdd = np.diag(np.diag(np.sqrt(Robs)))
+        #dX = - np.dot(Cdd.dot(LA.inv(Hess)),(X-Xpr)) - GNGainMatrix.dot(HX-Obs)
+        dX = - GNGainMatrix.dot(HX-Obs) + penalty
+        X = self.beta*Xpr + (1.0-self.beta)* X+ self.beta*dX
+        if (self._iDebug):
+            np.savetxt(self._debugFolderName+'dX_'+str(DAstep), dX)
+            np.savetxt(self._debugFolderName+'updateX_'+str(DAstep), X) 
+            np.savetxt(self._debugFolderName+'Obs_'+str(DAstep), Obs)  
+        
+        # calculate misfits
+        Nnorm = self.dynModel.NstateObs * self.Ns
+        diff = abs(Obs - HX)
+        misFit_L1 = np.sum(diff) / Nnorm
+        misFit_L2 = np.sqrt(np.sum(diff**2)) / Nnorm
+        misFit_Inf = LA.norm(diff, np.inf)                
+        misFitMax = np.max([misFit_L1, misFit_L2, misFit_Inf])
+        sigmaHX = np.std(HX, axis=1)
+        sigmaHXNorm = LA.norm(sigmaHX) / self.dynModel.NstateObs
+        
+        self.misfitX_L1.append(misFit_L1)
+        self.misfitX_L2.append(misFit_L2)
+        self.misfitX_inf.append(misFit_Inf)
+        self.sigmaHX.append(sigmaHXNorm)
+        
+        print "\nThe misfit between predicted QoI with observed QoI is:"
+        print "L1 norm = ", misFit_L1,", \nL2 norm = ", misFit_L2, "\nInf norm = ", misFit_Inf, "\n\n"
+    
+        return X, sigmaHXNorm, misFitMax
+        
+
+ # ensemble kalman filtering -Multi Data assimilation techniques (child classes)
+

@@ -11,9 +11,6 @@ from scipy.integrate import ode
 import matplotlib
 import matplotlib.pyplot as plt
 
-# local imports
-from utilities import read_input_data
-
 if not os.path.exists('figures/'):
     os.mkdir('figures/')
 
@@ -90,11 +87,7 @@ def plot_obs(para):
 
     return p5   
 
-if __name__ == "__main__":
-    
-    # parse parameters
-    paramDict = read_input_data('plotInfo.in')
-    para = paramDict['para']
+def main(iShow=False):
 
     # plot
     plt.figure()
@@ -105,7 +98,15 @@ if __name__ == "__main__":
     plt.xlabel('time')
     plt.ylabel(para)
     matplotlib.rcParams.update({'font.size':15})
-
     # save figure
     figureName = './figures/timeSeries_DA_'+ para +'.pdf'
     plt.savefig(figureName)
+
+if __name__ == "__main__":
+    
+    para = 'x'
+    main()
+    para = 'y'
+    main()
+    para = 'z'
+    main()
