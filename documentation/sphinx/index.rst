@@ -1,7 +1,7 @@
 
 
-VT-DA_Inv Documentation!
-========================
+VT-DA_Inv Documentation
+=======================
 
 .. toctree::
    :maxdepth: 4
