@@ -1,0 +1,26 @@
+#!/bin/sh
+#
+# This pre-commit hook tests that the documentation builds correctly.
+# It can be disabled by using the "-n" option with "git commit".
+#
+# See http://git-scm.com/book/en/Customizing-Git-Git-Hooks for details.
+#
+# This pre-commit hook requires that you have the "###PROJECT###" project on your python
+# path, in order for the DJANGO_SETTINGS_MODULE=###PROJECT###.settings to work.
+# This is needed to build the apidoc.
+#
+# To easily put the "###PROJECT###" project on your python path, use the same virtualenv
+# and in the project folder, execute "add2virtualenv ." once.
+
+echo "Checking documentation build..."
+res=$(DJANGO_SETTINGS_MODULE=###PROJECT###.settings bin/sphinx-build -q -E -w errors.log -b html -d build/doctrees source build/html 2> /dev/null)
+if test -s errors.log; then  # if errors.log exists and isn't empty, then there's some errors
+    echo "[error]  Blocking commit, found errors while building documentation:"
+    cat errors.log
+    rm -f errors.log
+    exit 1
+else
+    echo "[success]  Documentation built without error."
+fi
+rm -f errors.log
+

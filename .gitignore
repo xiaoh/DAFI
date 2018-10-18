@@ -1,6 +1,6 @@
 
 *.pyc
 .DS_Store
-documentation/sphinx/_build/
-documentation/sphinx/_template/
-documentation/sphinx/_static/
+docs/sphinx/_build/
+docs/sphinx/_template/
+docs/sphinx/_static/
