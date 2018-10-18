@@ -16,13 +16,7 @@ class DAFilter(object):
     """ Parent class for data assimilation filtering techniques.
 
     Use this as a template to write new filtering classes.
-    The required attributes and methods are summarized below.
-
-    methods:
-        solve()
-        report()
-        plot()
-        clean()
+    The required methods are summarized below.
     """
 
     def __init__(
@@ -30,13 +24,18 @@ class DAFilter(object):
         ):
         """ Parse input file and assign values to class attributes.
 
-        Args:
-            nsamples: Ensemble size. [int]
-            da_interval: Iteration interval between data assimilation
-                        steps. [float]
-            t_end: Final time. [float]
-            forward_model: Dynamic model. [DynModel]
-            input_dict: All filter-specific inputs. [dictionary of str]
+        Parameters
+        ----------
+        nsamples : int
+            Ensemble size.
+        da_interval : float
+            Iteration interval between data assimilation steps.
+        t_end : float
+            Final time.
+        forward_model : DynModel
+            Dynamic model.
+        input_dict : dict[str]
+            All filter-specific inputs.
         """
         self.dyn_model = forward_model
 
@@ -84,13 +83,36 @@ class DAFilter2(DAFilter):
         ):
         """ Parse input file and assign values to class attributes.
 
-        Args:
-            nsamples: Ensemble size. [int]
-            da_interval: Iteration interval between data assimilation
-                        steps. [float]
-            t_end: Final time. [float]
-            forward_model: Dynamic model. [DynModel]
-            input_dict: All filter-specific inputs. [dictionary of str]
+        Parameters
+        ----------
+        nsamples : int
+            Ensemble size.
+        da_interval : float
+            Iteration interval between data assimilation steps.
+        t_end : float
+            Final time.
+        forward_model : DynModel
+            Dynamic model.
+        input_dict : dict[str]
+            All filter-specific inputs.
+
+        Note
+        ----
+        Inputs in ``input_dict``:
+            * **convergence_residual** (``float``) -
+              Residual value for convergence.
+            * **save_folder** (``string``, ``./results_da``) -
+              Folder where to save results.
+            * **debug_flag** (``bool``, ``False``) -
+              Save extra information for debugging.
+            * **debug_folder** (``string``, ``./debug``) -
+              Folder where to save debugging information
+            * **verbosity** (``int``, ``1``) -
+              Amount of information to print to screen.
+            * **sensitivity_only** (``bool``, ``False``) -
+              Perform initial perturbation but no data assimilation).
+            * **reach_max_flag** (``bool``, ``True``) -
+              Do not terminate simulation when converged.
         """
         self.name = 'Generic DA filtering technique'
         self.short_name = None
@@ -131,7 +153,7 @@ class DAFilter2(DAFilter):
         try: self._save_folder = input_dict['save_folder']
         except: self._save_folder = os.curdir + os.sep + 'results_da'
         try: self._verb = int(input_dict['verbosity'])
-        except: self._verb = 1
+        except: self._verb = int(1)
 
         # initialize iteration array
         self.time_array = np.arange(0.0, self.t_end, self.da_interval)
@@ -155,9 +177,9 @@ class DAFilter2(DAFilter):
         self._misfit_x_l1norm = []
         self._misfit_x_l2norm = []
         self._misfit_x_inf = []
-        self._obs_sigma = []
-        self._sigma_hx = []
         self._misfit_max = []
+        self._sigma_obs = []
+        self._sigma_hx = []
 
     def __str__(self):
         str_info = self.name + \
@@ -176,14 +198,14 @@ class DAFilter2(DAFilter):
         it calculates misfits using various norms, and checks for
         convergence.
 
-        Updates:
-            time
-            iter
-            da_step
-            state_vec
-            model_obs
-            obs
-            obs_error
+        **Updates:**
+            * self.time
+            * self.iter
+            * self.da_step
+            * self.state_vec
+            * self.model_obs
+            * self.obs
+            * self.obs_error
         """
         # Generate initial state Ensemble
         self.state_vec_analysis, self.model_obs = self.dyn_model.generate_ensemble()
@@ -256,8 +278,8 @@ class DAFilter2(DAFilter):
                 self._misfit_x_l2norm))
             np.savetxt(self._save_folder + os.sep + 'misfit_inf', np.array(
                 self._misfit_x_inf))
-            np.savetxt(self._save_folder + os.sep + '_obs_sigma', np.array(
-                self._obs_sigma))
+            np.savetxt(self._save_folder + os.sep + '_sigma_obs', np.array(
+                self._sigma_obs))
             np.savetxt(self._save_folder + os.sep + 'sigma_HX', np.array(
                 self._sigma_hx))
         try: self.dyn_model.save()
@@ -265,10 +287,11 @@ class DAFilter2(DAFilter):
 
     # private methods
     def _correct_forecasts(self):
-        # Correct the propagated ensemble (filtering step).
-        #
-        # Updates:
-        #     self.state_vec_analysis
+        """ Correct the propagated ensemble (filtering step).
+
+        **Updates:**
+            * self.state_vec
+        """
         raise NotImplementedError(
             "Needs to be implemented in the child class!")
 
@@ -281,22 +304,25 @@ class DAFilter2(DAFilter):
                     value)
 
     def _calc_misfits(self):
-        # Calculate the misfit.
-        #
-        # Updates:
-        #     _misfit_x_l1norm
-        #     _misfit_x_l2norm
-        #     _misfit_x_inf
-        #     _sigma_hx
-        #     _misfit_max
-        #     _obs_sigma
-        #
+        """ Calculate the misfit.
+
+        **Updates:**
+            * self._misfit_x_l1norm
+            * self._misfit_x_l2norm
+            * self._misfit_x_inf
+            * self._sigma_hx
+            * self._misfit_max
+            * self._sigma_obs
+        """
 
         # calculate misfits
         nnorm = self.dyn_model.nstate_obs * self.nsamples
+        # TODO: Why are we dividing the norm by this? And why not the inf norm?
         diff = abs(self.obs - self.model_obs)
-        misfit_l1norm = np.sum(diff) / nnorm
-        misfit_l2norm = np.sqrt(np.sum(diff**2.0)) / nnorm
+        # np.sum(diff) / nnorm
+        # np.sqrt(np.sum(diff**2.0)) / nnorm
+        misfit_l1norm = la.norm(diff, 1) / nnorm
+        misfit_l2norm = la.norm(diff, 2) / nnorm
         misfit_inf = la.norm(diff, np.inf)
         misfit_max = np.max([misfit_l1norm, misfit_l2norm, misfit_inf])
         sigma_hx = np.std(self.model_obs, axis=1)
@@ -309,7 +335,7 @@ class DAFilter2(DAFilter):
         self._misfit_x_inf.append(misfit_inf)
         self._sigma_hx.append(sigma_hx_norm)
         self._misfit_max.append(misfit_max)
-        self._obs_sigma.append(sigma)
+        self._sigma_obs.append(sigma)
 
     def _check_convergence(self):
         # Check iteration convergence.
@@ -338,14 +364,14 @@ class DAFilter2(DAFilter):
         return conv, conv_all
 
     def _report(self, info):
-        # report at each iteration
+        """ Report at each iteration. """
         (iterative_residual, conv1, sigma_inf, conv2) = info
 
         str_report = '\n' + "#"*80
         str_report += "\nStandard deviation of ensemble: {}".format(
             self._sigma_hx[self.iter]) + \
             "\nStandard deviation of observation error: {}".format(
-            self._obs_sigma[self.iter])
+            self._sigma_obs[self.iter])
         str_report += "\n\nMisfit between the predicted Q and observed " + \
             "quantities of interest (QoI)." + \
             "\n  L1 norm = {}\n  L2 norm = {}\n  Inf norm = {}\n\n".format(
@@ -385,6 +411,8 @@ class EnKF(DAFilter2):
         ):
         """ Parse input file and assign values to class attributes.
 
+        Note
+        ----
         See DAFilter2.__init__ for details.
         """
         super(self.__class__, self).__init__(
@@ -393,10 +421,11 @@ class EnKF(DAFilter2):
         self.short_name = 'EnKF'
 
     def _correct_forecasts(self):
-        # Correct the propagated ensemble (filtering step) using EnKF
-        #
-        # Updates:
-        #     self.state_vec_analysis
+        """ Correct the propagated ensemble (filtering step) using EnKF
+
+        **Updates:**
+            * self.state_vec
+        """
 
         def _check_condition_number(hpht):
             conInv = la.cond(hpht + self.obs_error)

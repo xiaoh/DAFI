@@ -3,11 +3,9 @@ Source Code
 ===========
 This section contains the auto-documentation for the source code of the different packages.
 
-dainv
------
-.. automodule:: dainv.utilities
+.. toctree::
+   :maxdepth: 4
 
-dainv.utilities
-~~~~~~~~~~~~~~~
-.. automodule:: dainv.utilities
-    :members:
+   vt_dainv.rst
+   dainv.rst   
+

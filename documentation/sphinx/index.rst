@@ -1,10 +1,10 @@
 
 
-Welcome to VT DA_Inv's documentation!
-=====================================
+VT-DA_Inv Documentation
+=======================
 
 .. toctree::
-   :maxdepth: 3
+   :maxdepth: 4
    :caption: Contents:
 
    source_code.rst

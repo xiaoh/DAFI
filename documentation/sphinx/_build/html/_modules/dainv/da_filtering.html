@@ -1,0 +1,654 @@
+
+
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>dainv.da_filtering &mdash; vt_dainv  documentation</title>
+  
+
+  
+  
+  
+  
+
+  
+
+  
+  
+    
+
+  
+
+  <link rel="stylesheet" href="../../_static/css/theme.css" type="text/css" />
+  <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" /> 
+
+  
+  <script src="../../_static/js/modernizr.min.js"></script>
+
+</head>
+
+<body class="wy-body-for-nav">
+
+   
+  <div class="wy-grid-for-nav">
+
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search">
+          
+
+          
+            <a href="../../index.html" class="icon icon-home"> vt_dainv
+          
+
+          
+          </a>
+
+          
+            
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <p class="caption"><span class="caption-text">Contents:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../source_code.html">Source Code</a></li>
+</ul>
+
+            
+          
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../index.html">vt_dainv</a>
+        
+      </nav>
+
+
+      <div class="wy-nav-content">
+        
+        <div class="rst-content">
+        
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="../../index.html">Docs</a> &raquo;</li>
+        
+          <li><a href="../index.html">Module code</a> &raquo;</li>
+        
+      <li>dainv.da_filtering</li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+      </li>
+    
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <h1>Source code for dainv.da_filtering</h1><div class="highlight"><pre>
+<span></span><span class="c1"># Copyright 2018 Virginia Polytechnic Institute and State University.</span>
+<span class="sd">&quot;&quot;&quot; Collection of different filtering techniques. &quot;&quot;&quot;</span>
+
+<span class="c1"># standard library imports</span>
+<span class="kn">import</span> <span class="nn">ast</span>
+<span class="kn">import</span> <span class="nn">warnings</span>
+<span class="kn">import</span> <span class="nn">os</span>
+<span class="kn">import</span> <span class="nn">sys</span>
+
+<span class="c1"># third party imports</span>
+<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+<span class="kn">from</span> <span class="nn">numpy</span> <span class="k">import</span> <span class="n">linalg</span> <span class="k">as</span> <span class="n">la</span>
+
+<span class="c1"># parent classes (templates)</span>
+<div class="viewcode-block" id="DAFilter"><a class="viewcode-back" href="../../dainv_da_filtering.html#dainv.da_filtering.DAFilter">[docs]</a><span class="k">class</span> <span class="nc">DAFilter</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot; Parent class for data assimilation filtering techniques.</span>
+
+<span class="sd">    Use this as a template to write new filtering classes.</span>
+<span class="sd">    The required methods are summarized below.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+<div class="viewcode-block" id="DAFilter.__init__"><a class="viewcode-back" href="../../dainv_da_filtering.html#dainv.da_filtering.DAFilter.__init__">[docs]</a>    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span> <span class="n">nsamples</span><span class="p">,</span> <span class="n">da_interval</span><span class="p">,</span> <span class="n">t_end</span><span class="p">,</span> <span class="n">forward_model</span><span class="p">,</span> <span class="n">input_dict</span>
+        <span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot; Parse input file and assign values to class attributes.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        nsamples : int</span>
+<span class="sd">            Ensemble size.</span>
+<span class="sd">        da_interval : float</span>
+<span class="sd">            Iteration interval between data assimilation steps.</span>
+<span class="sd">        t_end : float</span>
+<span class="sd">            Final time.</span>
+<span class="sd">        forward_model : DynModel</span>
+<span class="sd">            Dynamic model.</span>
+<span class="sd">        input_dict : dict[str]</span>
+<span class="sd">            All filter-specific inputs.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">dyn_model</span> <span class="o">=</span> <span class="n">forward_model</span></div>
+
+    <span class="k">def</span> <span class="nf">__str__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="n">str_info</span> <span class="o">=</span> <span class="s1">&#39;An empty data assimilation filtering technique.&#39;</span>
+        <span class="k">return</span> <span class="n">str_info</span>
+
+<div class="viewcode-block" id="DAFilter.solve"><a class="viewcode-back" href="../../dainv_da_filtering.html#dainv.da_filtering.DAFilter.solve">[docs]</a>    <span class="k">def</span> <span class="nf">solve</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot; Implement the filtering technique. &quot;&quot;&quot;</span>
+        <span class="k">pass</span></div>
+
+<div class="viewcode-block" id="DAFilter.report"><a class="viewcode-back" href="../../dainv_da_filtering.html#dainv.da_filtering.DAFilter.report">[docs]</a>    <span class="k">def</span> <span class="nf">report</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot; Report summary information. &quot;&quot;&quot;</span>
+        <span class="k">try</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">dyn_model</span><span class="o">.</span><span class="n">report</span><span class="p">()</span>
+        <span class="k">except</span><span class="p">:</span> <span class="k">pass</span></div>
+
+<div class="viewcode-block" id="DAFilter.plot"><a class="viewcode-back" href="../../dainv_da_filtering.html#dainv.da_filtering.DAFilter.plot">[docs]</a>    <span class="k">def</span> <span class="nf">plot</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot; Create any relevant plots. &quot;&quot;&quot;</span>
+        <span class="k">try</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">dyn_model</span><span class="o">.</span><span class="n">plot</span><span class="p">()</span>
+        <span class="k">except</span><span class="p">:</span> <span class="k">pass</span></div>
+
+<div class="viewcode-block" id="DAFilter.clean"><a class="viewcode-back" href="../../dainv_da_filtering.html#dainv.da_filtering.DAFilter.clean">[docs]</a>    <span class="k">def</span> <span class="nf">clean</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot; Perform any necessary cleanup at completion. &quot;&quot;&quot;</span>
+        <span class="k">try</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">dyn_model</span><span class="o">.</span><span class="n">clean</span><span class="p">()</span>
+        <span class="k">except</span><span class="p">:</span> <span class="k">pass</span></div>
+
+<div class="viewcode-block" id="DAFilter.save"><a class="viewcode-back" href="../../dainv_da_filtering.html#dainv.da_filtering.DAFilter.save">[docs]</a>    <span class="k">def</span> <span class="nf">save</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot; Save any important results to text files. &quot;&quot;&quot;</span>
+        <span class="k">try</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">dyn_model</span><span class="o">.</span><span class="n">save</span><span class="p">()</span>
+        <span class="k">except</span><span class="p">:</span> <span class="k">pass</span></div></div>
+
+<div class="viewcode-block" id="DAFilter2"><a class="viewcode-back" href="../../dainv_da_filtering.html#dainv.da_filtering.DAFilter2">[docs]</a><span class="k">class</span> <span class="nc">DAFilter2</span><span class="p">(</span><span class="n">DAFilter</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot; Parent class for DA filtering techniques.</span>
+
+<span class="sd">    This class includes more methods than the DAFilter class.</span>
+<span class="sd">    The DAFilter class is a barebones template. DAFilter2 contains</span>
+<span class="sd">    several methods (e.g error checking, plotting, reporting) as well</span>
+<span class="sd">    as a framework for the main self.solve() method. This can be used</span>
+<span class="sd">    to quickly create new filter classes if some of the same methods</span>
+<span class="sd">    are desired.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+<div class="viewcode-block" id="DAFilter2.__init__"><a class="viewcode-back" href="../../dainv_da_filtering.html#dainv.da_filtering.DAFilter2.__init__">[docs]</a>    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span> <span class="n">nsamples</span><span class="p">,</span> <span class="n">da_interval</span><span class="p">,</span> <span class="n">t_end</span><span class="p">,</span> <span class="n">forward_model</span><span class="p">,</span> <span class="n">input_dict</span>
+        <span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot; Parse input file and assign values to class attributes.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        nsamples : int</span>
+<span class="sd">            Ensemble size.</span>
+<span class="sd">        da_interval : float</span>
+<span class="sd">            Iteration interval between data assimilation steps.</span>
+<span class="sd">        t_end : float</span>
+<span class="sd">            Final time.</span>
+<span class="sd">        forward_model : DynModel</span>
+<span class="sd">            Dynamic model.</span>
+<span class="sd">        input_dict : dict[str]</span>
+<span class="sd">            All filter-specific inputs.</span>
+
+<span class="sd">        Note</span>
+<span class="sd">        ----</span>
+<span class="sd">        Inputs in ``input_dict``:</span>
+<span class="sd">            * **convergence_residual** (``float``) -</span>
+<span class="sd">              Residual value for convergence.</span>
+<span class="sd">            * **save_folder** (``string``, ``./results_da``) -</span>
+<span class="sd">              Folder where to save results.</span>
+<span class="sd">            * **debug_flag** (``bool``, ``False``) -</span>
+<span class="sd">              Save extra information for debugging.</span>
+<span class="sd">            * **debug_folder** (``string``, ``./debug``) -</span>
+<span class="sd">              Folder where to save debugging information</span>
+<span class="sd">            * **verbosity** (``int``, ``1``) -</span>
+<span class="sd">              Amount of information to print to screen.</span>
+<span class="sd">            * **sensitivity_only** (``bool``, ``False``) -</span>
+<span class="sd">              Perform initial perturbation but no data assimilation).</span>
+<span class="sd">            * **reach_max_flag** (``bool``, ``True``) -</span>
+<span class="sd">              Do not terminate simulation when converged.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">name</span> <span class="o">=</span> <span class="s1">&#39;Generic DA filtering technique&#39;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">short_name</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">dyn_model</span> <span class="o">=</span> <span class="n">forward_model</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">nsamples</span> <span class="o">=</span> <span class="n">nsamples</span> <span class="c1"># number of samples in ensemble</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">nstate</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">dyn_model</span><span class="o">.</span><span class="n">nstate</span> <span class="c1"># number of states</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">nstate_obs</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">dyn_model</span><span class="o">.</span><span class="n">nstate_obs</span> <span class="c1"># number of observations</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">da_interval</span> <span class="o">=</span> <span class="n">da_interval</span> <span class="c1"># DA time step interval</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">t_end</span> <span class="o">=</span> <span class="n">t_end</span> <span class="c1"># total run time</span>
+
+        <span class="c1"># filter-specific inputs</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">reach_max_flag</span> <span class="o">=</span> <span class="n">ast</span><span class="o">.</span><span class="n">literal_eval</span><span class="p">(</span>
+                <span class="n">input_dict</span><span class="p">[</span><span class="s1">&#39;reach_max_flag&#39;</span><span class="p">])</span>
+        <span class="k">except</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">reach_max_flag</span> <span class="o">=</span> <span class="kc">True</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">reach_max_flag</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">convergence_residual</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span>
+                <span class="n">input_dict</span><span class="p">[</span><span class="s1">&#39;convergence_residual&#39;</span><span class="p">])</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">convergence_residual</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="c1"># private attributes</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_sensitivity_only</span> <span class="o">=</span> <span class="n">ast</span><span class="o">.</span><span class="n">literal_eval</span><span class="p">(</span>
+                <span class="n">input_dict</span><span class="p">[</span><span class="s1">&#39;sensitivity_only&#39;</span><span class="p">])</span>
+        <span class="k">except</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_sensitivity_only</span> <span class="o">=</span> <span class="kc">False</span>
+        <span class="k">try</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">_debug_flag</span> <span class="o">=</span> <span class="n">ast</span><span class="o">.</span><span class="n">literal_eval</span><span class="p">(</span><span class="n">input_dict</span><span class="p">[</span><span class="s1">&#39;debug_flag&#39;</span><span class="p">])</span>
+        <span class="k">except</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">_debug_flag</span> <span class="o">=</span> <span class="kc">False</span>
+        <span class="k">try</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">_debug_folder</span> <span class="o">=</span> <span class="n">input_dict</span><span class="p">[</span><span class="s1">&#39;debug_folder&#39;</span><span class="p">]</span>
+        <span class="k">except</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">_debug_folder</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">curdir</span> <span class="o">+</span> <span class="n">os</span><span class="o">.</span><span class="n">sep</span> <span class="o">+</span> <span class="s1">&#39;debug&#39;</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_debug_flag</span> <span class="ow">and</span> <span class="ow">not</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">exists</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_debug_folder</span><span class="p">):</span>
+            <span class="n">os</span><span class="o">.</span><span class="n">makedirs</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_debug_folder</span><span class="p">)</span>
+        <span class="k">try</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">_save_folder</span> <span class="o">=</span> <span class="n">input_dict</span><span class="p">[</span><span class="s1">&#39;save_folder&#39;</span><span class="p">]</span>
+        <span class="k">except</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">_save_folder</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">curdir</span> <span class="o">+</span> <span class="n">os</span><span class="o">.</span><span class="n">sep</span> <span class="o">+</span> <span class="s1">&#39;results_da&#39;</span>
+        <span class="k">try</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">_verb</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">input_dict</span><span class="p">[</span><span class="s1">&#39;verbosity&#39;</span><span class="p">])</span>
+        <span class="k">except</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">_verb</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
+
+        <span class="c1"># initialize iteration array</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">time_array</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="mf">0.0</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">t_end</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">da_interval</span><span class="p">)</span>
+
+        <span class="c1"># initialize states: these change at every iteration</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">time</span> <span class="o">=</span> <span class="mf">0.0</span> <span class="c1"># current time</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">iter</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span> <span class="c1"># current iteration</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">da_step</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span> <span class="c1"># current DA step</span>
+        <span class="c1"># ensemble matrix (nsamples, nstate)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">state_vec</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">([</span><span class="bp">self</span><span class="o">.</span><span class="n">dyn_model</span><span class="o">.</span><span class="n">nstate</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">nsamples</span><span class="p">])</span>
+        <span class="c1"># ensemble matrix projected to observed space (nsamples, nstateSample)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">model_obs</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">([</span><span class="bp">self</span><span class="o">.</span><span class="n">dyn_model</span><span class="o">.</span><span class="n">nstate_obs</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">nsamples</span><span class="p">])</span>
+        <span class="c1"># observation matrix (nstate_obs, nsamples)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">obs</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">([</span><span class="bp">self</span><span class="o">.</span><span class="n">dyn_model</span><span class="o">.</span><span class="n">nstate_obs</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">nsamples</span><span class="p">])</span>
+        <span class="c1"># observation covariance matrix (nstate_obs, nstate_obs)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">obs_error</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span>
+            <span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">dyn_model</span><span class="o">.</span><span class="n">nstate_obs</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">dyn_model</span><span class="o">.</span><span class="n">nstate_obs</span><span class="p">])</span>
+
+        <span class="c1"># initialize misfit: these grow each iteration, but all values stored.</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_misfit_x_l1norm</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_misfit_x_l2norm</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_misfit_x_inf</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_misfit_max</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_sigma_obs</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_sigma_hx</span> <span class="o">=</span> <span class="p">[]</span></div>
+
+    <span class="k">def</span> <span class="nf">__str__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="n">str_info</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">name</span> <span class="o">+</span> \
+            <span class="s1">&#39;</span><span class="se">\n</span><span class="s1">   Number of samples: </span><span class="si">{}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">nsamples</span><span class="p">)</span> <span class="o">+</span> \
+            <span class="s1">&#39;</span><span class="se">\n</span><span class="s1">   Run time:          </span><span class="si">{}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">t_end</span><span class="p">)</span> <span class="o">+</span>  \
+            <span class="s1">&#39;</span><span class="se">\n</span><span class="s1">   DA interval:       </span><span class="si">{}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">da_interval</span><span class="p">)</span> <span class="o">+</span> \
+            <span class="s1">&#39;</span><span class="se">\n</span><span class="s1">   Forward model:     </span><span class="si">{}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">dyn_model</span><span class="o">.</span><span class="n">name</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">str_info</span>
+
+<div class="viewcode-block" id="DAFilter2.solve"><a class="viewcode-back" href="../../dainv_da_filtering.html#dainv.da_filtering.DAFilter2.solve">[docs]</a>    <span class="k">def</span> <span class="nf">solve</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot; Solve the parameter estimation problem.</span>
+
+<span class="sd">        This is the main method for the filter. It solves the inverse</span>
+<span class="sd">        problem. It has options for sensitivity analysis, early</span>
+<span class="sd">        stopping, and output debugging information. At each iteration</span>
+<span class="sd">        it calculates misfits using various norms, and checks for</span>
+<span class="sd">        convergence.</span>
+
+<span class="sd">        **Updates:**</span>
+<span class="sd">            * self.time</span>
+<span class="sd">            * self.iter</span>
+<span class="sd">            * self.da_step</span>
+<span class="sd">            * self.state_vec</span>
+<span class="sd">            * self.model_obs</span>
+<span class="sd">            * self.obs</span>
+<span class="sd">            * self.obs_error</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="c1"># Generate initial state Ensemble</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">state_vec</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">model_obs</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">dyn_model</span><span class="o">.</span><span class="n">generate_ensemble</span><span class="p">()</span>
+        <span class="c1"># sensitivity only</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_sensitivity_only</span><span class="p">:</span>
+            <span class="n">next_end_time</span> <span class="o">=</span> <span class="mf">2.0</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">da_interval</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">time_array</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">state_vec</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">model_obs</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">dyn_model</span><span class="o">.</span><span class="n">forecast_to_time</span><span class="p">(</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">state_vec</span><span class="p">,</span> <span class="n">next_end_time</span><span class="p">)</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">ver</span><span class="o">&gt;=</span><span class="mi">1</span><span class="p">:</span>
+                <span class="nb">print</span> <span class="s2">&quot;</span><span class="se">\n</span><span class="s2">Sensitivity study completed.&quot;</span>
+            <span class="n">sys</span><span class="o">.</span><span class="n">exit</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
+        <span class="c1"># main DA loop</span>
+        <span class="n">early_stop</span> <span class="o">=</span> <span class="kc">False</span>
+        <span class="k">for</span> <span class="n">time</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">time_array</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">time</span> <span class="o">=</span> <span class="n">time</span>
+            <span class="n">next_end_time</span> <span class="o">=</span> <span class="mf">2.0</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">da_interval</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">time</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">da_step</span> <span class="o">=</span> <span class="p">(</span><span class="n">next_end_time</span> <span class="o">-</span> <span class="bp">self</span><span class="o">.</span><span class="n">da_interval</span><span class="p">)</span> <span class="o">/</span> \
+                <span class="bp">self</span><span class="o">.</span><span class="n">da_interval</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_verb</span><span class="o">&gt;=</span><span class="mi">1</span><span class="p">:</span>
+                <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;</span><span class="se">\n</span><span class="s2">Data Assimilation step: </span><span class="si">{}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">da_step</span><span class="p">))</span>
+            <span class="c1"># dyn_model: propagate the state ensemble to next DA time</span>
+            <span class="c1"># and get observations at next DA time.</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">state_vec</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">model_obs</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">dyn_model</span><span class="o">.</span><span class="n">forecast_to_time</span><span class="p">(</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">state_vec</span><span class="p">,</span> <span class="n">next_end_time</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">obs</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">obs_error</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">dyn_model</span><span class="o">.</span><span class="n">get_obs</span><span class="p">(</span><span class="n">next_end_time</span><span class="p">)</span>
+            <span class="c1"># data assimilation</span>
+            <span class="n">debug_dict</span> <span class="o">=</span> <span class="p">{</span>
+                <span class="s1">&#39;Xf&#39;</span><span class="p">:</span><span class="bp">self</span><span class="o">.</span><span class="n">state_vec</span><span class="p">,</span> <span class="s1">&#39;HX&#39;</span><span class="p">:</span><span class="bp">self</span><span class="o">.</span><span class="n">model_obs</span><span class="p">,</span> <span class="s1">&#39;obs&#39;</span><span class="p">:</span><span class="bp">self</span><span class="o">.</span><span class="n">obs</span><span class="p">,</span>
+                <span class="s1">&#39;R&#39;</span><span class="p">:</span><span class="bp">self</span><span class="o">.</span><span class="n">obs_error</span><span class="p">}</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_save_debug</span><span class="p">(</span><span class="n">debug_dict</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_correct_forecasts</span><span class="p">()</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_calc_misfits</span><span class="p">()</span>
+            <span class="n">debug_dict</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;Xa&#39;</span><span class="p">:</span><span class="bp">self</span><span class="o">.</span><span class="n">state_vec</span><span class="p">}</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_save_debug</span><span class="p">(</span><span class="n">debug_dict</span><span class="p">)</span>
+            <span class="c1"># check convergence and report</span>
+            <span class="n">conv</span><span class="p">,</span> <span class="n">conv_all</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_check_convergence</span><span class="p">()</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_verb</span><span class="o">&gt;=</span><span class="mi">2</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_report</span><span class="p">(</span><span class="n">conv_all</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">conv</span> <span class="ow">and</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">reach_max_flag</span><span class="p">:</span>
+                <span class="n">early_stop</span> <span class="o">=</span> <span class="kc">True</span>
+                <span class="k">break</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">iter</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">iter</span> <span class="o">+</span> <span class="mi">1</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_verb</span><span class="o">&gt;=</span><span class="mi">1</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">early_stop</span><span class="p">:</span>
+                <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;</span><span class="se">\n\n</span><span class="s2">DA Filtering completed: convergence early stop.&quot;</span><span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;</span><span class="se">\n\n</span><span class="s2">DA Filtering completed: Max iteration reached.&quot;</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="DAFilter2.plot"><a class="viewcode-back" href="../../dainv_da_filtering.html#dainv.da_filtering.DAFilter2.plot">[docs]</a>    <span class="k">def</span> <span class="nf">plot</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot; Plot iteration convergence. &quot;&quot;&quot;</span>
+        <span class="c1"># TODO: os.system(&#39;plotIterationConvergence.py&#39;)</span>
+        <span class="k">try</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">dyn_model</span><span class="o">.</span><span class="n">plot</span><span class="p">()</span>
+        <span class="k">except</span><span class="p">:</span> <span class="k">pass</span></div>
+
+<div class="viewcode-block" id="DAFilter2.report"><a class="viewcode-back" href="../../dainv_da_filtering.html#dainv.da_filtering.DAFilter2.report">[docs]</a>    <span class="k">def</span> <span class="nf">report</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot; Report summary information. &quot;&quot;&quot;</span>
+        <span class="c1"># TODO: Report DA results</span>
+        <span class="k">try</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">dyn_model</span><span class="o">.</span><span class="n">report</span><span class="p">()</span>
+        <span class="k">except</span><span class="p">:</span> <span class="k">pass</span></div>
+
+<div class="viewcode-block" id="DAFilter2.clean"><a class="viewcode-back" href="../../dainv_da_filtering.html#dainv.da_filtering.DAFilter2.clean">[docs]</a>    <span class="k">def</span> <span class="nf">clean</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot; Cleanup before exiting. &quot;&quot;&quot;</span>
+        <span class="k">try</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">dyn_model</span><span class="o">.</span><span class="n">clean</span><span class="p">()</span>
+        <span class="k">except</span><span class="p">:</span> <span class="k">pass</span></div>
+
+<div class="viewcode-block" id="DAFilter2.save"><a class="viewcode-back" href="../../dainv_da_filtering.html#dainv.da_filtering.DAFilter2.save">[docs]</a>    <span class="k">def</span> <span class="nf">save</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot; Saves results to text files. &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_save_flag</span><span class="p">:</span>
+            <span class="n">np</span><span class="o">.</span><span class="n">savetxt</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_save_folder</span> <span class="o">+</span> <span class="n">os</span><span class="o">.</span><span class="n">sep</span> <span class="o">+</span> <span class="s1">&#39;misfit_L1&#39;</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_misfit_x_l1norm</span><span class="p">))</span>
+            <span class="n">np</span><span class="o">.</span><span class="n">savetxt</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_save_folder</span> <span class="o">+</span> <span class="n">os</span><span class="o">.</span><span class="n">sep</span> <span class="o">+</span> <span class="s1">&#39;misfit_L2&#39;</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_misfit_x_l2norm</span><span class="p">))</span>
+            <span class="n">np</span><span class="o">.</span><span class="n">savetxt</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_save_folder</span> <span class="o">+</span> <span class="n">os</span><span class="o">.</span><span class="n">sep</span> <span class="o">+</span> <span class="s1">&#39;misfit_inf&#39;</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_misfit_x_inf</span><span class="p">))</span>
+            <span class="n">np</span><span class="o">.</span><span class="n">savetxt</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_save_folder</span> <span class="o">+</span> <span class="n">os</span><span class="o">.</span><span class="n">sep</span> <span class="o">+</span> <span class="s1">&#39;_sigma_obs&#39;</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_sigma_obs</span><span class="p">))</span>
+            <span class="n">np</span><span class="o">.</span><span class="n">savetxt</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_save_folder</span> <span class="o">+</span> <span class="n">os</span><span class="o">.</span><span class="n">sep</span> <span class="o">+</span> <span class="s1">&#39;sigma_HX&#39;</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_sigma_hx</span><span class="p">))</span>
+        <span class="k">try</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">dyn_model</span><span class="o">.</span><span class="n">save</span><span class="p">()</span>
+        <span class="k">except</span><span class="p">:</span> <span class="k">pass</span></div>
+
+    <span class="c1"># private methods</span>
+    <span class="k">def</span> <span class="nf">_correct_forecasts</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot; Correct the propagated ensemble (filtering step).</span>
+
+<span class="sd">        **Updates:**</span>
+<span class="sd">            * self.state_vec</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">(</span>
+            <span class="s2">&quot;Needs to be implemented in the child class!&quot;</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">_save_debug</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">debug_dict</span><span class="p">):</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_debug_flag</span><span class="p">:</span>
+            <span class="k">for</span> <span class="n">key</span><span class="p">,</span> <span class="n">value</span> <span class="ow">in</span> <span class="n">debug_dict</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+                <span class="n">np</span><span class="o">.</span><span class="n">savetxt</span><span class="p">(</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">_debug_folder</span> <span class="o">+</span> <span class="n">os</span><span class="o">.</span><span class="n">sep</span> <span class="o">+</span> <span class="n">key</span> <span class="o">+</span>
+                        <span class="s1">&#39;_</span><span class="si">{}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">da_step</span><span class="p">),</span>
+                    <span class="n">value</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">_calc_misfits</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot; Calculate the misfit.</span>
+
+<span class="sd">        **Updates:**</span>
+<span class="sd">            * self._misfit_x_l1norm</span>
+<span class="sd">            * self._misfit_x_l2norm</span>
+<span class="sd">            * self._misfit_x_inf</span>
+<span class="sd">            * self._sigma_hx</span>
+<span class="sd">            * self._misfit_max</span>
+<span class="sd">            * self._sigma_obs</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="c1"># calculate misfits</span>
+        <span class="n">nnorm</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">dyn_model</span><span class="o">.</span><span class="n">nstate_obs</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">nsamples</span>
+        <span class="c1"># TODO: Why are we dividing the norm by this? And why not the inf norm?</span>
+        <span class="n">diff</span> <span class="o">=</span> <span class="nb">abs</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">obs</span> <span class="o">-</span> <span class="bp">self</span><span class="o">.</span><span class="n">model_obs</span><span class="p">)</span>
+        <span class="c1"># np.sum(diff) / nnorm</span>
+        <span class="c1"># np.sqrt(np.sum(diff**2.0)) / nnorm</span>
+        <span class="n">misfit_l1norm</span> <span class="o">=</span> <span class="n">la</span><span class="o">.</span><span class="n">norm</span><span class="p">(</span><span class="n">diff</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span> <span class="o">/</span> <span class="n">nnorm</span>
+        <span class="n">misfit_l2norm</span> <span class="o">=</span> <span class="n">la</span><span class="o">.</span><span class="n">norm</span><span class="p">(</span><span class="n">diff</span><span class="p">,</span> <span class="mi">2</span><span class="p">)</span> <span class="o">/</span> <span class="n">nnorm</span>
+        <span class="n">misfit_inf</span> <span class="o">=</span> <span class="n">la</span><span class="o">.</span><span class="n">norm</span><span class="p">(</span><span class="n">diff</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">inf</span><span class="p">)</span>
+        <span class="n">misfit_max</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">max</span><span class="p">([</span><span class="n">misfit_l1norm</span><span class="p">,</span> <span class="n">misfit_l2norm</span><span class="p">,</span> <span class="n">misfit_inf</span><span class="p">])</span>
+        <span class="n">sigma_hx</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">std</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">model_obs</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+        <span class="n">sigma_hx_norm</span> <span class="o">=</span> <span class="n">la</span><span class="o">.</span><span class="n">norm</span><span class="p">(</span><span class="n">sigma_hx</span><span class="p">)</span> <span class="o">/</span> <span class="bp">self</span><span class="o">.</span><span class="n">dyn_model</span><span class="o">.</span><span class="n">nstate_obs</span>
+        <span class="n">sigma</span> <span class="o">=</span> <span class="p">(</span><span class="n">la</span><span class="o">.</span><span class="n">norm</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">diag</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">obs_error</span><span class="p">)))</span> <span class="o">/</span> \
+            <span class="bp">self</span><span class="o">.</span><span class="n">dyn_model</span><span class="o">.</span><span class="n">nstate_obs</span><span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_misfit_x_l1norm</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">misfit_l1norm</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_misfit_x_l2norm</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">misfit_l2norm</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_misfit_x_inf</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">misfit_inf</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_sigma_hx</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">sigma_hx_norm</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_misfit_max</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">misfit_max</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_sigma_obs</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">sigma</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">_check_convergence</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="c1"># Check iteration convergence.</span>
+
+        <span class="k">def</span> <span class="nf">_convergence_1</span><span class="p">():</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">iter</span><span class="o">&gt;</span><span class="mi">0</span><span class="p">:</span>
+                <span class="n">iterative_residual</span> <span class="o">=</span> \
+                    <span class="p">(</span><span class="nb">abs</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_misfit_x_l2norm</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">iter</span><span class="p">]</span>
+                    <span class="o">-</span> <span class="bp">self</span><span class="o">.</span><span class="n">_misfit_x_l2norm</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">iter</span><span class="o">-</span><span class="mi">1</span><span class="p">]))</span> \
+                    <span class="o">/</span> <span class="nb">abs</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_misfit_x_l2norm</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
+                <span class="n">conv</span> <span class="o">=</span> <span class="n">iterative_residual</span>  <span class="o">&lt;</span> <span class="bp">self</span><span class="o">.</span><span class="n">convergence_residual</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">iterative_residual</span> <span class="o">=</span> <span class="kc">None</span>
+                <span class="n">conv</span> <span class="o">=</span> <span class="kc">False</span>
+            <span class="k">return</span> <span class="n">iterative_residual</span><span class="p">,</span> <span class="n">conv</span>
+
+        <span class="k">def</span> <span class="nf">_convergence_2</span><span class="p">():</span>
+            <span class="n">sigma_inf</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">max</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">diag</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">obs_error</span><span class="p">)))</span>
+            <span class="n">conv</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_misfit_max</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">iter</span><span class="p">]</span> <span class="o">&gt;</span> <span class="n">sigma_inf</span>
+            <span class="k">return</span> <span class="n">sigma_inf</span><span class="p">,</span> <span class="n">conv</span>
+
+        <span class="n">iterative_residual</span><span class="p">,</span> <span class="n">conv1</span> <span class="o">=</span> <span class="n">_convergence_1</span><span class="p">()</span>
+        <span class="n">sigma_inf</span><span class="p">,</span> <span class="n">conv2</span> <span class="o">=</span> <span class="n">_convergence_2</span><span class="p">()</span>
+        <span class="n">conv_all</span> <span class="o">=</span> <span class="p">(</span><span class="n">iterative_residual</span><span class="p">,</span> <span class="n">conv1</span><span class="p">,</span> <span class="n">sigma_inf</span><span class="p">,</span> <span class="n">conv2</span><span class="p">)</span>
+        <span class="n">conv</span> <span class="o">=</span> <span class="n">conv1</span>
+        <span class="k">return</span> <span class="n">conv</span><span class="p">,</span> <span class="n">conv_all</span>
+
+    <span class="k">def</span> <span class="nf">_report</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">info</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot; Report at each iteration. &quot;&quot;&quot;</span>
+        <span class="p">(</span><span class="n">iterative_residual</span><span class="p">,</span> <span class="n">conv1</span><span class="p">,</span> <span class="n">sigma_inf</span><span class="p">,</span> <span class="n">conv2</span><span class="p">)</span> <span class="o">=</span> <span class="n">info</span>
+
+        <span class="n">str_report</span> <span class="o">=</span> <span class="s1">&#39;</span><span class="se">\n</span><span class="s1">&#39;</span> <span class="o">+</span> <span class="s2">&quot;#&quot;</span><span class="o">*</span><span class="mi">80</span>
+        <span class="n">str_report</span> <span class="o">+=</span> <span class="s2">&quot;</span><span class="se">\n</span><span class="s2">Standard deviation of ensemble: </span><span class="si">{}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_sigma_hx</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">iter</span><span class="p">])</span> <span class="o">+</span> \
+            <span class="s2">&quot;</span><span class="se">\n</span><span class="s2">Standard deviation of observation error: </span><span class="si">{}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_sigma_obs</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">iter</span><span class="p">])</span>
+        <span class="n">str_report</span> <span class="o">+=</span> <span class="s2">&quot;</span><span class="se">\n\n</span><span class="s2">Misfit between the predicted Q and observed &quot;</span> <span class="o">+</span> \
+            <span class="s2">&quot;quantities of interest (QoI).&quot;</span> <span class="o">+</span> \
+            <span class="s2">&quot;</span><span class="se">\n</span><span class="s2">  L1 norm = </span><span class="si">{}</span><span class="se">\n</span><span class="s2">  L2 norm = </span><span class="si">{}</span><span class="se">\n</span><span class="s2">  Inf norm = </span><span class="si">{}</span><span class="se">\n\n</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_misfit_x_l1norm</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">iter</span><span class="p">],</span> <span class="bp">self</span><span class="o">.</span><span class="n">_misfit_x_l2norm</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">iter</span><span class="p">],</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_misfit_x_inf</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">iter</span><span class="p">])</span>
+
+        <span class="n">str_report</span> <span class="o">+=</span> <span class="s2">&quot;</span><span class="se">\n\n</span><span class="s2">Convergence criteria 1:&quot;</span> <span class="o">+</span> \
+            <span class="s2">&quot;</span><span class="se">\n</span><span class="s2">  Relative iterative residual: </span><span class="si">{}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">iterative_residual</span><span class="p">)</span> \
+            <span class="o">+</span> <span class="s2">&quot;</span><span class="se">\n</span><span class="s2">  Relative convergence criterion: </span><span class="si">{}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">convergence_residual</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">conv1</span><span class="p">:</span>
+            <span class="n">str_report</span> <span class="o">+=</span> <span class="s2">&quot;</span><span class="se">\n</span><span class="s2">  Status: Not yet converged.&quot;</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">str_report</span> <span class="o">+=</span> <span class="s2">&quot;</span><span class="se">\n</span><span class="s2">  Status: Converged.&quot;</span>
+
+        <span class="n">str_report</span> <span class="o">+=</span> <span class="s2">&quot;</span><span class="se">\n\n</span><span class="s2">Convergence criteria 2:&quot;</span> <span class="o">+</span> \
+            <span class="s2">&quot;</span><span class="se">\n</span><span class="s2">  Infinite misfit: </span><span class="si">{}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_misfit_max</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">iter</span><span class="p">])</span> <span class="o">+</span> \
+            <span class="s2">&quot;</span><span class="se">\n</span><span class="s2">  Infinite norm  of observation error: </span><span class="si">{}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span>
+                <span class="n">sigma_inf</span><span class="p">)</span>
+        <span class="k">if</span>  <span class="n">conv2</span><span class="p">:</span>
+            <span class="n">str_report</span> <span class="o">+=</span> <span class="s2">&quot;</span><span class="se">\n</span><span class="s2">  Status: Not yet converged.&quot;</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">str_report</span> <span class="o">+=</span> <span class="s2">&quot;</span><span class="se">\n</span><span class="s2">  Status: Converged.&quot;</span>
+
+        <span class="n">str_report</span> <span class="o">+=</span> <span class="s1">&#39;</span><span class="se">\n\n</span><span class="s1">&#39;</span>
+        <span class="nb">print</span><span class="p">(</span><span class="n">str_report</span><span class="p">)</span></div>
+
+<span class="c1"># child classes (specific filtering techniques</span>
+
+<div class="viewcode-block" id="EnKF"><a class="viewcode-back" href="../../dainv_da_filtering.html#dainv.da_filtering.EnKF">[docs]</a><span class="k">class</span> <span class="nc">EnKF</span><span class="p">(</span><span class="n">DAFilter2</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot; Implementation of the ensemble Kalman Filter (EnKF).</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="c1"># TODO: add more detail to the docstring. E.g. what is EnKF.</span>
+
+<div class="viewcode-block" id="EnKF.__init__"><a class="viewcode-back" href="../../dainv_da_filtering.html#dainv.da_filtering.EnKF.__init__">[docs]</a>    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span> <span class="n">nsamples</span><span class="p">,</span> <span class="n">da_interval</span><span class="p">,</span> <span class="n">t_end</span><span class="p">,</span> <span class="n">forward_model</span><span class="p">,</span> <span class="n">input_dict</span>
+        <span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot; Parse input file and assign values to class attributes.</span>
+
+<span class="sd">        Note</span>
+<span class="sd">        ----</span>
+<span class="sd">        See DAFilter2.__init__ for details.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="nb">super</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="vm">__class__</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span>
+            <span class="n">nsamples</span><span class="p">,</span> <span class="n">da_interval</span><span class="p">,</span> <span class="n">t_end</span><span class="p">,</span> <span class="n">forward_model</span><span class="p">,</span> <span class="n">input_dict</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">name</span> <span class="o">=</span> <span class="s1">&#39;Ensemble Kalman Filter&#39;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">short_name</span> <span class="o">=</span> <span class="s1">&#39;EnKF&#39;</span></div>
+
+    <span class="k">def</span> <span class="nf">_correct_forecasts</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot; Correct the propagated ensemble (filtering step) using EnKF</span>
+
+<span class="sd">        **Updates:**</span>
+<span class="sd">            * self.state_vec</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="k">def</span> <span class="nf">_check_condition_number</span><span class="p">(</span><span class="n">hpht</span><span class="p">):</span>
+            <span class="n">conInv</span> <span class="o">=</span> <span class="n">la</span><span class="o">.</span><span class="n">cond</span><span class="p">(</span><span class="n">hpht</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">obs_error</span><span class="p">)</span>
+            <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Conditional number of (hpht + R) is </span><span class="si">{}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">conInv</span><span class="p">))</span>
+            <span class="k">if</span> <span class="p">(</span><span class="n">conInv</span> <span class="o">&gt;</span> <span class="mf">1e16</span><span class="p">):</span>
+                <span class="n">warnings</span><span class="o">.</span><span class="n">warn</span><span class="p">(</span>
+                    <span class="s2">&quot;The matrix (hpht + R) is singular, inverse will fail.&quot;</span>
+                    <span class="p">,</span><span class="ne">RuntimeWarning</span><span class="p">)</span>
+
+        <span class="k">def</span> <span class="nf">_mean_subtracted_matrix</span><span class="p">(</span><span class="n">mat</span><span class="p">,</span> <span class="n">samps</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">nsamples</span><span class="p">):</span>
+            <span class="n">mean_vec</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span> <span class="n">np</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="n">mat</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span> <span class="p">])</span>
+            <span class="n">mean_vec</span> <span class="o">=</span> <span class="n">mean_vec</span><span class="o">.</span><span class="n">T</span>
+            <span class="n">mean_vec</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">tile</span><span class="p">(</span><span class="n">mean_vec</span><span class="p">,</span> <span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="n">samps</span><span class="p">))</span>
+            <span class="n">mean_sub_mat</span> <span class="o">=</span> <span class="n">mat</span> <span class="o">-</span> <span class="n">mean_vec</span>
+            <span class="k">return</span> <span class="n">mean_sub_mat</span>
+
+        <span class="c1"># calculate the Kalman gain matrix</span>
+        <span class="n">xp</span> <span class="o">=</span> <span class="n">_mean_subtracted_matrix</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">state_vec</span><span class="p">)</span>
+        <span class="n">hxp</span> <span class="o">=</span> <span class="n">_mean_subtracted_matrix</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">model_obs</span><span class="p">)</span>
+        <span class="n">coeff</span> <span class="o">=</span>  <span class="p">(</span><span class="mf">1.0</span> <span class="o">/</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">nsamples</span> <span class="o">-</span> <span class="mf">1.0</span><span class="p">))</span>
+        <span class="n">pht</span> <span class="o">=</span> <span class="n">coeff</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">dot</span><span class="p">(</span><span class="n">xp</span><span class="p">,</span> <span class="n">hxp</span><span class="o">.</span><span class="n">T</span><span class="p">)</span>
+        <span class="n">hpht</span> <span class="o">=</span> <span class="n">coeff</span> <span class="o">*</span> <span class="n">hxp</span><span class="o">.</span><span class="n">dot</span><span class="p">(</span><span class="n">hxp</span><span class="o">.</span><span class="n">T</span><span class="p">)</span>
+        <span class="n">_check_condition_number</span><span class="p">(</span><span class="n">hpht</span><span class="p">)</span>
+        <span class="n">inv</span> <span class="o">=</span> <span class="n">la</span><span class="o">.</span><span class="n">inv</span><span class="p">(</span><span class="n">hpht</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">obs_error</span><span class="p">)</span>
+        <span class="n">inv</span> <span class="o">=</span> <span class="n">inv</span><span class="o">.</span><span class="n">A</span> <span class="c1">#convert np.matrix to np.ndarray</span>
+        <span class="n">kalman_gain_matrix</span> <span class="o">=</span> <span class="n">pht</span><span class="o">.</span><span class="n">dot</span><span class="p">(</span><span class="n">inv</span><span class="p">)</span>
+        <span class="c1"># analysis step</span>
+        <span class="n">dx</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">dot</span><span class="p">(</span><span class="n">kalman_gain_matrix</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">obs</span> <span class="o">-</span> <span class="bp">self</span><span class="o">.</span><span class="n">model_obs</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">state_vec</span> <span class="o">+=</span> <span class="n">dx</span>
+        <span class="c1"># debug</span>
+        <span class="n">debug_dict</span> <span class="o">=</span> <span class="p">{</span>
+            <span class="s1">&#39;K&#39;</span><span class="p">:</span><span class="n">kalman_gain_matrix</span><span class="p">,</span> <span class="s1">&#39;inv&#39;</span><span class="p">:</span><span class="n">inv</span><span class="p">,</span> <span class="s1">&#39;HPHT&#39;</span><span class="p">:</span><span class="n">hpht</span><span class="p">,</span> <span class="s1">&#39;PHT&#39;</span><span class="p">:</span><span class="n">pht</span><span class="p">,</span>
+            <span class="s1">&#39;HXP&#39;</span><span class="p">:</span><span class="n">hxp</span><span class="p">,</span> <span class="s1">&#39;XP&#39;</span><span class="p">:</span><span class="n">xp</span><span class="p">}</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_save_debug</span><span class="p">(</span><span class="n">debug_dict</span><span class="p">)</span></div>
+</pre></div>
+
+           </div>
+           
+          </div>
+          <footer>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &copy; Copyright 2018, carlos
+
+    </p>
+  </div>
+  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/rtfd/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+
+  
+
+    
+    
+      <script type="text/javascript" id="documentation_options" data-url_root="../../" src="../../_static/documentation_options.js"></script>
+        <script type="text/javascript" src="../../_static/jquery.js"></script>
+        <script type="text/javascript" src="../../_static/underscore.js"></script>
+        <script type="text/javascript" src="../../_static/doctools.js"></script>
+        <script async="async" type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    
+
+  
+
+  <script type="text/javascript" src="../../_static/js/theme.js"></script>
+
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>
