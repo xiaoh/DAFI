@@ -31,7 +31,7 @@ def plot_samples(para):
     HX_mean = []
     
     for i in range(da_step):
-        HX = np.loadtxt('./debugData/HX_'+str(i+1)+'.0')
+        HX = np.loadtxt('./debugData/HX_'+str(i+1))
         if i == 0:
             HX_seq = HX[state_ind,:]
             HX_mean.append(np.mean(HX[state_ind,:]))
@@ -76,7 +76,7 @@ def plot_obs(para):
     # get sequential noised observation
     obs_seq = []
     for i in range(da_step):
-        obs = np.loadtxt('./debugData/obs_'+str(i+1)+'.0')
+        obs = np.loadtxt('./debugData/obs_'+str(i+1))
         if i == 0:
             obs_seq.append(obs[state_ind,0])
         else:

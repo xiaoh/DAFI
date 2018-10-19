@@ -19,3 +19,10 @@ nsamples 50
 #specify the debug flag and folder name
 debug_flag           True
 debug_folder         ./debugData
+
+save_flag False
+plot_flag True
+report_flag False
+verbosity 2
+rand_seed_flag True
+rand_seed 1
