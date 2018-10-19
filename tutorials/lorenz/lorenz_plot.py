@@ -10,6 +10,7 @@ import numpy as np
 from scipy.integrate import ode
 import matplotlib
 import matplotlib.pyplot as plt
+from matplotlib.lines import Line2D
 
 if not os.path.exists('figures/'):
     os.mkdir('figures/')
@@ -77,10 +78,7 @@ def plot_obs(para):
     obs_seq = []
     for i in range(da_step):
         obs = np.loadtxt('./debugData/obs_'+str(i+1)+'.0')
-        if i == 0:
-            obs_seq.append(obs[state_ind,0])
-        else:
-            obs_seq.append(obs[state_ind,0])
+        obs_seq.append(obs[state_ind,0])
     obs_seq = np.array(obs_seq)
     # plot observation
     p5 = plt.plot(da_t,obs_seq,'r.', label = 'observation')
@@ -97,9 +95,12 @@ def main(iShow=False):
     p5 = plot_obs(para)
     plt.xlabel('time')
     plt.ylabel(para)
+    line = Line2D([0],[0],linestyle='-',color='g',alpha=0.5)
+    line_label = 'samples'
+    plt.legend([line, p2[0], p4[0],p5[0]],[line_label, p2[0].get_label(), p4[0].get_label(),p5[0].get_label()],loc = 'best')
     matplotlib.rcParams.update({'font.size':15})
     # save figure
-    figureName = './figures/timeSeries_DA_'+ para +'.pdf'
+    figureName = './figures/timeSeries_DA_'+ para +'.png'
     plt.savefig(figureName)
 
 if __name__ == "__main__":

@@ -92,7 +92,7 @@ def main():
     try: rand_seed_flag = ast.literal_eval(param_dict['rand_seed_flag'])
     except: rand_seed_flag = False
     if rand_seed_flag:
-        try: rand_seed = float(param_dict['rand_seed'])
+        try: rand_seed = int(param_dict['rand_seed'])
         except: rand_seed = 1.0
     # remove all the inputs meant for this file, mfu_main.py.
     # what is left are inputs meant for the specific DA filter method used.

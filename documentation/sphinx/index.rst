@@ -7,6 +7,8 @@ VT-DA_Inv Documentation
    :maxdepth: 4
    :caption: Contents:
 
+   theory.rst
+   tutorial_lorenz.rst
    source_code.rst
 
 Indices and tables
