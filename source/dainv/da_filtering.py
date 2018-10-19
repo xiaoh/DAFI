@@ -6,6 +6,7 @@ import ast
 import warnings
 import os
 import sys
+import pdb
 
 # third party imports
 import numpy as np
@@ -165,6 +166,7 @@ class DAFilter2(DAFilter):
         # ensemble matrix (nsamples, nstate)
         self.state_vec_forecast = np.zeros([self.dyn_model.nstate, self.nsamples])
         self.state_vec_analysis = np.zeros([self.dyn_model.nstate, self.nsamples])
+        self.state_vec_prior = np.zeros([self.dyn_model.nstate, self.nsamples])
         # ensemble matrix projected to observed space (nsamples, nstateSample)
         self.model_obs = np.zeros([self.dyn_model.nstate_obs, self.nsamples])
         # observation matrix (nstate_obs, nsamples)
@@ -208,7 +210,8 @@ class DAFilter2(DAFilter):
             * self.obs_error
         """
         # Generate initial state Ensemble
-        self.state_vec_analysis, self.model_obs = self.dyn_model.generate_ensemble()
+        self.state_vec_prior, self.model_obs = self.dyn_model.generate_ensemble()
+        self.state_vec_analysis = self.state_vec_prior.copy()
         # sensitivity only
         if self._sensitivity_only:
             next_end_time = 2.0 * self.da_interval + self.time_array[0]
@@ -220,6 +223,7 @@ class DAFilter2(DAFilter):
         # main DA loop
         early_stop = False
         for time in self.time_array:
+	    pdb.set_trace()
             self.time = time
             next_end_time = 2.0 * self.da_interval + self.time
             self.da_step = (next_end_time - self.da_interval) / \
@@ -229,7 +233,7 @@ class DAFilter2(DAFilter):
             # dyn_model: propagate the state ensemble to next DA time
             # and get observations at next DA time.
             self.state_vec_forecast, self.model_obs = self.dyn_model.forecast_to_time(
-                self.state_vec_analysis, next_end_time)
+                self.state_vec_analysis.copy(), next_end_time)
             self.obs, self.obs_error = self.dyn_model.get_obs(next_end_time)
             # data assimilation
             self._correct_forecasts()
@@ -454,7 +458,7 @@ class EnKF(DAFilter2):
         kalman_gain_matrix = pht.dot(inv)
         # analysis step
         dx = np.dot(kalman_gain_matrix, self.obs - self.model_obs)
-        self.state_vec_analysis += dx
+        self.state_vec_analysis = self.state_vec_forecast + dx
         # debug
         debug_dict = {
             'K':kalman_gain_matrix, 'inv':inv, 'HPHT':hpht, 'PHT':pht,
@@ -463,7 +467,7 @@ class EnKF(DAFilter2):
 
 
 # ensemble randomized maximum likelihood techniques (child classes)
-class EnRML(DAFilter):
+class EnRML(DAFilter2):
     """ Implementation of Ensemble Randomized Maximum Likelihood(EnRML).
 
     """
@@ -479,57 +483,14 @@ class EnRML(DAFilter):
             nsamples, da_interval, t_end, forward_model, input_dict)
         self.name = 'Ensemble Randomized Maximum Likelihood'
         self.short_name = 'EnRML'
-        
-        # EnRML inputs
-        self.Tend = float(paramDict["Tend"]) # total run time     
-        self.DAInterval = float(paramDict['DAInterval']) # DA time step interval                 
-        self.Ns = int(paramDict['Ns']) # number of sample
-        self.beta = float(paramDict["beta"])
-        self.constbeta = ast.literal_eval(paramDict['constbeta'])
-        self.convergenceResi = float(paramDict['convergenceResi'])
-        self.reachmaxiteration = ast.literal_eval(paramDict['reachmaxiteration'])
-        # EnRML private variables
-        self._sensitivityOnly = ast.literal_eval(paramDict['sensitivityOnly'])
-        self._iDebug = paramDict['iDebug']
-        self._debugFolderName = paramDict['debugFolderName']
-        if not os.path.exists(self._debugFolderName):
-            os.makedirs(self._debugFolderName) 
-        # Create instance of dynamic model class 
-        self.forwardModel = paramDict['forwardModel']
-        self.forwarModelInput = paramDict['forwardModelInput']
-        dynModel = getattr(importlib.import_module('dynModels.' + self.forwardModel), self.forwardModel)
-        self.dynModel = dynModel(self.Ns, self.DAInterval, self.Tend, self.forwarModelInput)
-    
-        ## Initialize time
-        self.time = 0 # current time
-        self.T = np.arange(0, self.Tend, self.DAInterval)
-        
-        ## Initialize states 
-        self.Xpr = np.zeros([self.dynModel.Nstate, self.Ns]) # prior ensemble matrix (Ns, Nstate)
-        self.Xf = np.zeros([self.dynModel.Nstate, self.Ns]) # forcast ensemble matrix (Ns, Nstate)
-        self.Xa = np.zeros([self.dynModel.Nstate, self.Ns]) # analysis ensemble matrix (Ns, Nstate)
-        self.HX = np.zeros([self.dynModel.NstateObs, self.Ns]) # ensemble matrix projected to observed space (Ns, NstateSample)
-        self.Obs = np.zeros([self.dynModel.NstateObs, self.Ns]) # observation matrix (Ns, NstateSample)
-        
-        ## Initialize misfit       
-        self.misfitX_L1 = []; 
-        self.misfitX_L2 = [];
-        self.misfitX_inf = [];
-        self.obsSigma = [];
-        self.obsSigmaInf = [];
-        self.sigmaHX = [];
-        self.steplength = [];
 
-    def __str__(self):
-        """ Print basic summary information of the ensemble, e.g.,
-            model name, number of samples, DA interval
-        """
-        s = 'Ensemble Randomized Maximum Likelihood Method' + \
-            '\n   Number of samples: {}'.format(self.Ns) + \
-            '\n   Run time:          {}'.format(self.Tend) +  \
-            '\n   DA interval:       {}'.format(self.DAInterval) + \
-            '\n   Forward model:     {}'.format(self.forwardModel)
-        return s
+    def _correct_forcast(self):
+
+        # analysis step
+        dx = - GNGainMatrix.dot(self.model_obs-self.obs) + penalty
+        self.state_vec_analysis = self.beta*self.state_vec_prior + (1.0-\
+                            self.beta)*self.state_vec_forecast + self.beta*dx
+
 
     def solve(self):
         """ Solves the parameter estimation problem.
