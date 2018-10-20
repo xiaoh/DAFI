@@ -63,9 +63,10 @@ def read_input_data(input_file):
         sys.exit(1)
     else:
         for line in file:
+            line = line.split('#',1)[0]
             line = line.strip()
             # ignore empty or comment lines
-            if not line or line.startswith("#"):
+            if not line:
                 continue
             # allow ":" and "=" in input file
             line = line.replace(':',' ').replace('=',' ')

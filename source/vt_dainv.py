@@ -122,7 +122,7 @@ def main():
     print(
         "Solving the inverse problem:\n  Model:  {}".format(
             forward_model.name) + \
-            "\n  Filter: {}\n".format(inverse_model.name) )
+            "\n  Filter: {}".format(inverse_model.name) )
     start_time = time.time()
     inverse_model.solve()
     print("Time spent on solver: {}s".format(time.time() - start_time))
