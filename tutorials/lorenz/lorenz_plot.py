@@ -32,7 +32,7 @@ def plot_samples(para):
     HX_mean = []
     
     for i in range(da_step):
-        HX = np.loadtxt('./debugData/HX_'+str(i+1)+'.0')
+        HX = np.loadtxt('./debugData/HX_'+str(i+1))
         if i == 0:
             HX_seq = HX[state_ind,:]
             HX_mean.append(np.mean(HX[state_ind,:]))
@@ -77,7 +77,7 @@ def plot_obs(para):
     # get sequential noised observation
     obs_seq = []
     for i in range(da_step):
-        obs = np.loadtxt('./debugData/obs_'+str(i+1)+'.0')
+        obs = np.loadtxt('./debugData/obs_'+str(i+1))
         obs_seq.append(obs[state_ind,0])
     obs_seq = np.array(obs_seq)
     # plot observation
@@ -97,7 +97,8 @@ def main(iShow=False):
     plt.ylabel(para)
     line = Line2D([0],[0],linestyle='-',color='g',alpha=0.5)
     line_label = 'samples'
-    plt.legend([line, p2[0], p4[0],p5[0]],[line_label, p2[0].get_label(), p4[0].get_label(),p5[0].get_label()],loc = 'best')
+    plt.legend([line, p2[0], p4[0],p5[0]],[line_label, p2[0].get_label(),
+         p4[0].get_label(),p5[0].get_label()], loc = 'best')
     matplotlib.rcParams.update({'font.size':15})
     # save figure
     figureName = './figures/timeSeries_DA_'+ para +'.png'
