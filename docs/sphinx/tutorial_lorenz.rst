@@ -31,11 +31,9 @@ To infer the optimal parameters for Lorenz equations based on the observation is
 
 Data assimilation method is to solve the inverse problem, 
 
-Different data assimilation methods are embeded in the code (located in the "$source/da_inv/da_filtering.py"). The list of data assimilation is shown below:
+Different data assimilation methods are embeded in the code (located in the "$source/da_inv/da_filtering.py"). The list of usable data assimilation methods is shown below:
 
 #. Ensemble Kalman Filtering :cite:`iglesias2013ensemble` 
-
-#. Ensemble Randomized Maximum Likelihood :cite:`gu2007iterative`
 
 Dynamic Model
 -------------
@@ -48,8 +46,9 @@ The dynamic model in this tutorial is Lorenz model. The code for Lorenz model is
    :language: python
 
 Lorenz Model Files
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-Below is an overview of the files required to run the data simulation for Lorenz model in DA-Inv. The required files are listed below. 
+------------------
+
+Below is an overview of the files required to run the data assimilation for Lorenz model in DA-Inv. The required files are listed below. 
 
 ==================   =============================  =============================
 **File Type**        **File Name**                  **Directory**
@@ -88,7 +87,7 @@ Specify self-defined parameters in the 'forward_model_input.in' file. The 'forwa
 Step 3 : Execute 
 ~~~~~~~~~~~~~~~~
 
-To execute the data assimilation for lorenz system, move to the directory of '$source' and type '. init_da.sh' to export the PATH. Then move to the lorenz directory($tutorials/lorenz), type './run.sh' to start the data assimilation process. The process information is saved in 'log.enkf' file at lorenz tutorial directory.
+To execute the data assimilation for lorenz system, move to the directory of '$source' and type '. init_da.sh' to export the PATH. Then move to the lorenz directory($tutorials/lorenz), type './run.sh' to start the data assimilation process. The process information will be saved in 'log.enkf' file at lorenz tutorial directory.
 
 Step 4 : Postprocessing
 ~~~~~~~~~~~~~~~~~~~~~~~
