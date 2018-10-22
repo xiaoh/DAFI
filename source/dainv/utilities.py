@@ -9,7 +9,7 @@ import shutil
 import sys
 
 
-def replace(file, pattern, subst):
+def replace(filename, pattern, subst):
     """ Replace all instances of a pattern in a file with a new pattern.
 
     Parameters
@@ -24,7 +24,7 @@ def replace(file, pattern, subst):
     # create temp file
     fh, abs_path = tempfile.mkstemp()
     new_file = open(abs_path, 'w')
-    old_file = open(file)
+    old_file = open(filename)
     for line in old_file:
         new_file.write(line.replace(pattern, subst))
     # close temp file
@@ -32,9 +32,9 @@ def replace(file, pattern, subst):
     os.close(fh)
     old_file.close()
     # remove original file
-    os.remove(file)
+    os.remove(filename)
     # move new file
-    shutil.move(abs_path, file)
+    shutil.move(abs_path, filename)
 
 
 def read_input_data(input_file):

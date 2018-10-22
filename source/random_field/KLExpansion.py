@@ -170,7 +170,8 @@ class klExpansion:
         """
         [N, nKL] = KLModes.shape  # parse the dimension
         assert len(omegaVec) == nKL, \
-            "Lengths of KL coefficient omega (%d) and KL modes (%d) differs!" % (len(omegaVec), nKL)
+            "Lengths of KL coefficient omega (%d) and KL modes (%d) differs!" \
+            % (len(omegaVec), nKL)
 
         if self.meanField is None:
             self.meanField = np.zeros([N, 1])

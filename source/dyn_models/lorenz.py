@@ -24,6 +24,7 @@ from scipy.integrate import ode
 from dainv.dyn_model import DynModel
 from dainv.utilities import read_input_data
 
+
 class Solver(DynModel):
     """
         Dynamic forward model: Lorenz 63
@@ -109,7 +110,8 @@ class Solver(DynModel):
         # generate initial X
         for iDim in np.arange(self.nstate):
             dxStd = self.x_rel_std * self.x_init[iDim]
-            X[iDim, :] = self.x_init[iDim] + np.random.normal(0, dxStd, self.nsamples)
+            X[iDim, :] = self.x_init[iDim] + \
+                np.random.normal(0, dxStd, self.nsamples)
         # operation operator
         H = self._constructHMatrix()
         #H = np.array([[1, 0, 0], [0, 1, 0], [0, 0, 1], [0, 0, 0]]).T
@@ -141,15 +143,24 @@ class Solver(DynModel):
         # switch perturbation of each parameter
         if self.nstate == 4:
             dx[3] = 0
-            if self.perturb_rho: rho = x[3]
-            if self.perturb_beta: beta = x[3]
-            if self.perturb_sigma: sigma = x[3]
+            if self.perturb_rho:
+                rho = x[3]
+            if self.perturb_beta:
+                beta = x[3]
+            if self.perturb_sigma:
+                sigma = x[3]
         if self.nstate == 5:
             dx[3] = 0
             dx[4] = 0
-            if not self.perturb_rho: beta = x[3]; sigma = x[4]
-            if self.perturb_beta: rho = x[3]; sigma = x[4]
-            if self.perturb_sigma: rho = x[3]; beta = x[4]
+            if not self.perturb_rho:
+                beta = x[3]
+                sigma = x[4]
+            if self.perturb_beta:
+                rho = x[3]
+                sigma = x[4]
+            if self.perturb_sigma:
+                rho = x[3]
+                beta = x[4]
         if self.nstate == 6:
             dx[3] = 0
             dx[4] = 0
@@ -185,8 +196,11 @@ class Solver(DynModel):
         # Set start time
         new_start_time = next_end_time - self.da_interval
         # Make time series from start time to end time
-        time_series = np.arange(new_start_time + self.dt_interval, next_end_time + self.dt_interval, self.dt_interval) #TODO
-        # time_series = np.arange(new_start_time, next_end_time, self.dt_interval) # TODO
+        time_series = np.arange(new_start_time + self.dt_interval,
+                                next_end_time + self.dt_interval,
+                                self.dt_interval)  # TODO
+        # time_series = np.arange(  # TODO
+        #     new_start_time, next_end_time, self.dt_interval) # TODO
         # Ode solver setup
         self.solver = ode(self.lorenz63)
         self.solver.set_integrator('dopri5')
@@ -194,7 +208,7 @@ class Solver(DynModel):
         # Solve ode for each sample
         for i in range(self.nsamples):
             # Set initial value for ode solver
-            self.solver.set_initial_value(X[:,i], new_start_time)
+            self.solver.set_initial_value(X[:, i], new_start_time)
             x = np.empty([len(time_series), self.nstate])
             for t in np.arange(len(time_series)):
                 if not self.solver.successful():
@@ -203,7 +217,7 @@ class Solver(DynModel):
                 self.solver.integrate(time_series[t])
                 x[t] = self.solver.y
             # Save current state in state matrix X
-            Xf[:,i] = x[-1]
+            Xf[:, i] = x[-1]
         # Construct observation operator
         H = self._constructHMatrix()
         HX = H.dot(Xf)
@@ -258,12 +272,12 @@ class Solver(DynModel):
         obs_std_vec = np.empty(self.nstate_obs)
         # calculate current da_step
         # TODO da_step = (next_end_time - self.da_interval) / self.da_interval
-        da_step = next_end_time / self.da_interval # TODO
+        da_step = next_end_time / self.da_interval  # TODO
         # read observation at next end time
-        obs_vec = np.loadtxt('obs.txt')[int(da_step)*10,1:-1]
+        obs_vec = np.loadtxt('obs.txt')[int(da_step)*10, 1:-1]
         # add noise in observation
         for iDim in np.arange(self.nstate_obs):
-            obs_std = self.obs_rel_std * np.abs(obs_vec[iDim]) + 0.1 #TODO
+            obs_std = self.obs_rel_std * np.abs(obs_vec[iDim]) + 0.1  # TODO
             obs_std_vec[iDim] = obs_std
             obs[iDim] = obs_vec[iDim] + np.random.normal(0, obs_std, 1)
         # construct ensemble observation
@@ -271,7 +285,7 @@ class Solver(DynModel):
         for i in np.arange(self.nsamples):
             obsM[:, i] = obs
         # construct the observation error covariance
-        self.Robs = sp.diags(obs_std_vec**2,0)
+        self.Robs = sp.diags(obs_std_vec**2, 0)
 
         return obsM
 
@@ -279,7 +293,8 @@ class Solver(DynModel):
         """construct the observation operator"""
 
         H = [[1, 0, 0], [0, 1, 0], [0, 0, 1]]
-        for i in range(self.num_params): H.append([0,0,0])
+        for i in range(self.num_params):
+            H.append([0, 0, 0])
         H = np.array(H).T
 
         return H
