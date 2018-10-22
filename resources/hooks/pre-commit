@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/bash
 #
 # This pre-commit hook tests that the documentation builds correctly.
 # It can be disabled by using the "-n" option with "git commit".
@@ -23,4 +23,24 @@ else
     echo "[success]  Documentation built without error."
 fi
 rm -f errors.log
+
+autopep=$(autopep8 -dr .)
+if [[ -z $autopep ]]
+then
+    echo "[success] PEP8 passed."
+else
+    echo "[error] Nlocking commit, PEP8 did not pass."
+    #echo "$autopep" | colordiff
+    exit 1
+fi
+
+
+`python -m unittest discover -p "*_test.py"`
+if [[ $? = 0 ]]
+then
+    echo "[succes] Unit tests passed."
+else
+    echo "[error] Unit  tests did not pass."
+    exit 1
+fi
 
