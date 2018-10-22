@@ -1,6 +1,6 @@
 #!/usr/bin/env python2
 # Copyright 2018 Virginia Polytechnic Insampletitute and State University.
-""" This module is to postprocess the da_ta for the Lorenz model"""
+""" This module is to postprocess the data for the Lorenz model"""
 
 # standard library imports
 import os
@@ -25,11 +25,11 @@ def plot_samples(para):
     # get observed time point
     da_t = t[10:-1:10]
     da_step = len(da_t)
-    
+
     #intialize sequential HX and mean
     HX_seq = []
     HX_mean = []
-    
+
     for i in range(da_step):
         HX = np.loadtxt('./debugData/HX_'+str(i+1))
         if i == 0:
@@ -85,7 +85,7 @@ def plot_obs(para):
     # plot observation
     p5 = plt.plot(da_t,obs_seq,'r.', label = 'observation')
 
-    return p5   
+    return p5
 
 def main(iShow=False):
 
@@ -103,7 +103,7 @@ def main(iShow=False):
     plt.savefig(figureName)
 
 if __name__ == "__main__":
-    
+
     para = 'x'
     main()
     para = 'y'

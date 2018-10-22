@@ -4,6 +4,7 @@
 # third party imports
 import numpy as np
 
+
 class DynModel(object):
     """ Parent class for dynamic models.
 

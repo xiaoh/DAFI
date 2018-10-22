@@ -7,9 +7,9 @@
 # date               :Nov.01, 2015
 # revision           :Nov.01, 2015
 
-####################################################################################################
+##########################################################################
 
-## Import system modules
+# Import system modules
 # sci computing
 import numpy as np
 import scipy.sparse as sp
@@ -22,9 +22,10 @@ import os
 # plotting
 import matplotlib.pyplot as plt  # for plotting
 
-## Import local modules
+# Import local modules
 from random_field import StochasticProcess as StP
 from random_field import KLExpansion as KL
+
 
 class randomField:
     """Generate a random field (Kernel generation, KL Expansion, reconstruction of field).
@@ -40,15 +41,15 @@ class randomField:
     def __init__(self, coord, Arg_covGen, Arg_calModes, instanceName):
         # parse input
         self.coord = coord    # matrix of coordinates
-        [self.n, self.d] = coord.shape # number of state and dimension of state
+        [self.n, self.d] = coord.shape  # number of state and dimension of state
         if self.d not in {int(1), int(2), int(3)}:
             print "Error: we can only handle 1D, 2D and 3D problems, please check xState is n by (1, 2, or 3)"
             exit(1)
-        self.Arg_covGen = Arg_covGen # arguments for non-stationary covariance generation
+        self.Arg_covGen = Arg_covGen  # arguments for non-stationary covariance generation
 
-        self.Arg_calModes = Arg_calModes # arguments for KL Modes
+        self.Arg_calModes = Arg_calModes  # arguments for KL Modes
 
-        self.rfFolderName = 'randomData_'+instanceName
+        self.rfFolderName = 'randomData_' + instanceName
         if not os.path.exists(self.rfFolderName):
             print "creat klExpansionData3D folder for the data related with KL"
             os.system('mkdir ' + self.rfFolderName)
@@ -77,13 +78,13 @@ class randomField:
         self.kl = KL.klExpansion(cov_sparse, covWeighted_sparse)
         # perform KL expansion
         [eigVal, KLModes] = self.kl.calKLModes(self.Arg_calModes)
-        np.savetxt(self.rfFolderName+'/KLModes.dat', KLModes)
+        np.savetxt(self.rfFolderName + '/KLModes.dat', KLModes)
         toc = time.time()
         print "elapse time for generate modes = ", toc - tic
 
         return KLModes
 
-    def uncorrUniRandom(self, n, distType = "Gaussian"):
+    def uncorrUniRandom(self, n, distType="Gaussian"):
         """
         Generate Uncorrelated random variables (Vector) with unit variance
 
@@ -96,7 +97,7 @@ class randomField:
         """
 
         # Default distribution type
-        #np.random.seed(1000);
+        # np.random.seed(1000);
         if distType == "Gaussian":
             RandomVec = np.random.randn(n, 1)
 

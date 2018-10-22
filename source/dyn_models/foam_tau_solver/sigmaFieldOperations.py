@@ -6,7 +6,9 @@ import matplotlib.pylab as plt
 import os
 import os.path as ospt
 
-from dyn_models.foam_tau_solver import foamFileOperation as foamOp  # OpenFOAM file operator
+# OpenFOAM file operator
+from dyn_models.foam_tau_solver import foamFileOperation as foamOp
+
 
 def computeSigmaField(scatteredSigmaFile, cellCenters, kernel, lengthScale):
     """
@@ -26,17 +28,18 @@ def computeSigmaField(scatteredSigmaFile, cellCenters, kernel, lengthScale):
     sigmaData = np.loadtxt(scatteredSigmaFile)
 
     if sigmaData.shape[1] == 3:
-        sigmaFunc = interpolate.Rbf( \
-                sigmaData[:, 0], sigmaData[:, 1], sigmaData[:, 2], \
-                function=kernel, epsilon=lengthScale)
+        sigmaFunc = interpolate.Rbf(
+            sigmaData[:, 0], sigmaData[:, 1], sigmaData[:, 2],
+            function=kernel, epsilon=lengthScale)
 
         sigmaField = sigmaFunc(cellCenters[:, 0], cellCenters[:, 1])
     elif sigmaData.shape[1] == 4:
-        sigmaFunc = interpolate.Rbf( \
-                sigmaData[:, 0], sigmaData[:, 1], sigmaData[:, 2], sigmaData[:, 3], \
-                function=kernel, epsilon=lengthScale)
+        sigmaFunc = interpolate.Rbf(
+            sigmaData[:, 0], sigmaData[:, 1], sigmaData[:, 2], sigmaData[:, 3],
+            function=kernel, epsilon=lengthScale)
 
-        sigmaField = sigmaFunc(cellCenters[:, 0], cellCenters[:, 1], cellCenters[:, 2])
+        sigmaField = sigmaFunc(
+            cellCenters[:, 0], cellCenters[:, 1], cellCenters[:, 2])
     else:
         print "Please check the dimensions of scatteredSigmaFile."
 
@@ -47,9 +50,10 @@ def computeSigmaField(scatteredSigmaFile, cellCenters, kernel, lengthScale):
     # plt.scatter(cellCenters[0:-1:skip, 0], cellCenters[0:-1:skip, 1], 50, sigmaField[0:-1:skip], \
     #            cmap=plt.cm.jet)
     # plt.colorbar()
-    #plt.show()
+    # plt.show()
 
     return sigmaField
+
 
 def checkSigmaField():
     # A utility that can called on an openFoam case to generate sigma field in
@@ -57,17 +61,18 @@ def checkSigmaField():
     # Assume that the current dir is an openfoam case
 
     baseCaseDir = ospt.join('0/')
-    scatteredSigmaFile = ospt.join('constant', \
-                         'scatSigma.dat')
+    scatteredSigmaFile = ospt.join('constant',
+                                   'scatSigma.dat')
 
     meshCoord3D = foamOp.readTurbCoordinateFromFile(baseCaseDir)
 
     rbfLengthScale = 0.6
     rbfKernel = 'gaussian'
-    sigma = computeSigmaField(scatteredSigmaFile, meshCoord3D, \
-                                       rbfKernel, rbfLengthScale)
+    sigma = computeSigmaField(scatteredSigmaFile, meshCoord3D,
+                              rbfKernel, rbfLengthScale)
     sigmaFile = ospt.join(os.getcwd(), '0/sigma')
     foamOp.writeScalarToFile(sigma, sigmaFile)
+
 
 if __name__ == '__main__':
 

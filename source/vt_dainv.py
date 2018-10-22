@@ -57,10 +57,11 @@ from dainv.utilities import read_input_data
 # user-specified inverse model filter imported later with importlib
 # user-specified dynamic model imported later with importlib
 
-# parse input file
+
 def _print_usage():
     # print usage of the program.
     print("Usage: mfu_main.py <input_file>")
+
 
 def _get_input():
     # get the input file.
@@ -71,6 +72,7 @@ def _get_input():
         _print_usage()
         sys.exit(1)
     return input_file
+
 
 def main():
     # required inputs
@@ -83,17 +85,27 @@ def main():
     da_interval = float(param_dict['da_interval'])
     nsamples = int(param_dict['nsamples'])
     # optional inputs - set default if missing.
-    try: report_flag = ast.literal_eval(param_dict['report_flag'])
-    except: report_flag = False
-    try: plot_flag = ast.literal_eval(param_dict['plot_flag'])
-    except: plot_flag = False
-    try: save_flag = ast.literal_eval(param_dict['save_flag'])
-    except: save_flag = False
-    try: rand_seed_flag = ast.literal_eval(param_dict['rand_seed_flag'])
-    except: rand_seed_flag = False
+    try:
+        report_flag = ast.literal_eval(param_dict['report_flag'])
+    except:
+        report_flag = False
+    try:
+        plot_flag = ast.literal_eval(param_dict['plot_flag'])
+    except:
+        plot_flag = False
+    try:
+        save_flag = ast.literal_eval(param_dict['save_flag'])
+    except:
+        save_flag = False
+    try:
+        rand_seed_flag = ast.literal_eval(param_dict['rand_seed_flag'])
+    except:
+        rand_seed_flag = False
     if rand_seed_flag:
-        try: rand_seed = int(param_dict['rand_seed'])
-        except: rand_seed = 1.0
+        try:
+            rand_seed = int(param_dict['rand_seed'])
+        except:
+            rand_seed = 1.0
     # remove all the inputs meant for this file, mfu_main.py.
     # what is left are inputs meant for the specific DA filter method used.
     main_inputs = [
@@ -101,8 +113,10 @@ def main():
         'nsamples', 'report_flag', 'plot_flag', 'save_flag', 'rand_seed_fag',
         'rand_seed']
     for inp in main_inputs:
-        try: param_dict.pop(inp);
-        except: pass
+        try:
+            _ = param_dict.pop(inp)
+        except:
+            pass
 
     # import and initialize forward and inverse models
     # random seed: do this before importing local modules that use np.random
@@ -114,15 +128,14 @@ def main():
     forward_model = DynModel(nsamples, da_interval, t_end, input_file_dm)
     # inverse model
     InvFilter = getattr(importlib.import_module('dainv.da_filtering'),
-        da_filter)
-    inverse_model = InvFilter(
-        nsamples, da_interval, t_end, forward_model, param_dict)
+                        da_filter)
+    inverse_model = InvFilter(nsamples, da_interval, t_end, forward_model,
+                              param_dict)
 
     # solve the inverse problem
-    print(
-        "Solving the inverse problem:\n  Model:  {}".format(
-            forward_model.name) + \
-            "\n  Filter: {}".format(inverse_model.name) )
+    print("Solving the inverse problem:" +
+          "\n  Model:  {}".format(forward_model.name) +
+          "\n  Filter: {}".format(inverse_model.name))
     start_time = time.time()
     inverse_model.solve()
     print("Time spent on solver: {}s".format(time.time() - start_time))
@@ -135,6 +148,7 @@ def main():
     if save_flag:
         inverse_model.save()
     inverse_model.clean()
+
 
 if __name__ == "__main__":
     main()

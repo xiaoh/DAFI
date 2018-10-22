@@ -7,9 +7,9 @@
 # date               :Oct.27, 2015
 # revision           :Nov.01, 2015
 
-####################################################################################################
+##########################################################################
 
-## Import system modules
+# Import system modules
 # sci computing
 import numpy as np
 import scipy.sparse as sp
@@ -19,11 +19,11 @@ import numpy.linalg as LA
 import pdb
 import time
 # plotting
-#import seaborn as sns  # for statistical plotting
+# import seaborn as sns  # for statistical plotting
 import matplotlib.pyplot as plt  # for plotting
 import os
 
-## Import local modules
+# Import local modules
 from random_field import StochasticProcess as mSP
 from dyn_models.foam_tau_solver import foamFileOperation as foamOp
 
@@ -43,6 +43,7 @@ class klExpansion:
     Notes: N is number of cells
 
     """
+
     def __init__(self, cov=None, covWeighted=None, meanField=None):
 
         # parse input
@@ -66,7 +67,6 @@ class klExpansion:
             print "Non-zero mean is adopted for random field construction"
         self.meanField = meanField
 
-
     def calKLModes(self, Arg_calKLModes):
         """calculate the eigenvalues and KL modes (normalized eigen-vectors)
 
@@ -81,14 +81,14 @@ class klExpansion:
 
         """
         # parse arguments for calKLModes
-        if not Arg_calKLModes.has_key('nKL'):
+        if 'nKL' not in Arg_calKLModes:
             print 'Error: Please defined nKL (number of modes truncated)!'
             exit(1)
         else:
             nKL = Arg_calKLModes['nKL']
             self.nKL = nKL
 
-        if not Arg_calKLModes.has_key('weightField'):
+        if 'weightField' not in Arg_calKLModes:
             print 'Error: You must give me weight Field array'
             exit(1)
         else:
@@ -97,7 +97,7 @@ class klExpansion:
         covTrace = sum(self.covWeighted.diagonal())
         # perform the eig-decomposition
         # solving cov * eigVecs[i] = eigVal[i] * eigVecs[i]
-        eigVals, eigVecs = sp.linalg.eigsh(self.covWeighted, k = nKL)
+        eigVals, eigVecs = sp.linalg.eigsh(self.covWeighted, k=nKL)
         # sort the eig-value and eig-vectors in a descending order
         ascendingOrder = eigVals.argsort()
         descendingOrder = ascendingOrder[::-1]
@@ -112,7 +112,8 @@ class klExpansion:
             if eigVals[i] >= 0:
                 KLModes[:, i] = eigVecsWeighted[:, i] * np.sqrt(eigVals[i])
             else:
-                print 'Negative eigenvalue detected at nKL=' + str(i) + ': number of KL modes might be too large!'
+                print 'Negative eigenvalue detected at nKL=' + \
+                    str(i) + ': number of KL modes might be too large!'
                 KLModes[:, i] = eigVecsWeighted[:, i] * 0
 
         self.KLModes = KLModes
@@ -126,12 +127,17 @@ class klExpansion:
             filename = dirName + '/0/mode'
             cmd = 'cp ' + filename + ' ' + filename + str(iterN)
             os.system(cmd)
-            os.system('sed -i \'s/mode/mode'+str(iterN)+'/\' '+filename+str(iterN))
-            foamOp.writeScalarToFile(self.KLModes[:,iterN], filename+str(iterN))
+            os.system(
+                'sed -i \'s/mode/mode' +
+                str(iterN) +
+                '/\' ' +
+                filename +
+                str(iterN))
+            foamOp.writeScalarToFile(
+                self.KLModes[:, iterN], filename + str(iterN))
 
-        #pdb.set_trace()
+        # pdb.set_trace()
         #stop_flag = 1
-
 
     def KLProjection(self, Field, KLModes, eigVals, weightField):
         """project the random field onto KL modes,
@@ -144,13 +150,13 @@ class klExpansion:
         Return:
             omegaVec    : the coefficients for KL modes (nKL by 1)
         """
-        nKL = len(eigVals) # number of KL modes
+        nKL = len(eigVals)  # number of KL modes
         omegaVec = np.zeros([nKL, 1])
         for k in range(nKL):
             #omegaVec[k, 0] = np.sum(weightField * Field * KLModes[:, k]) / np.sqrt(eigVals[k])
-            omegaVec[k, 0] = np.sum(weightField * Field * KLModes[:, k]) / eigVals[k]
+            omegaVec[k, 0] = np.sum(
+                weightField * Field * KLModes[:, k]) / eigVals[k]
         return omegaVec
-
 
     def reconstructField_Reduced(self, omegaVec, KLModes):
         """reconstruct a random field with truncated KL modes
@@ -164,11 +170,11 @@ class klExpansion:
         """
         [N, nKL] = KLModes.shape  # parse the dimension
         assert len(omegaVec) == nKL, \
-        "Lengths of KL coefficient omega (%d) and KL modes (%d) differs!"% (len(omegaVec), nKL)
+            "Lengths of KL coefficient omega (%d) and KL modes (%d) differs!" % (len(omegaVec), nKL)
 
         if self.meanField is None:
             self.meanField = np.zeros([N, 1])
-        #pdb.set_trace()
+        # pdb.set_trace()
         recField = self.meanField + np.dot(KLModes, omegaVec)
         return recField
 
@@ -182,35 +188,39 @@ class klExpansion:
             TBD
 
         """
-        #TODO: To be implemented
+        # TODO: To be implemented
         pass
+
 
 if __name__ == '__main__':
 
-    # Generate a sparse covariance using module StochasticProcess.GaussianProcess
-    testDir = './verificationData/klExpansion/mesh10/' # directory where the test data stored
+    # Generate a sparse covariance using module
+    # StochasticProcess.GaussianProcess
+    # directory where the test data stored
+    testDir = './verificationData/klExpansion/mesh10/'
     #testDir = './verificationData/klExpansion/cavity16/'
     xState = np.loadtxt(testDir + 'cellCenter3D.dat')
     sigmaField = np.loadtxt(testDir + 'cellSigma3D.dat')
-    lenXField = 0.1*np.ones(sigmaField.shape)
-    lenYField = 0.1*np.ones(sigmaField.shape)
-    lenZField = 0.1*np.ones(sigmaField.shape)
+    lenXField = 0.1 * np.ones(sigmaField.shape)
+    lenYField = 0.1 * np.ones(sigmaField.shape)
+    lenZField = 0.1 * np.ones(sigmaField.shape)
     weightField = np.loadtxt(testDir + 'cellArea3D.dat')
     truncateTol = -np.log(1e-10)
 
     Arg_covGen = {
-                    'sigmaField': sigmaField,
-                    'lenXField': lenXField,
-                    'lenYField': lenYField,
-                    'lenZField': lenZField,
-                    'weightField':weightField,
-                    'truncateTol': truncateTol
-                 }
+        'sigmaField': sigmaField,
+        'lenXField': lenXField,
+        'lenYField': lenYField,
+        'lenZField': lenZField,
+        'weightField': weightField,
+        'truncateTol': truncateTol
+    }
     tic = time.time()
-    gp = mSP.GaussianProcess(xState) # initial a instance of GaussianProcess class
+    # initial a instance of GaussianProcess class
+    gp = mSP.GaussianProcess(xState)
     cov_sparse, covWeighted_sparse = gp.covGen(Arg_covGen)
     toc = time.time()
-    elapseT = toc -tic
+    elapseT = toc - tic
     print "elapse Time for generate cov_sparse", elapseT
     pdb.set_trace()
     tic = time.time()
@@ -219,20 +229,21 @@ if __name__ == '__main__':
     #kl = klExpansion(cov_sparse)
     nKL = 2
     Arg_calKLModes = {
-                        'nKL': nKL,
-                        'weightField':weightField
-                     }
+        'nKL': nKL,
+        'weightField': weightField
+    }
     [eigVal, KLModes] = kl.calKLModes(Arg_calKLModes)
     toc = time.time()
-    elapseT = toc -tic
+    elapseT = toc - tic
     print "elapse Time for KL-Expansion", elapseT
     pdb.set_trace()
     KLModes_true = np.loadtxt(testDir + 'KLmodes_UQTK.dat')
     KLModes_true = KLModes_true[:, 2:]
 
-    err = np.max(np.abs(KLModes/KLModes_true) - 1.0)
+    err = np.max(np.abs(KLModes / KLModes_true) - 1.0)
     print "the max of the misfit of KLModes with UQTK result is ", err
 
     np.random.seed(10)
-    omegaVec = ss.norm.rvs(size=nKL); omegaVec = np.array([omegaVec]).T
+    omegaVec = ss.norm.rvs(size=nKL)
+    omegaVec = np.array([omegaVec]).T
     recField = kl.reconstructField_Reduced(omegaVec, KLModes)

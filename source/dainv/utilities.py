@@ -8,6 +8,7 @@ import os
 import shutil
 import sys
 
+
 def replace(file, pattern, subst):
     """ Replace all instances of a pattern in a file with a new pattern.
 
@@ -20,20 +21,21 @@ def replace(file, pattern, subst):
     subst : str
         The new character string.
     """
-    #Create temp file
+    # create temp file
     fh, abs_path = tempfile.mkstemp()
-    new_file = open(abs_path,'w')
+    new_file = open(abs_path, 'w')
     old_file = open(file)
     for line in old_file:
         new_file.write(line.replace(pattern, subst))
-    #close temp file
+    # close temp file
     new_file.close()
     os.close(fh)
     old_file.close()
-    #Remove original file
+    # remove original file
     os.remove(file)
-    #Move new file
+    # move new file
     shutil.move(abs_path, file)
+
 
 def read_input_data(input_file):
     """Parse an input file into a dictionary.
@@ -63,18 +65,19 @@ def read_input_data(input_file):
         sys.exit(1)
     else:
         for line in file:
-            line = line.split('#',1)[0]
+            line = line.split('#', 1)[0]
             line = line.strip()
             # ignore empty or comment lines
             if not line:
                 continue
             # allow ":" and "=" in input file
-            line = line.replace(':',' ').replace('=',' ')
+            line = line.replace(':', ' ').replace('=', ' ')
             # parse into dictionary
-            param, value = line.split(None,1)
+            param, value = line.split(None, 1)
             param_dict[param] = value
         file.close()
     return param_dict
+
 
 def extract_list_from_string(string, sep=',', type_func=str):
     """ Extract a list from a string.

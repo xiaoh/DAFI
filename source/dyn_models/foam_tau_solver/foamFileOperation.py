@@ -14,7 +14,8 @@ import pdb
 import utilities as Tool
 
 global unitTest
-unitTest = False;
+unitTest = False
+
 
 def readTurbStressFromFile(tauFile):
     """
@@ -34,13 +35,14 @@ def readTurbStressFromFile(tauFile):
     glob_pattern = re.sub(r'\)', '', glob_pattern)
 
     tau = glob_pattern
-    #pdb.set_trace()
+    # pdb.set_trace()
     fout.write(tau)
-    fout.close();
+    fout.close()
 
     tau = np.loadtxt('tau.txt')
-    #pdb.set_trace();
+    # pdb.set_trace();
     return tau
+
 
 def readTensorFromFile(tauFile):
     """
@@ -60,29 +62,30 @@ def readTensorFromFile(tauFile):
     glob_pattern = re.sub(r'\)', '', glob_pattern)
 
     tau = glob_pattern
-    #pdb.set_trace()
+    # pdb.set_trace()
     fout.write(tau)
-    fout.close();
+    fout.close()
 
     tau = np.loadtxt('tau.txt')
-    #pdb.set_trace();
+    # pdb.set_trace();
     return tau
+
 
 def readVectorFromFile(UFile):
     """
     """
     resMid = extractVector(UFile)
-    fout = open('Utemp', 'w');
+    fout = open('Utemp', 'w')
     glob_pattern = resMid.group()
     glob_pattern = re.sub(r'\(', '', glob_pattern)
     glob_pattern = re.sub(r'\)', '', glob_pattern)
     fout.write(glob_pattern)
-    fout.close();
+    fout.close()
     vector = np.loadtxt('Utemp')
     return vector
 
-
     pdb.set_trace()
+
 
 def readVelocityFromFile(UFile):
     """ Function is to get value of U from the openFoam U files
@@ -96,15 +99,15 @@ def readVelocityFromFile(UFile):
     resMid = extractVector(UFile)
 
     # write it in Utemp
-    fout = open('Utemp', 'w');
+    fout = open('Utemp', 'w')
     fout.write(resMid.group())
-    fout.close();
+    fout.close()
 
     # write it in UM with the pattern that numpy.load txt could read
     fin = open('Utemp', 'r')
-    fout = open('UM.txt', 'w');
+    fout = open('UM.txt', 'w')
 
-    while 1:
+    while True:
         line = fin.readline()
         line = line[1:-2]
         fout.write(line)
@@ -112,10 +115,11 @@ def readVelocityFromFile(UFile):
         if not line:
             break
     fin.close()
-    fout.close();
+    fout.close()
     # to convert UM as U vector: (u1,v1,w1,u2,v2,w2,....uNcell,vNcell,wNcell)
     U = np.loadtxt('UM.txt')
     return U
+
 
 def readTurbCoordinateFromFile(fileDir):
     """
@@ -140,7 +144,7 @@ def readTurbCoordinateFromFile(fileDir):
     glob_patternx = re.sub(r'\(', '', glob_patternx)
     glob_patternx = re.sub(r'\)', '', glob_patternx)
     fout.write(glob_patternx)
-    fout.close();
+    fout.close()
     xVec = np.loadtxt('xcoor.txt')
 
     fout = open('ycoor.txt', 'w')
@@ -148,7 +152,7 @@ def readTurbCoordinateFromFile(fileDir):
     glob_patterny = re.sub(r'\(', '', glob_patterny)
     glob_patterny = re.sub(r'\)', '', glob_patterny)
     fout.write(glob_patterny)
-    fout.close();
+    fout.close()
     yVec = np.loadtxt('ycoor.txt')
 
     fout = open('zcoor.txt', 'w')
@@ -156,12 +160,13 @@ def readTurbCoordinateFromFile(fileDir):
     glob_patternz = re.sub(r'\(', '', glob_patternz)
     glob_patternz = re.sub(r'\)', '', glob_patternz)
     fout.write(glob_patternz)
-    fout.close();
+    fout.close()
     zVec = np.loadtxt('zcoor.txt')
 
     coordinate = np.vstack((xVec, yVec, zVec))
     coordinate = coordinate.T
     return coordinate
+
 
 def readTurbCellAreaFromFile(fileDir):
     """
@@ -182,13 +187,14 @@ def readTurbCellAreaFromFile(fileDir):
     glob_patternx = re.sub(r'\(', '', glob_patternx)
     glob_patternx = re.sub(r'\)', '', glob_patternx)
     fout.write(glob_patternx)
-    fout.close();
+    fout.close()
     cvVec = np.loadtxt('cellVolumn.txt')
     cvVec = np.array([cvVec])
     dz = np.loadtxt(dvfile)
     cellArea = cvVec / dz
     cellArea = cellArea.T
     return cellArea
+
 
 def readTurbCellVolumeFromFile(fileDir):
     """
@@ -208,11 +214,12 @@ def readTurbCellVolumeFromFile(fileDir):
     glob_patternx = re.sub(r'\(', '', glob_patternx)
     glob_patternx = re.sub(r'\)', '', glob_patternx)
     fout.write(glob_patternx)
-    fout.close();
+    fout.close()
     cvVec = np.loadtxt('cellVolumn.txt')
     cvVec = np.array([cvVec])
     cellVolume = cvVec.T
     return cellVolume
+
 
 def readScalarFromFile(fileName):
     """
@@ -231,9 +238,10 @@ def readScalarFromFile(fileName):
     glob_patternx = re.sub(r'\(', '', glob_patternx)
     glob_patternx = re.sub(r'\)', '', glob_patternx)
     fout.write(glob_patternx)
-    fout.close();
+    fout.close()
     scalarVec = np.loadtxt('temp.txt')
     return scalarVec
+
 
 def extractSymmTensor(tensorFile):
     """ subFunction of readTurbStressFromFile
@@ -250,10 +258,10 @@ def extractSymmTensor(tensorFile):
     """
 
     fin = open(tensorFile, 'r')  # need consider directory
-    line = fin.read() # line is U file to read
+    line = fin.read()  # line is U file to read
     fin.close()
 
-    ### select U as (X X X)pattern (Using regular expression)
+    # select U as (X X X)pattern (Using regular expression)
     patternMid = re.compile(r"""
     (
     \(                                                   # match(
@@ -271,11 +279,12 @@ def extractSymmTensor(tensorFile):
     \)                                                   # match )
     (\n|\ )                                              # match next line
     )+                                                   # search greedly
-    """,re.DOTALL | re.VERBOSE)
+    """, re.DOTALL | re.VERBOSE)
 
     resMid = patternMid.search(line)
 
     return resMid
+
 
 def extractTensor(tensorFile):
     """ subFunction of readTurbStressFromFile
@@ -292,10 +301,10 @@ def extractTensor(tensorFile):
     """
 
     fin = open(tensorFile, 'r')  # need consider directory
-    line = fin.read() # line is U file to read
+    line = fin.read()  # line is U file to read
     fin.close()
 
-    ### select U as (X X X)pattern (Using regular expression)
+    # select U as (X X X)pattern (Using regular expression)
     patternMid = re.compile(r"""
     (
     \(                                                   # match(
@@ -319,11 +328,12 @@ def extractTensor(tensorFile):
     \)
     (\n|\ )                                              # match next line
     )+                                                   # search greedly
-    """,re.DOTALL | re.VERBOSE)
+    """, re.DOTALL | re.VERBOSE)
 
     resMid = patternMid.search(line)
 
     return resMid
+
 
 def extractVector(vectorFile):
     """ Function is using regular expression select Vector value out
@@ -336,9 +346,9 @@ def extractVector(vectorFile):
     """
 
     fin = open(vectorFile, 'r')  # need consider directory
-    line = fin.read() # line is U file to read
+    line = fin.read()  # line is U file to read
     fin.close()
-    ### select U as (X X X)pattern (Using regular expression)
+    # select U as (X X X)pattern (Using regular expression)
     patternMid = re.compile(r"""
     (
     \(                                                   # match(
@@ -350,9 +360,10 @@ def extractVector(vectorFile):
     \)                                                   # match )
     \n                                                   # match next line
     )+                                                   # search greedly
-    """,re.DOTALL | re.VERBOSE)
+    """, re.DOTALL | re.VERBOSE)
     resMid = patternMid.search(line)
     return resMid
+
 
 def extractScalar(scalarFile):
     """ subFunction of readTurbStressFromFile
@@ -366,9 +377,9 @@ def extractScalar(scalarFile):
             you need use resMid.group() to see the content.
     """
     fin = open(scalarFile, 'r')  # need consider directory
-    line = fin.read() # line is k file to read
+    line = fin.read()  # line is k file to read
     fin.close()
-    ### select k as ()pattern (Using regular expression)
+    # select k as ()pattern (Using regular expression)
     patternMid = re.compile(r"""
         \(                                                   # match"("
         \n                                                   # match next line
@@ -377,10 +388,11 @@ def extractScalar(scalarFile):
         \n                                                   # match next line
         )+                                                   # search greedly
         \)                                                   # match")"
-    """,re.DOTALL | re.VERBOSE)
+    """, re.DOTALL | re.VERBOSE)
     resMid = patternMid.search(line)
 
     return resMid
+
 
 def extractTensorPattern(tensorFile):
     """ Function is using regular expression select OpenFOAM tensor files pattern
@@ -393,7 +405,7 @@ def extractTensorPattern(tensorFile):
     resEnd:  Lower Pattern
     """
     fin = open(tensorFile, 'r')
-    line=fin.read()
+    line = fin.read()
     fin.close()
     patternStart = re.compile(r"""
         .                        # Whatever except next line
@@ -405,7 +417,7 @@ def extractTensorPattern(tensorFile):
         [0-9]+                   # match 0-9
         ((\ )|(\n))+?            # match space or next line
         \(                       # match (
-    """,re.DOTALL | re.VERBOSE)
+    """, re.DOTALL | re.VERBOSE)
     resStart = patternStart.search(line)
 
     patternEnd = re.compile(r"""
@@ -416,9 +428,10 @@ def extractTensorPattern(tensorFile):
         \{                       # match {
         .+                       # match whatever in {}
         \}                       # match }
-    """,re.DOTALL | re.VERBOSE)
+    """, re.DOTALL | re.VERBOSE)
     resEnd = patternEnd.search(line)
     return resStart, resEnd
+
 
 def _extractLocPattern(locFile):
     """ Function is using regular expression select OpenFOAM Location files pattern
@@ -431,23 +444,24 @@ def _extractLocPattern(locFile):
     resEnd:  Lower Pattern
     """
     fin = open(locFile, 'r')
-    line=fin.read()
+    line = fin.read()
     fin.close()
     patternStart = re.compile(r"""
         .                        # Whatever except next line
         +?                       # Match 1 or more of preceding-Non-greedy
         \(                       # match (
-    """,re.DOTALL | re.VERBOSE)
+    """, re.DOTALL | re.VERBOSE)
     resStart = patternStart.search(line)
 
     patternEnd = re.compile(r"""
         \)                       # match )
         ((\ )|;|(\n))+          # match space or nextline or ;
         ((\ )|;|(\n))+          # match space or nextline or ;
-    """,re.DOTALL | re.VERBOSE)
+    """, re.DOTALL | re.VERBOSE)
     resEnd = patternEnd.search(line)
-    #pdb.set_trace()
+    # pdb.set_trace()
     return resStart, resEnd
+
 
 def writeLocToFile(coords, locFile):
     """Write the coords to the locFile
@@ -462,21 +476,22 @@ def writeLocToFile(coords, locFile):
     # add parentheses to tensor
     tempFile = 'loctemp'
     np.savetxt(tempFile, coords)
-    os.system("sed -i -e 's/^/(/g' "+tempFile)
-    os.system("sed -i -e 's/\($\)/)/g' "+tempFile)
+    os.system("sed -i -e 's/^/(/g' " + tempFile)
+    os.system(r"sed -i -e 's/\($\)/)/g' " + tempFile)
     # read tensor out
     fin = open(tempFile, 'r')
-    field=fin.read()
+    field = fin.read()
     fin.close()
     # read patterns
     (resStart, resEnd) = _extractLocPattern(locFile)
-    #pdb.set_trace()
-    fout=open(locFile, 'w');
+    # pdb.set_trace()
+    fout = open(locFile, 'w')
     fout.write(resStart.group())
     fout.write("\n")
     fout.write(field)
     fout.write(resEnd.group())
-    fout.close();
+    fout.close()
+
 
 def writeTurbStressToFile(tau, tauFile):
     """Write the modified tau to the tauFile
@@ -490,25 +505,26 @@ def writeTurbStressToFile(tau, tauFile):
     """
     # add parentheses to tensor
     tempFile = 'tauUpdate'
-    np.savetxt(tempFile,tau)
-    os.system("sed -i -e 's/^/(/g' "+tempFile)
-    os.system("sed -i -e 's/\($\)/)/g' "+tempFile)
+    np.savetxt(tempFile, tau)
+    os.system("sed -i -e 's/^/(/g' " + tempFile)
+    os.system(r"sed -i -e 's/\($\)/)/g' " + tempFile)
 
     # read tensor out
     fin = open(tempFile, 'r')
-    field=fin.read()
+    field = fin.read()
     fin.close()
     # read patterns
     (resStartTau, resEndTau) = extractTensorPattern(tauFile)
 
-    if(unitTest == True):
+    if(unitTest):
         tauFile = "./Tau"
-    fout=open(tauFile, 'w');
+    fout = open(tauFile, 'w')
     fout.write(resStartTau.group())
     fout.write("\n")
     fout.write(field)
     fout.write(resEndTau.group())
-    fout.close();
+    fout.close()
+
 
 def writeVelocityToFile(U, UFile):
     """Write the modified tau to the tauFile
@@ -522,23 +538,24 @@ def writeVelocityToFile(U, UFile):
     """
     # add parentheses to tensor
     tempFile = 'Utemp'
-    np.savetxt(tempFile,U)
-    os.system("sed -i -e 's/^/(/g' "+tempFile)
-    os.system("sed -i -e 's/\($\)/)/g' "+tempFile)
+    np.savetxt(tempFile, U)
+    os.system("sed -i -e 's/^/(/g' " + tempFile)
+    os.system(r"sed -i -e 's/\($\)/)/g' " + tempFile)
 
     # read tensor out
     fin = open(tempFile, 'r')
-    field=fin.read()
+    field = fin.read()
     fin.close()
     # read patterns
     (resStartU, resEndU) = extractTensorPattern(UFile)
 
-    fout=open(UFile, 'w');
+    fout = open(UFile, 'w')
     fout.write(resStartU.group())
     fout.write("\n")
     fout.write(field)
     fout.write(resEndU.group())
-    fout.close();
+    fout.close()
+
 
 def writeScalarToFile(Scalar, ScalarFile):
     """Write the modified scalar to the scalar the OpenFOAM file
@@ -556,20 +573,21 @@ def writeScalarToFile(Scalar, ScalarFile):
     (resStartk, resEndk) = extractTensorPattern(ScalarFile)
 
     tempFile = 'scalarTemp'
-    np.savetxt('scalarTemp',Scalar)
+    np.savetxt('scalarTemp', Scalar)
 
     # read scalar field
     fin = open(tempFile, 'r')
-    field=fin.read()
+    field = fin.read()
     fin.close()
-    #revise k
+    # revise k
 
-    fout=open(ScalarFile, 'w');
+    fout = open(ScalarFile, 'w')
     fout.write(resStartk.group())
     fout.write("\n")
     fout.write(field)
     fout.write(resEndk.group())
-    fout.close();
+    fout.close()
+
 
 def genFolders(Npara, Ns, caseName, caseNameObservation, DAInterval, Tau):
     """ Function:to generate case folders
@@ -585,10 +603,10 @@ def genFolders(Npara, Ns, caseName, caseNameObservation, DAInterval, Tau):
     None
     """
     # remove previous ensemble case files
-    os.system('rm -fr '+caseName+'-tmp_*');
-    os.system('rm -fr '+caseName+'_benchMark');
-    #pdb.set_trace()
-    writeInterval = "%.6f"%DAInterval
+    os.system('rm -fr ' + caseName + '-tmp_*')
+    os.system('rm -fr ' + caseName + '_benchMark')
+    # pdb.set_trace()
+    writeInterval = "%.6f" % DAInterval
     ii = 0
     caseCount = np.linspace(1, Ns, Ns)
     for case in caseCount:
@@ -597,9 +615,9 @@ def genFolders(Npara, Ns, caseName, caseNameObservation, DAInterval, Tau):
 
         tmpCaseName = caseName + "-tmp_" + str(case)
 
-        if(ospt.isdir(tmpCaseName)): #see if tmpCaseName's'directory is existed
+        if(ospt.isdir(tmpCaseName)):  # see if tmpCaseName's'directory is existed
             shutil.rmtree(tmpCaseName)
-        shutil.copytree(caseName, tmpCaseName) # copy
+        shutil.copytree(caseName, tmpCaseName)  # copy
 
         # Replace Tau ensemble for cases ensemble
         tauTemp = Tau[ii, :, :]
@@ -608,21 +626,25 @@ def genFolders(Npara, Ns, caseName, caseNameObservation, DAInterval, Tau):
 
         # Replace case writeInterval
         rasFile = ospt.join(os.getcwd(), tmpCaseName, "system", "controlDict")
-        Tool.replace(rasFile, "<writeInterval>", writeInterval);
+        Tool.replace(rasFile, "<writeInterval>", writeInterval)
 
         ii += 1
 
-    #generate observation folder
+    # generate observation folder
     if(ospt.isdir(caseNameObservation)):
         shutil.rmtree(caseNameObservation)
-    #pdb.set_trace()
-    shutil.copytree(caseName, caseNameObservation) # copy
+    # pdb.set_trace()
+    shutil.copytree(caseName, caseNameObservation)  # copy
     # prepare case directory
-    rasFile = ospt.join(os.getcwd(), caseNameObservation, "system", "controlDict")
-    Tool.replace(rasFile, "<writeInterval>", writeInterval);
+    rasFile = ospt.join(
+        os.getcwd(),
+        caseNameObservation,
+        "system",
+        "controlDict")
+    Tool.replace(rasFile, "<writeInterval>", writeInterval)
+
 
 def callFoam(ensembleCaseName, caseSolver, pseudoObs, parallel=False):
-
     """ Function is to call myPisoFoam and sampling (solved to next DAInterval)
 
     Args:
@@ -632,13 +654,13 @@ def callFoam(ensembleCaseName, caseSolver, pseudoObs, parallel=False):
     None
     """
     if(parallel):
-        #run pisoFoam (or other OpenFOAM solver as appropriate)
+        # run pisoFoam (or other OpenFOAM solver as appropriate)
         os.system('mpirun -np 4 pisoFoam -case ' + ensembleCaseName +
-                  ' -parallel > '+ ensembleCaseName + '/log')
+                  ' -parallel > ' + ensembleCaseName + '/log')
         # extract value at observation location by "sample"_pseudo matrix H)
         os.system('mpirun -np 4 sample -case ' + ensembleCaseName +
                   ' -latestTime -parallel > ' + ensembleCaseName + '/log')
-    else: # same as above, but for single processor runs
+    else:  # same as above, but for single processor runs
         os.system(caseSolver + ' -case ' + ensembleCaseName + ' &>>' +
                   ensembleCaseName + '/log')
         os.system('sample -case ' + ensembleCaseName + ' -latestTime > ' +
@@ -648,9 +670,9 @@ def callFoam(ensembleCaseName, caseSolver, pseudoObs, parallel=False):
 
         # extract value at observation location
         if pseudoObs == 1:
-            os.system('sample -case ' + ensembleCaseName + ' -time 0 >> '+
-                    ensembleCaseName + '/log')
-            os.system('sample -case ' + ensembleCaseName + ' -latestTime >> '+
-                    ensembleCaseName + '/log')
+            os.system('sample -case ' + ensembleCaseName + ' -time 0 >> ' +
+                      ensembleCaseName + '/log')
+            os.system('sample -case ' + ensembleCaseName + ' -latestTime >> ' +
+                      ensembleCaseName + '/log')
         else:
             pass

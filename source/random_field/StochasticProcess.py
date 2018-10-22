@@ -7,9 +7,9 @@
 # date               :Oct.27, 2015
 # revision           :Nov.01, 2015
 
-####################################################################################################
+##########################################################################
 
-## Import system modules
+# Import system modules
 # sci computing
 import numpy as np
 import scipy.sparse as sp
@@ -17,10 +17,11 @@ import scipy.sparse as sp
 import time
 import pdb
 # plotting
-#import seaborn as sns  # for statistical plotting
+# import seaborn as sns  # for statistical plotting
 import matplotlib.pyplot as plt  # for plotting
 
-## Import local modules
+# Import local modules
+
 
 class GaussianProcess:
     """Construct a Gaussian process.
@@ -31,15 +32,16 @@ class GaussianProcess:
 
     Args:
         xState          :xState = (x1; x2; ..., xn), [n by d]
-                         xi is d dimension 
-                         e.g. xi = (x, y, z). (xState is spatial coordinate)        
+                         xi is d dimension
+                         e.g. xi = (x, y, z). (xState is spatial coordinate)
 
     """
-    
+
     def __init__(self, xState):
         print "Generate a Gaussian Random Field (Gaussian Process)"
         self.xState = xState    # matrix of states
-        [self.n, self.d] = xState.shape # number of state and dimension of state
+        # number of state and dimension of state
+        [self.n, self.d] = xState.shape
         if self.d == int(3):
             print "Now we are working on a 3D spatial problem"
         elif self.d == int(2):
@@ -49,7 +51,7 @@ class GaussianProcess:
         else:
             print "Error: we can only handle 1D, 2D and 3D problems, please check xState is n by (1, 2, or 3)"
             exit(1)
-        
+
     def covGen(self, Arg_covGen):
         """generate covariance matrix for xState.
 
@@ -70,33 +72,33 @@ class GaussianProcess:
         return:
             cov_sparse          : sparse covariance matrix (after truncation)
             cov_sparseWeighted  : sparse covariance matrix (after truncation)
-        
+
         """
         # TODO the parsing argument below need to be move to KLReducedModel class
         # parse the arguments
         # if not Arg_covGen.has_key('nonstationarySigmaFlag'):
-            # nonstationarySigmaFlag = False
-            # print 'warning: no defined nonstationarySigmaFlag, default is stationary: constant sigma'
+        # nonstationarySigmaFlag = False
+        # print 'warning: no defined nonstationarySigmaFlag, default is stationary: constant sigma'
         # else:
-            # nonstationarySigmaFlag = Arg_covGen['nonstationarySigmaFlag']
-            # assert type(nonstationarySigmaFlag).__name__ == 'bool', \
-            # "nonstationarySigmaFlag should be True or False only!"        
-           # 
+        # nonstationarySigmaFlag = Arg_covGen['nonstationarySigmaFlag']
+        # assert type(nonstationarySigmaFlag).__name__ == 'bool', \
+        # "nonstationarySigmaFlag should be True or False only!"
+        #
         # if not Arg_covGen.has_key('nonstationaryLenFlag'):
-            # nonstationaryLenFlag = False
-            # print 'warning: no defined nonstationaryLenFlag, default is stationary: constant lenth scale'
+        # nonstationaryLenFlag = False
+        # print 'warning: no defined nonstationaryLenFlag, default is stationary: constant lenth scale'
         # else:
-            # nonstationaryLenFlag = Arg_covGen['nonstationaryLenFlag']
-            # assert type(nonstationaryLenFlag).__name__ == 'bool', \
-            # "nonstationaryLenFlag should be True or False only!"
-        if not 'kernelType' in Arg_covGen:
+        # nonstationaryLenFlag = Arg_covGen['nonstationaryLenFlag']
+        # assert type(nonstationaryLenFlag).__name__ == 'bool', \
+        # "nonstationaryLenFlag should be True or False only!"
+        if 'kernelType' not in Arg_covGen:
             kernelType = 'SqExp'
-            
+
         kernelType = Arg_covGen['kernelType']
-        ## parse the arguments
-        if kernelType=='SqExp':
+        # parse the arguments
+        if kernelType == 'SqExp':
             # x- length scale array
-            if not Arg_covGen.has_key('lenXField'):
+            if 'lenXField' not in Arg_covGen:
                 print 'Error: You must give me x- length scale Field array'
                 exit(1)
             else:
@@ -104,7 +106,7 @@ class GaussianProcess:
                 lenXField = np.array([lenXField])
             # y- length scale array
             if self.d == 2 or self.d == 3:
-                if not Arg_covGen.has_key('lenYField'):
+                if 'lenYField' not in Arg_covGen:
                     print 'Error: You must give me y- length scale Field array'
                     exit(1)
                 else:
@@ -112,13 +114,13 @@ class GaussianProcess:
                     lenYField = np.array([lenYField])
             # z- length scale array
             if self.d == 3:
-                if not Arg_covGen.has_key('lenZField'):
+                if 'lenZField' not in Arg_covGen:
                     print 'Error: You must give me z- length scale Field array'
                     exit(1)
                 else:
                     lenZField = Arg_covGen['lenZField']
                     lenZField = np.array([lenZField])
-        elif kernelType=='givenStructure':
+        elif kernelType == 'givenStructure':
             CovStruct = Arg_covGen['CovStruct']
         else:
             print "This kernel type is not supported currently!"
@@ -126,18 +128,18 @@ class GaussianProcess:
 
         # sigmaField array
         print "start to generate a Gaussian covariance matrix (cov and weighted cov)"
-        if not Arg_covGen.has_key('sigmaField'):
+        if 'sigmaField' not in Arg_covGen:
             print 'Use unit variance for sigma field'
-            if Arg_covGen.has_key('lenXField'):
+            if 'lenXField' in Arg_covGen:
                 sigmaField = np.ones(lenXField.shape)
-            elif kernelType=='givenStructure':
+            elif kernelType == 'givenStructure':
                 sigmaField = np.ones((1, CovStruct.shape[0]))
         else:
             sigmaField = Arg_covGen['sigmaField']
             sigmaField = np.array([sigmaField])
-        
+
         # weight array
-        if not Arg_covGen.has_key('weightField'):
+        if 'weightField' not in Arg_covGen:
             print 'Error: You must give me weight Field array'
             exit(1)
         else:
@@ -145,30 +147,36 @@ class GaussianProcess:
             weightField = np.array([weightField])
 
         # torelance for truncating the covariance matrix to be sparse
-        if not Arg_covGen.has_key('truncateTol'):
+        if 'truncateTol' not in Arg_covGen:
             truncateTol = -np.log(1e-3)
             print 'warning: no defined truncateTol for truncating covariance, default tolerance =', truncateTol
         else:
-            truncateTol = Arg_covGen['truncateTol']                               
+            truncateTol = Arg_covGen['truncateTol']
 
         # sigma[i, j] matrix
-        SIGMA = np.dot(sigmaField.T, sigmaField); SIGMA = np.sqrt(SIGMA)
+        SIGMA = np.dot(sigmaField.T, sigmaField)
+        SIGMA = np.sqrt(SIGMA)
         # weight matrix
-        W = np.dot(weightField.T, weightField); W = np.sqrt(W)
+        W = np.dot(weightField.T, weightField)
+        W = np.sqrt(W)
 
-        if kernelType=='SqExp':
-            LenX = np.dot(lenXField.T, lenXField); LenX = np.sqrt(LenX)
+        if kernelType == 'SqExp':
+            LenX = np.dot(lenXField.T, lenXField)
+            LenX = np.sqrt(LenX)
             LenY = None
             LenZ = None
             if self.d >= 2:
-                LenY = np.dot(lenYField.T, lenYField); LenY = np.sqrt(LenY)
+                LenY = np.dot(lenYField.T, lenYField)
+                LenY = np.sqrt(LenY)
             if self.d >= 3:
-                LenZ = np.dot(lenZField.T, lenZField); LenZ = np.sqrt(LenZ)
+                LenZ = np.dot(lenZField.T, lenZField)
+                LenZ = np.sqrt(LenZ)
             args = (LenX, LenY, LenZ)
-        elif kernelType=='givenStructure':
+        elif kernelType == 'givenStructure':
             args = (CovStruct,)
 
-        [cov_sparse, covWeighted_sparse] = self._kernel(kernelType, args, SIGMA, W, truncateTol)
+        [cov_sparse, covWeighted_sparse] = self._kernel(
+            kernelType, args, SIGMA, W, truncateTol)
         return cov_sparse, covWeighted_sparse
 
     def _kernel(self, kernelType, args, SIGMA, W=None, truncateTol=6.9):
@@ -185,14 +193,14 @@ class GaussianProcess:
             LenX             : LenX[i, j] = (lenXField[i] * lenXField[j])^0.5
             LenY             : LenY[i, j] = (lenYField[i] * lenYField[j])^0.5
             LenZ             : LenZ[i, j] = (lenZField[i] * lenZField[j])^0.5
-            Corr             : Correlation matrix 
+            Corr             : Correlation matrix
 
 
         return:
             cov_sparse          : covariance (sparse matrix)
             covWeighted_sparse  : weighted covariance (sparse matrix)
         """
-        if kernelType=='SqExp':
+        if kernelType == 'SqExp':
             LenX = args[0]
             LenY = args[1]
             LenZ = args[2]
@@ -201,34 +209,34 @@ class GaussianProcess:
             # 1-D
             if self.d == 1:
                 [X, XPrime] = np.meshgrid(self.xState[:, 0], self.xState[:, 0])
-                mLcov =  (X - XPrime)**alpha / (LenX**alpha)
+                mLcov = (X - XPrime)**alpha / (LenX**alpha)
             # 2-D
-            elif self.d ==2:
+            elif self.d == 2:
                 [X, XPrime] = np.meshgrid(self.xState[:, 0], self.xState[:, 0])
                 [Y, YPrime] = np.meshgrid(self.xState[:, 1], self.xState[:, 1])
-                mLcov =  (X - XPrime)**alpha / (LenX**alpha) + \
-                         (Y - YPrime)**alpha / (LenY**alpha)
+                mLcov = (X - XPrime)**alpha / (LenX**alpha) + \
+                    (Y - YPrime)**alpha / (LenY**alpha)
             # 3-D
             elif self.d == 3:
                 [X, XPrime] = np.meshgrid(self.xState[:, 0], self.xState[:, 0])
                 [Y, YPrime] = np.meshgrid(self.xState[:, 1], self.xState[:, 1])
                 [Z, ZPrime] = np.meshgrid(self.xState[:, 2], self.xState[:, 2])
-                mLcov =  (X - XPrime)**alpha / (LenX**alpha) + \
-                         (Y - YPrime)**alpha / (LenY**alpha) + \
-                         (Z - ZPrime)**alpha / (LenZ**alpha)
+                mLcov = (X - XPrime)**alpha / (LenX**alpha) + \
+                    (Y - YPrime)**alpha / (LenY**alpha) + \
+                    (Z - ZPrime)**alpha / (LenZ**alpha)
             else:
                 print "Error: we can only handle 1D, 2D and 3D problems, please check xState is n by (1, 2, or 3)"
                 exit(1)
             CovStruct = np.exp(-mLcov)
             indicatorM = mLcov < truncateTol
-        elif kernelType=='givenStructure':
+        elif kernelType == 'givenStructure':
             CovStruct = args[0]
             indicatorM = CovStruct > np.exp(-truncateTol)
 
         # For validation purpose
-        #np.savetxt('./CovStruct.dat',CovStruct)
-        #np.savetxt('./indicatorM.dat',indicatorM)
-        
+        # np.savetxt('./CovStruct.dat',CovStruct)
+        # np.savetxt('./indicatorM.dat',indicatorM)
+
         # logical matrix
         indicatorM = indicatorM.astype(float)
         # truncate the covariance
@@ -242,10 +250,12 @@ class GaussianProcess:
         covWeighted_sparse = sp.coo_matrix(covWeighted)
         return cov_sparse, covWeighted_sparse
 
+
 if __name__ == '__main__':
     # Read test data
-    testDir = './verificationData/klExpansion/cavity16/' # directory where the test data stored
-    
+    # directory where the test data stored
+    testDir = './verificationData/klExpansion/cavity16/'
+
     xState = np.loadtxt(testDir + 'cellCenter3D.dat')
     sigmaField = np.loadtxt(testDir + 'cellSigma3D.dat')
     lenXField = np.ones(sigmaField.shape)
@@ -253,15 +263,13 @@ if __name__ == '__main__':
     lenZField = np.ones(sigmaField.shape)
     weightField = np.loadtxt(testDir + 'cellArea3D.dat')
     Arg_covGen = {
-                    'sigmaField': sigmaField,
-                    'lenXField': lenXField,
-                    'lenYField': lenYField,
-                    'lenZField': lenZField,
-                    'weightField':weightField
-                 }
-                 
-    gp = GaussianProcess(xState) # initial a instance of GaussianProcess class
+        'sigmaField': sigmaField,
+        'lenXField': lenXField,
+        'lenYField': lenYField,
+        'lenZField': lenZField,
+        'weightField': weightField
+    }
+
+    gp = GaussianProcess(xState)  # initial a instance of GaussianProcess class
     [cov_sparse, covWeighted_sparse] = gp.covGen(Arg_covGen)
-    pdb.set_trace()    
-    
-            
+    pdb.set_trace()
