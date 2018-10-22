@@ -215,6 +215,13 @@ class DAFilter2(DAFilter):
         self._sigma_hx_norm = []
         self._sigma_obs_norm = []
 
+        # for storage and saving: these grow each iteration
+        self.state_vec_analysis_all = []
+        self.state_vec_forecast_all = []
+        self.obs_all = []
+        self.model_obs_all = []
+        self.obs_error_all = []
+
     def __str__(self):
         str_info = self.name + \
             '\n   Number of samples: {}'.format(self.nsamples) + \
@@ -240,6 +247,8 @@ class DAFilter2(DAFilter):
             * self.model_obs
             * self.obs
             * self.obs_error
+            * self.state_vec_analysis_all
+            * self.state_vec_forecast_all
         """
         # Generate initial state Ensemble
         self.state_vec_analysis, self.model_obs = \
@@ -269,10 +278,12 @@ class DAFilter2(DAFilter):
             # data assimilation
             self._correct_forecasts()
             self._calc_misfits()
-            debug_dict = {
-                'Xf': self.state_vec_forecast, 'Xa': self.state_vec_analysis,
-                'HX': self.model_obs, 'obs': self.obs, 'R': self.obs_error}
-            self._save_debug(debug_dict)
+            # save results
+            self.obs_all.append(self.obs.copy())
+            self.model_obs_all.append(self.model_obs.copy())
+            self.obs_error_all.append(self.obs_error.copy())
+            self.state_vec_analysis_all.append(self.state_vec_analysis.copy())
+            self.state_vec_forecast_all.append(self.state_vec_forecast.copy())
             # check convergence and report
             if self._verb >= 2:
                 print(self._report())
@@ -339,14 +350,26 @@ class DAFilter2(DAFilter):
         """ Saves results to text files. """
         self._create_folder(self._save_folder)
         np.savetxt(self._save_folder + os.sep + 'misfit_norm', np.array(
-            self._misfit_x_norm))
+            self._misfit_norm))
         np.savetxt(self._save_folder + os.sep + 'sigma_HX', np.array(
             self._sigma_hx_norm))
-        np.savetxt(self._save_folder + os.sep + '_sigma_obs', np.array(
+        np.savetxt(self._save_folder + os.sep + 'sigma_obs', np.array(
             self._sigma_obs_norm))
-        header = 'da_step: {}, time: {}'.format(self.da_step, self.time)
-        np.savetxt(self._save_folder + os.sep + 'X', np.array(
-            self.state_vec_analysis), header=header)
+        for da_step, value in enumerate(self.state_vec_analysis_all):
+            np.savetxt(self._save_folder + os.sep + 'Xa_{}'.format(da_step+1),
+                       value)
+        for da_step, value in enumerate(self.state_vec_forecast_all):
+            np.savetxt(self._save_folder + os.sep + 'Xf_{}'.format(da_step+1),
+                       value)
+        for da_step, value in enumerate(self.obs_all):
+            np.savetxt(self._save_folder + os.sep + 'obs_{}'.format(da_step+1),
+                       value)
+        for da_step, value in enumerate(self.model_obs_all):
+            np.savetxt(self._save_folder + os.sep + 'HX_{}'.format(da_step+1),
+                       value)
+        for da_step, value in enumerate(self.obs_error_all):
+            np.savetxt(self._save_folder + os.sep + 'R_{}'.format(da_step+1),
+                       value)
         try:
             self.dyn_model.save()
         except:

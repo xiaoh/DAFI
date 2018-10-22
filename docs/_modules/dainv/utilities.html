@@ -78,6 +78,8 @@
             
               <p class="caption"><span class="caption-text">Contents:</span></p>
 <ul>
+<li class="toctree-l1"><a class="reference internal" href="../../theory.html">Theory</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../tutorial_lorenz.html">Tutorial: Lorenz63</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../source_code.html">Source Code</a></li>
 </ul>
 
@@ -152,7 +154,8 @@
 <span class="kn">import</span> <span class="nn">shutil</span>
 <span class="kn">import</span> <span class="nn">sys</span>
 
-<div class="viewcode-block" id="replace"><a class="viewcode-back" href="../../dainv_utilities.html#dainv.utilities.replace">[docs]</a><span class="k">def</span> <span class="nf">replace</span><span class="p">(</span><span class="n">file</span><span class="p">,</span> <span class="n">pattern</span><span class="p">,</span> <span class="n">subst</span><span class="p">):</span>
+
+<div class="viewcode-block" id="replace"><a class="viewcode-back" href="../../dainv_utilities.html#dainv.utilities.replace">[docs]</a><span class="k">def</span> <span class="nf">replace</span><span class="p">(</span><span class="n">filename</span><span class="p">,</span> <span class="n">pattern</span><span class="p">,</span> <span class="n">subst</span><span class="p">):</span>
     <span class="sd">&quot;&quot;&quot; Replace all instances of a pattern in a file with a new pattern.</span>
 
 <span class="sd">    Parameters</span>
@@ -164,20 +167,21 @@
 <span class="sd">    subst : str</span>
 <span class="sd">        The new character string.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
-    <span class="c1">#Create temp file</span>
+    <span class="c1"># create temp file</span>
     <span class="n">fh</span><span class="p">,</span> <span class="n">abs_path</span> <span class="o">=</span> <span class="n">tempfile</span><span class="o">.</span><span class="n">mkstemp</span><span class="p">()</span>
-    <span class="n">new_file</span> <span class="o">=</span> <span class="nb">open</span><span class="p">(</span><span class="n">abs_path</span><span class="p">,</span><span class="s1">&#39;w&#39;</span><span class="p">)</span>
-    <span class="n">old_file</span> <span class="o">=</span> <span class="nb">open</span><span class="p">(</span><span class="n">file</span><span class="p">)</span>
+    <span class="n">new_file</span> <span class="o">=</span> <span class="nb">open</span><span class="p">(</span><span class="n">abs_path</span><span class="p">,</span> <span class="s1">&#39;w&#39;</span><span class="p">)</span>
+    <span class="n">old_file</span> <span class="o">=</span> <span class="nb">open</span><span class="p">(</span><span class="n">filename</span><span class="p">)</span>
     <span class="k">for</span> <span class="n">line</span> <span class="ow">in</span> <span class="n">old_file</span><span class="p">:</span>
         <span class="n">new_file</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="n">line</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="n">pattern</span><span class="p">,</span> <span class="n">subst</span><span class="p">))</span>
-    <span class="c1">#close temp file</span>
+    <span class="c1"># close temp file</span>
     <span class="n">new_file</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
     <span class="n">os</span><span class="o">.</span><span class="n">close</span><span class="p">(</span><span class="n">fh</span><span class="p">)</span>
     <span class="n">old_file</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
-    <span class="c1">#Remove original file</span>
-    <span class="n">os</span><span class="o">.</span><span class="n">remove</span><span class="p">(</span><span class="n">file</span><span class="p">)</span>
-    <span class="c1">#Move new file</span>
-    <span class="n">shutil</span><span class="o">.</span><span class="n">move</span><span class="p">(</span><span class="n">abs_path</span><span class="p">,</span> <span class="n">file</span><span class="p">)</span></div>
+    <span class="c1"># remove original file</span>
+    <span class="n">os</span><span class="o">.</span><span class="n">remove</span><span class="p">(</span><span class="n">filename</span><span class="p">)</span>
+    <span class="c1"># move new file</span>
+    <span class="n">shutil</span><span class="o">.</span><span class="n">move</span><span class="p">(</span><span class="n">abs_path</span><span class="p">,</span> <span class="n">filename</span><span class="p">)</span></div>
+
 
 <div class="viewcode-block" id="read_input_data"><a class="viewcode-back" href="../../dainv_utilities.html#dainv.utilities.read_input_data">[docs]</a><span class="k">def</span> <span class="nf">read_input_data</span><span class="p">(</span><span class="n">input_file</span><span class="p">):</span>
     <span class="sd">&quot;&quot;&quot;Parse an input file into a dictionary.</span>
@@ -207,18 +211,19 @@
         <span class="n">sys</span><span class="o">.</span><span class="n">exit</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
     <span class="k">else</span><span class="p">:</span>
         <span class="k">for</span> <span class="n">line</span> <span class="ow">in</span> <span class="n">file</span><span class="p">:</span>
-            <span class="n">line</span> <span class="o">=</span> <span class="n">line</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s1">&#39;#&#39;</span><span class="p">,</span><span class="mi">1</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span>
+            <span class="n">line</span> <span class="o">=</span> <span class="n">line</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s1">&#39;#&#39;</span><span class="p">,</span> <span class="mi">1</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span>
             <span class="n">line</span> <span class="o">=</span> <span class="n">line</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span>
             <span class="c1"># ignore empty or comment lines</span>
             <span class="k">if</span> <span class="ow">not</span> <span class="n">line</span><span class="p">:</span>
                 <span class="k">continue</span>
             <span class="c1"># allow &quot;:&quot; and &quot;=&quot; in input file</span>
-            <span class="n">line</span> <span class="o">=</span> <span class="n">line</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s1">&#39;:&#39;</span><span class="p">,</span><span class="s1">&#39; &#39;</span><span class="p">)</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s1">&#39;=&#39;</span><span class="p">,</span><span class="s1">&#39; &#39;</span><span class="p">)</span>
+            <span class="n">line</span> <span class="o">=</span> <span class="n">line</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s1">&#39;:&#39;</span><span class="p">,</span> <span class="s1">&#39; &#39;</span><span class="p">)</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s1">&#39;=&#39;</span><span class="p">,</span> <span class="s1">&#39; &#39;</span><span class="p">)</span>
             <span class="c1"># parse into dictionary</span>
-            <span class="n">param</span><span class="p">,</span> <span class="n">value</span> <span class="o">=</span> <span class="n">line</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="kc">None</span><span class="p">,</span><span class="mi">1</span><span class="p">)</span>
+            <span class="n">param</span><span class="p">,</span> <span class="n">value</span> <span class="o">=</span> <span class="n">line</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="kc">None</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
             <span class="n">param_dict</span><span class="p">[</span><span class="n">param</span><span class="p">]</span> <span class="o">=</span> <span class="n">value</span>
         <span class="n">file</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
     <span class="k">return</span> <span class="n">param_dict</span></div>
+
 
 <div class="viewcode-block" id="extract_list_from_string"><a class="viewcode-back" href="../../dainv_utilities.html#dainv.utilities.extract_list_from_string">[docs]</a><span class="k">def</span> <span class="nf">extract_list_from_string</span><span class="p">(</span><span class="n">string</span><span class="p">,</span> <span class="n">sep</span><span class="o">=</span><span class="s1">&#39;,&#39;</span><span class="p">,</span> <span class="n">type_func</span><span class="o">=</span><span class="nb">str</span><span class="p">):</span>
     <span class="sd">&quot;&quot;&quot; Extract a list from a string.</span>

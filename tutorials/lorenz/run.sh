@@ -2,7 +2,7 @@
 
 START=$(date +%s.%N)
 
-vt_dainv.py main_input.in &> log.enkf
+vt_dainv.py dainv.in &> log.dainv
 
 END=$(date +%s.%N)
 DIFF=$(echo "$END - $START" | bc)

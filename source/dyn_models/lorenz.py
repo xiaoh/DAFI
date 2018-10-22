@@ -1,13 +1,5 @@
 # Copyright 2018 Virginia Polytechnic Institute and State University.
-"""
-
-This module is dynamic model for solving the Lorenz attractor
-
-It  consist of 3 functions:
-    1 generateEnsemble: generate ensemble
-    2 forcastToTime: evolve ensemble to next time using forward model
-    3 observe: Get observations and observation error covariance
-
+""" Dynamic model for solving the Lorenz system.
 """
 
 # standard library imports
@@ -26,16 +18,56 @@ from dainv.utilities import read_input_data
 
 
 class Solver(DynModel):
-    """
-        Dynamic forward model: Lorenz 63
-        The state variable include: x, y, z
-        The parameters need to be augmented: coefficients for rho, beta, sigma
-        The Observation include: x, y, z
+    """ Dynamic model for solving the Lorenz system.
+
+    The state vector includes the time-dependent positions (x, y, z) and the
+    three constant coefficients (rho, beta, sigma). The observations consist
+    of the position at the given time (x, y, z).
     """
 
     def __init__(self, nsamples, da_interval, t_end,  model_input):
-        """
-            Initialization
+        """ Initialize the dynamic model and parse input file.
+
+        Parameters
+        ----------
+        nsamples : int
+            Ensemble size.
+        da_interval : float
+            Time interval between data assimilation steps.
+        t_end : float
+            Final time.
+        input_file : str
+            Input file name.
+
+        Note
+        ----
+        Inputs in ``model_input``:
+            * **dt_interval** (``str``) -
+              Time step for the dynamic model.
+            * **x** (``float``) -
+              True initial x-position.
+            * **y** (``float``) -
+              True initial y-position.
+            * **z** (``float``) -
+              True initial z-position.
+            * **rho** (``float``) -
+              True value of parameter rho.
+            * **beta** (``float``) -
+              True value of parameter beta.
+            * **sigma** (``float``) -
+              True value of parameter sigma.
+            * **x_rel_std** (``float``) -
+              Relative standard deviation of x, y, z, rho, beta, sigma.
+              E.g. std(rho) = rho * x_rel_std
+            * **obs_rel_std** (``float``) -
+              Relative standard deviation of observation. See x_rel_std for
+              details.
+            * **perturb_rho** (``bool``) -
+              Whether to infer the value of rho.
+            * **perturb_beta** (``bool``) -
+              Whether to infer the value of beta.
+            * **perturb_sigma** (``bool``) -
+              Whether to infer the value of sigma.
         """
         self.name = 'Lorenz63'
         # number of samples in the ensemble
@@ -45,27 +77,25 @@ class Solver(DynModel):
         # End time
         self.t_end = t_end
         # Extract forward Model Input parameters
-        paramDict = read_input_data(model_input)
-        # case folder name
-        self.caseName = paramDict['caseName']
+        param_dict = read_input_data(model_input)
         # forward time inverval
-        self.dt_interval = float(paramDict['dt_interval'])
+        self.dt_interval = float(param_dict['dt_interval'])
         # initial state varibles: x, y, z
-        self.x = float(paramDict['x'])
-        self.y = float(paramDict['y'])
-        self.z = float(paramDict['z'])
+        self.x = float(param_dict['x'])
+        self.y = float(param_dict['y'])
+        self.z = float(param_dict['z'])
         # initial parameters: rho, beta, sigma
-        self.rho = float(paramDict['rho'])
-        self.beta = float(paramDict['beta'])
-        self.sigma = float(paramDict['sigma'])
+        self.rho = float(param_dict['rho'])
+        self.beta = float(param_dict['beta'])
+        self.sigma = float(param_dict['sigma'])
         # relative standard deviation of observation
-        self.obs_rel_std = float(paramDict['obs_rel_std'])
+        self.obs_rel_std = float(param_dict['obs_rel_std'])
         # relative standard deviation of x, y, z, rho, beta, sigma
-        self.x_rel_std = float(paramDict['x_rel_std'])
+        self.x_rel_std = float(param_dict['x_rel_std'])
         # switch control which parameters are perturbed
-        self.perturb_rho = ast.literal_eval(paramDict['perturb_rho'])
-        self.perturb_beta = ast.literal_eval(paramDict['perturb_beta'])
-        self.perturb_sigma = ast.literal_eval(paramDict['perturb_sigma'])
+        self.perturb_rho = ast.literal_eval(param_dict['perturb_rho'])
+        self.perturb_beta = ast.literal_eval(param_dict['perturb_beta'])
+        self.perturb_sigma = ast.literal_eval(param_dict['perturb_sigma'])
         # initial  state condition
         self.x_init = [self.x, self.y, self.z]
 
@@ -94,104 +124,108 @@ class Solver(DynModel):
 
         Args:
         -----
-        DAInterval: DA step interval
+        DAInterval : DA step interval
 
         Returns
         -------
-        X: ndarray
-            ensemble of whole states
-        HX: ndarray
-            ensemble of whole states in observation space
+        state_vec : ndarray
+            State variables at current time.
+            ``dtype=float``, ``ndim=2``, ``shape=(nstate, nsamples)``
+        model_obs : ndarray
+            Forecast ensemble in observation space.
+            ``dtype=float``, ``ndim=2``, ``shape=(nstate, nsamples)``
         """
 
-        X = np.zeros([self.nstate, self.nsamples])
-        HX = np.zeros([self.nstate_obs, self.nsamples])
+        state_vec = np.zeros([self.nstate, self.nsamples])
+        model_obs = np.zeros([self.nstate_obs, self.nsamples])
 
-        # generate initial X
-        for iDim in np.arange(self.nstate):
-            dxStd = self.x_rel_std * self.x_init[iDim]
-            X[iDim, :] = self.x_init[iDim] + \
-                np.random.normal(0, dxStd, self.nsamples)
+        # generate initial state_vec
+        for idim in np.arange(self.nstate):
+            dx_std = self.x_rel_std * self.x_init[idim]
+            state_vec[idim, :] = self.x_init[idim] + \
+                np.random.normal(0, dx_std, self.nsamples)
         # operation operator
-        H = self._constructHMatrix()
-        #H = np.array([[1, 0, 0], [0, 1, 0], [0, 0, 1], [0, 0, 0]]).T
-        HX = H.dot(X)
-        return X, HX
+        h_matrix = self._construct_h_matrix()
+        # h_matrix = np.array([[1, 0, 0], [0, 1, 0], [0, 0, 1], [0, 0, 0]]).T
+        model_obs = h_matrix.dot(state_vec)
+        return state_vec, model_obs
 
-    def lorenz63(self, t, x):
-        """
-        Define Lorenz 63 system
+    def lorenz63(self, time, state_vec):
+        """ Define Lorenz 63 system.
 
         Parameters
         ----------
-        t: float
-            current time
-        x: adrray
-            state variables at current time
+        time : float
+           Current time.
+        state_vec : ndarray
+            State variables at current time.
+            ``dtype=float``, ``ndim=2``, ``shape=(nstate, nsamples)``
 
         Returns
         -------
-        dx: differential value for each state varible
+        delta_x : differential value for each state varible
         """
-
+        # TODO: time not used?
         # intial system parameters
         rho = self.rho
         beta = self.beta
         sigma = self.sigma
         # initial differential vector for each state variable
-        dx = np.zeros([self.nstate, 1])
+        delta_x = np.zeros([self.nstate, 1])
         # switch perturbation of each parameter
         if self.nstate == 4:
-            dx[3] = 0
+            delta_x[3] = 0
             if self.perturb_rho:
-                rho = x[3]
+                rho = state_vec[3]
             if self.perturb_beta:
-                beta = x[3]
+                beta = state_vec[3]
             if self.perturb_sigma:
-                sigma = x[3]
+                sigma = state_vec[3]
         if self.nstate == 5:
-            dx[3] = 0
-            dx[4] = 0
+            delta_x[3] = 0
+            delta_x[4] = 0
             if not self.perturb_rho:
-                beta = x[3]
-                sigma = x[4]
+                beta = state_vec[3]
+                sigma = state_vec[4]
             if self.perturb_beta:
-                rho = x[3]
-                sigma = x[4]
+                rho = state_vec[3]
+                sigma = state_vec[4]
             if self.perturb_sigma:
-                rho = x[3]
-                beta = x[4]
+                rho = state_vec[3]
+                beta = state_vec[4]
         if self.nstate == 6:
-            dx[3] = 0
-            dx[4] = 0
-            dx[5] = 0
-            rho = x[3]
-            beta = x[4]
-            sigma = x[5]
+            delta_x[3] = 0
+            delta_x[4] = 0
+            delta_x[5] = 0
+            rho = state_vec[3]
+            beta = state_vec[4]
+            sigma = state_vec[5]
         # ODEs
-        dx[0] = sigma * (-x[0] + x[1])
-        dx[1] = rho * x[0] - x[1] - x[0] * x[2]
-        dx[2] = x[0] * x[1] - beta * x[2]
+        delta_x[0] = sigma * (-state_vec[0] + state_vec[1])
+        delta_x[1] = rho * state_vec[0] - state_vec[1] - \
+            state_vec[0] * state_vec[2]
+        delta_x[2] = state_vec[0] * state_vec[1] - beta * state_vec[2]
+        return delta_x
 
-        return dx
-
-    def forecast_to_time(self, X, next_end_time):
-        """
-        Returns states at the next end time.
+    def forecast_to_time(self, state_vec_current, next_end_time):
+        """ Returns states at the next end time.
 
         Parameters
         ----------
-        X: ndarray
-            current state variables
-        next_end_time: float
-            next end time
+        state_vec_current : ndarray
+            State variables at current time.
+            ``dtype=float``, ``ndim=2``, ``shape=(nstate, nsamples)``
+        next_end_time : float
+            Next end time.
 
         Returns
         -------
-        X: ndarray
-            forwarded ensemble state variables by forward model
-        HX: ndarray
-            ensemble in observation space
+        state_vec_forecast: ndarray
+            Forecast ensemble of state variables by forward model.
+            ``dtype=float``, ``ndim=2``, ``shape=(nstate, nsamples)``
+        model_obs: ndarray
+            Forecast ensemble in observation space.
+            ``dtype=float``, ``ndim=2``, ``shape=(nstate, nsamples)``
         """
         # Set start time
         new_start_time = next_end_time - self.da_interval
@@ -204,68 +238,76 @@ class Solver(DynModel):
         # Ode solver setup
         self.solver = ode(self.lorenz63)
         self.solver.set_integrator('dopri5')
-        Xf = np.zeros(X.shape)
+        state_vec_forecast = np.zeros(state_vec_current.shape)
         # Solve ode for each sample
-        for i in range(self.nsamples):
+        for isamp in range(self.nsamples):
             # Set initial value for ode solver
-            self.solver.set_initial_value(X[:, i], new_start_time)
-            x = np.empty([len(time_series), self.nstate])
+            self.solver.set_initial_value(
+                state_vec_current[:, isamp], new_start_time)
+            forecast_state = np.empty([len(time_series), self.nstate])
             for t in np.arange(len(time_series)):
                 if not self.solver.successful():
                     print "solver failed"
                     sys.exit(1)
                 self.solver.integrate(time_series[t])
-                x[t] = self.solver.y
-            # Save current state in state matrix X
-            Xf[:, i] = x[-1]
+                forecast_state[t] = self.solver.y
+            # Save current state in state matrix state_vec_current
+            state_vec_forecast[:, isamp] = forecast_state[-1]
         # Construct observation operator
-        H = self._constructHMatrix()
-        HX = H.dot(Xf)
-        return Xf, HX
+        h_matrix = self._construct_h_matrix()
+        model_obs = h_matrix.dot(state_vec_forecast)
+        return state_vec_forecast, model_obs
 
     def get_obs(self, next_end_time):
-        """
-        Return the observation and observation error covariance
+        """ Return the observation and observation covariance.
 
         Parameters
         ----------
-        next_end_time: float
-            next end time
+        next_end_time : float
+            Next end time.
 
         Returns
         -------
-        obs: ndarray
-            ensemble observations
-        R_obs: ndarray
-            observation error covariance
+        obs : ndarray
+            Ensemble observations. ``dtype=float``, ``ndim=2``,
+            ``shape=(nstate_obs, nsamples)``
+        obs_error : ndarray
+            Observation error covariance. ``dtype=float``, ``ndim=2``,
+            ``shape=(nstate_obs, nstate_obs)``
         """
         obs = self.observe(next_end_time)
-        R_obs = self.get_Robs()
+        obs_error = self.get_obs_error()
+        return obs, obs_error
 
-        return obs, R_obs
-
-    def get_Robs(self):
+    def get_obs_error(self):
         """ Return the observation error covariance. """
+        return self.obs_error.todense()
 
-        return self.Robs.todense()
+    def report(self):
+        """ Report summary information. """
+        pass
+
+    def plot(self):
+        """ Plot relevant model results. """
+        pass
 
     def clean(self):
         """ Perform any necessary cleanup before exiting. """
         pass
 
     def observe(self, next_end_time):
-        """
-        Return the observation data
+        """ Return the observation data at a given time.
 
         Parameters
         ----------
         next_end_time: float
-            next end time
+            Next end time.
 
         Returns
         -------
-        obsM: ndarray
-            ensemble observations
+        obs_mat: ndarray
+            Ensemble observations. ``dtype=float``, ``ndim=2``,
+            ``shape=(nstate_obs, nsamples)``
         """
         # initial observation and observation standard deviation
         obs = np.empty(self.nstate_obs)
@@ -276,25 +318,22 @@ class Solver(DynModel):
         # read observation at next end time
         obs_vec = np.loadtxt('obs.txt')[int(da_step)*10, 1:-1]
         # add noise in observation
-        for iDim in np.arange(self.nstate_obs):
-            obs_std = self.obs_rel_std * np.abs(obs_vec[iDim]) + 0.1  # TODO
-            obs_std_vec[iDim] = obs_std
-            obs[iDim] = obs_vec[iDim] + np.random.normal(0, obs_std, 1)
+        for i_dim in np.arange(self.nstate_obs):
+            obs_std = self.obs_rel_std * np.abs(obs_vec[i_dim]) + 0.1  # TODO
+            obs_std_vec[i_dim] = obs_std
+            obs[i_dim] = obs_vec[i_dim] + np.random.normal(0, obs_std, 1)
         # construct ensemble observation
-        obsM = np.empty([self.nstate_obs, self.nsamples])
+        obs_mat = np.empty([self.nstate_obs, self.nsamples])
         for i in np.arange(self.nsamples):
-            obsM[:, i] = obs
+            obs_mat[:, i] = obs
         # construct the observation error covariance
-        self.Robs = sp.diags(obs_std_vec**2, 0)
+        self.obs_error = sp.diags(obs_std_vec**2, 0)
+        return obs_mat
 
-        return obsM
-
-    def _constructHMatrix(self):
-        """construct the observation operator"""
-
-        H = [[1, 0, 0], [0, 1, 0], [0, 0, 1]]
+    def _construct_h_matrix(self):
+        """ Construct the observation operator. """
+        h_matrix = [[1, 0, 0], [0, 1, 0], [0, 0, 1]]
         for i in range(self.num_params):
-            H.append([0, 0, 0])
-        H = np.array(H).T
-
-        return H
+            h_matrix.append([0, 0, 0])
+        h_matrix = np.array(h_matrix).T
+        return h_matrix

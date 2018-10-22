@@ -78,6 +78,8 @@
             
               <p class="caption"><span class="caption-text">Contents:</span></p>
 <ul>
+<li class="toctree-l1"><a class="reference internal" href="../../theory.html">Theory</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../tutorial_lorenz.html">Tutorial: Lorenz63</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../source_code.html">Source Code</a></li>
 </ul>
 
@@ -148,6 +150,7 @@
 <span class="c1"># third party imports</span>
 <span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
 
+
 <div class="viewcode-block" id="DynModel"><a class="viewcode-back" href="../../dainv_dyn_model.html#dainv.dyn_model.DynModel">[docs]</a><span class="k">class</span> <span class="nc">DynModel</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
     <span class="sd">&quot;&quot;&quot; Parent class for dynamic models.</span>
 
@@ -169,7 +172,7 @@
 <span class="sd">        nsamples : int</span>
 <span class="sd">            Ensemble size.</span>
 <span class="sd">        da_interval : float</span>
-<span class="sd">            Iteration interval between data assimilation steps.</span>
+<span class="sd">            Time interval between data assimilation steps.</span>
 <span class="sd">        t_end : float</span>
 <span class="sd">            Final time.</span>
 <span class="sd">        input_file : str</span>

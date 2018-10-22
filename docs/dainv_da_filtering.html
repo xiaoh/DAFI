@@ -80,6 +80,8 @@
             
               <p class="caption"><span class="caption-text">Contents:</span></p>
 <ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="theory.html">Theory</a></li>
+<li class="toctree-l1"><a class="reference internal" href="tutorial_lorenz.html">Tutorial: Lorenz63</a></li>
 <li class="toctree-l1 current"><a class="reference internal" href="source_code.html">Source Code</a><ul class="current">
 <li class="toctree-l2"><a class="reference internal" href="vt_dainv.html">vt_dainv.py (exec)</a></li>
 <li class="toctree-l2 current"><a class="reference internal" href="dainv.html">dainv</a><ul class="current">
@@ -333,11 +335,14 @@ convergence.</p>
 <dt><strong>Updates:</strong></dt>
 <dd><ul class="first last simple">
 <li>self.time</li>
+<li>self.iter</li>
 <li>self.da_step</li>
 <li>self.state_vec</li>
 <li>self.model_obs</li>
 <li>self.obs</li>
 <li>self.obs_error</li>
+<li>self.state_vec_analysis_all</li>
+<li>self.state_vec_forecast_all</li>
 </ul>
 </dd>
 </dl>
@@ -366,19 +371,6 @@ information.</p>
 <p class="first admonition-title">Note</p>
 <p class="last">See DAFilter2.__init__ for details.</p>
 </div>
-</dd></dl>
-
-<dl class="method">
-<dt id="dainv.da_filtering.EnKF.correct_forecasts">
-<code class="descname">correct_forecasts</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/dainv/da_filtering.html#EnKF.correct_forecasts"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#dainv.da_filtering.EnKF.correct_forecasts" title="Permalink to this definition">¶</a></dt>
-<dd><p>Correct the propagated ensemble (filtering step) using EnKF</p>
-<dl class="docutils">
-<dt><strong>Updates:</strong></dt>
-<dd><ul class="first last simple">
-<li>self.state_vec_analysis</li>
-</ul>
-</dd>
-</dl>
 </dd></dl>
 
 </dd></dl>
