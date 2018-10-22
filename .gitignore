@@ -4,3 +4,4 @@
 docs/sphinx/_build/
 docs/sphinx/_template/
 docs/sphinx/_static/
+log.*

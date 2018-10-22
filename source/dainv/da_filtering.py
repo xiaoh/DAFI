@@ -141,7 +141,7 @@ class DAFilter2(DAFilter):
         self.da_interval = da_interval  # DA time step interval
         self.t_end = t_end  # total run time
 
-        # filter control inputs
+        # filter-specific inputs
         try:
             self.reach_max_flag = ast.literal_eval(
                 input_dict['reach_max_flag'])
@@ -210,7 +210,7 @@ class DAFilter2(DAFilter):
         self.obs_error = np.zeros(
             [self.dyn_model.nstate_obs, self.dyn_model.nstate_obs])
 
-        # initialize misfit: these grow each iteration; all values stored.
+        # initialize misfit: these grow each iteration, but all values stored.
         self._misfit_norm = []
         self._sigma_hx_norm = []
         self._sigma_obs_norm = []
@@ -234,6 +234,7 @@ class DAFilter2(DAFilter):
 
         **Updates:**
             * self.time
+            * self.iter
             * self.da_step
             * self.state_vec
             * self.model_obs
@@ -266,7 +267,7 @@ class DAFilter2(DAFilter):
                     self.state_vec_analysis, self.time)
             self.obs, self.obs_error = self.dyn_model.get_obs(self.time)
             # data assimilation
-            self.correct_forecasts()
+            self._correct_forecasts()
             self._calc_misfits()
             debug_dict = {
                 'Xf': self.state_vec_forecast, 'Xa': self.state_vec_analysis,
@@ -338,11 +339,11 @@ class DAFilter2(DAFilter):
         """ Saves results to text files. """
         self._create_folder(self._save_folder)
         np.savetxt(self._save_folder + os.sep + 'misfit_norm', np.array(
-            self._misfit_norm))
-        np.savetxt(self._save_folder + os.sep + 'sigma_obs', np.array(
-            self._sigma_obs_norm))
+            self._misfit_x_norm))
         np.savetxt(self._save_folder + os.sep + 'sigma_HX', np.array(
             self._sigma_hx_norm))
+        np.savetxt(self._save_folder + os.sep + '_sigma_obs', np.array(
+            self._sigma_obs_norm))
         header = 'da_step: {}, time: {}'.format(self.da_step, self.time)
         np.savetxt(self._save_folder + os.sep + 'X', np.array(
             self.state_vec_analysis), header=header)
@@ -396,7 +397,7 @@ class DAFilter2(DAFilter):
         return iterative_residual
 
     def _check_convergence(self):
-        """ Check iteration convergence. """
+        # Check iteration convergence.
         conv_variance = self._misfit_norm[self.da_step - 1] < \
             self._sigma_obs_norm[self.da_step - 1]
         residual = self._iteration_residual(self._misfit_norm, self.da_step-1)
@@ -452,7 +453,7 @@ class EnKF(DAFilter2):
         self.name = 'Ensemble Kalman Filter'
         self.short_name = 'EnKF'
 
-    def correct_forecasts(self):
+    def _correct_forecasts(self):
         """ Correct the propagated ensemble (filtering step) using EnKF
 
         **Updates:**
