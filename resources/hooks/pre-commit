@@ -12,6 +12,7 @@
 # To easily put the "###PROJECT###" project on your python path, use the same virtualenv
 # and in the project folder, execute "add2virtualenv ." once.
 
+# documentation
 echo "Checking documentation build..."
 res=$(DJANGO_SETTINGS_MODULE=###PROJECT###.settings bin/sphinx-build -q -E -w errors.log -b html -d build/doctrees source build/html 2> /dev/null)
 if test -s errors.log; then  # if errors.log exists and isn't empty, then there's some errors
@@ -24,17 +25,25 @@ else
 fi
 rm -f errors.log
 
-autopep=$(autopep8 -dr .)
-if [[ -z $autopep ]]
-then
-    echo "[success] PEP8 passed."
-else
-    echo "[error] Nlocking commit, PEP8 did not pass."
-    #echo "$autopep" | colordiff
+
+# pep8
+files=`git diff --name-only --cached *.py`
+for file in $files
+do
+    autopep=$(autopep8 -d $file)
+    if [[ -z $autopep ]]
+    then
+        echo "[success] PEP8 passed."
+    else
+        echo "[error] PEP8 did not pass."
+        echo "        File: $file"
+        #echo "$autopep" | colordiff
     exit 1
-fi
+    fi
+done
 
 
+# unittest
 `python -m unittest discover -p "*_test.py"`
 if [[ $? = 0 ]]
 then
