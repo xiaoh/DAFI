@@ -4,6 +4,10 @@ Ensemble based inverse modeling (data-assimilation).
 
 Developed by Dr. Heng Xiao's group at Virginia Tech: [Data-Enabled Computational Mechanics Laboratory at Virgnia Tech.](https://www.aoe.vt.edu/people/faculty/xiaoheng/personal-page.html)
 
+Documentation
+-------------
+Documentation can be found in the project website ( [http://xiaoh.github.io/vt-dainv](http://xiaoh.github.io/vt-dainv)), or in ``./docs/index.html``
+
 Contributors:
 -------------
 * Jianxun Wang
