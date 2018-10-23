@@ -23,7 +23,7 @@ Project Structure
   Uses Sphinx to create html. Published in ghpages.
 * **tests/** Unit tests for the source code. Use pre-commit hooks to check.
 * **tutorials/** Tutorial cases, follow in documentation.
-* **resources/** Collection of templates and usefull scripts, mostly for development.
+* **devtools/** Development tools, including templates and scripts.
 * **LICENSE** Apache 2.0 license file
 * **NOTICE** Required by License, lists any copyrighted material used.
 * **README.md** This file.
