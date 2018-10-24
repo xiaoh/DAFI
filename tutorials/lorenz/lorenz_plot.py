@@ -106,13 +106,12 @@ def main(iShow=False):
     p5 = plot_obs(para)
     plt.xlabel('time')
     plt.ylabel(para)
-    line = Line2D([0], [0], linestyle='-', color='g', alpha=0.5)
+    line = Line2D([0], [0], linestyle='-', color='g')
     line_label = 'samples'
     plt.legend(
         [line, p2[0], p4[0], p5[0]],
         [line_label, p2[0].get_label(), p4[0].get_label(), p5[0].get_label()],
         loc='best')
-    matplotlib.rcParams.update({'font.size': 15})
     # save figure
     figureName = './figures/timeSeries_DA_' + para + '.png'
     plt.savefig(figureName)

@@ -198,6 +198,8 @@ class DAFilter2(DAFilter):
         self.time = 0.0  # current time
         self.da_step = int(0)  # current DA step
         # ensemble matrix (nsamples, nstate)
+        self.state_vec_prior = np.zeros(
+            [self.dyn_model.nstate, self.nsamples])
         self.state_vec_forecast = np.zeros(
             [self.dyn_model.nstate, self.nsamples])
         self.state_vec_analysis = np.zeros(
@@ -244,6 +246,7 @@ class DAFilter2(DAFilter):
         # Generate initial state Ensemble
         self.state_vec_analysis, self.model_obs = \
             self.dyn_model.generate_ensemble()
+        self.state_vec_prior = self.state_vec_analysis.copy()
         # sensitivity only
         if self._sensitivity_only:
             self.state_vec_forecast, self.model_obs = \
@@ -495,3 +498,95 @@ class EnKF(DAFilter2):
             'K': kalman_gain_matrix, 'inv': inv, 'HPHT': hpht, 'PHT': pht,
             'HXP': hxp, 'XP': xp}
         self._save_debug(debug_dict)
+
+
+# child classes (specific filtering techniques)
+class EnRML(DAFilter2):
+    """ Implementation of the ensemble Randomized Maximal Likelihood (EnRML).
+
+    It inherits most methods from parent class (``DAFIlter2``), but
+    replaces the ``correct_forecasts`` method to use EnKF for the
+    data-assimilation step.
+
+    The EnRML is updated by: ``Xa = Xf + GN*(obs - HX)+P`` 
+    where *Xf* is the forecasted state vector (by the forward model), 
+    *Xa* is the updated vector after data-assimilation, *GN* is the 
+   	Gauss-Newton matrix, *obs* is the observation vector, and *HX* is the 
+    forecasted state vector in observation space, *P* is Penalty matrix. 
+    See the documentation for more information.
+    """
+
+    def __init__(self, nsamples, da_interval, t_end, forward_model,
+                 input_dict):
+        """ Parse input file and assign values to class attributes.
+
+        Note
+        ----
+        See DAFilter2.__init__ for details.
+        """
+        super(self.__class__, self).__init__(
+            nsamples, da_interval, t_end, forward_model, input_dict)
+        self.name = 'Ensemble Randomized Maximal Likelihood'
+        self.short_name = 'EnRML'
+        self.beta = float(input_dict['beta'])
+        self.const_beta_flag = ast.literal_eval(
+                input_dict['const_beta_flag'])
+
+    def _correct_forecasts(self):
+        """ Correct the propagated ensemble (filtering step) using EnKF
+
+        **Updates:**
+            * self.state_vec_analysis
+        """
+
+        def _check_condition_number(hpht):
+            con_inv = la.cond(hpht + self.obs_error)
+            if self._verb >= 2:
+                print("  Condition number of (HPHT + R) is {}".format(
+                    con_inv))
+            if (con_inv > 1e16):
+                message = "The matrix (HPHT + R) is singular, inverse will" + \
+                    "fail."
+                warnings.warn(message, RuntimeWarning)
+
+        def _mean_subtracted_matrix(mat, samps=self.nsamples):
+            mean_vec = np.array([np.mean(mat, axis=1)])
+            mean_vec = mean_vec.T
+            mean_vec = np.tile(mean_vec, (1, samps))
+            mean_sub_mat = mat - mean_vec
+            return mean_sub_mat
+
+        # calculate the Gauss-Newton matrix
+        xp0 = _mean_subtracted_matrix(self.state_vec_prior)
+        p0= (1.0 / (self.nsamples - 1.0)) *xp0.dot(xp0.T)
+        x = self.state_vec_forecast.copy()
+        for iter in range(100):
+	        xp = _mean_subtracted_matrix(x)
+	        hx = self.dyn_model.forward(x)
+        	hxp = _mean_subtracted_matrix(hx)
+        	gen = np.dot(hxp, la.pinv(xp))
+        	sen_mat = p0.dot(gen.T)
+        	coeff = (1.0 / (self.nsamples - 1.0))
+        	pht = coeff * np.dot(xp, hxp.T)
+        	hpht = coeff * hxp.dot(hxp.T)
+        	_check_condition_number(hpht)
+        	inv = la.inv(hpht + self.obs_error)
+        	inv = inv.A  # convert np.matrix to np.ndarray
+        	gauss_newton_matrix = sen_mat.dot(inv)
+
+        	# calculate the penalty
+        	penalty = np.dot(gauss_newton_matrix,gen.dot(
+        		self.state_vec_forecast-self.state_vec_prior)) 
+
+        	# analysis step
+        	dx = np.dot(gauss_newton_matrix, self.obs - self.model_obs) \
+        			- penalty
+        	x = self.beta*self.state_vec_prior + (
+        		1.0-self.beta)* self.state_vec_forecast + self.beta*dx
+        self.state_vec_analysis = x
+        # debug
+        debug_dict = {
+            'GN': gauss_newton_matrix, 'pen': penalty, 'inv': inv, 
+            'HPHT': hpht, 'PHT': pht, 'HXP': hxp, 'XP': xp}
+        self._save_debug(debug_dict)
+

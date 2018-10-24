@@ -223,6 +223,29 @@ class Solver(DynModel):
         HX = H.dot(Xf)
         return Xf, HX
 
+    def forward(self, X):
+        """
+        Returns states at the next end time.
+
+        Parameters
+        ----------
+        X: ndarray
+            current state variables
+        next_end_time: float
+            next end time
+
+        Returns
+        -------
+        X: ndarray
+            forwarded ensemble state variables by forward model
+        HX: ndarray
+            ensemble in observation space
+        """
+        # Construct observation operator
+        H = self._constructHMatrix()
+        HX = H.dot(X)
+        return HX
+
     def get_obs(self, next_end_time):
         """
         Return the observation and observation error covariance

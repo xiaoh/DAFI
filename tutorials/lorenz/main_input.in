@@ -5,7 +5,10 @@ dyn_model lorenz
 dyn_model_input ./forward_model_input.in
 
 #specify data assimilation method
-da_filter EnKF
+da_filter EnRML
+
+beta 0.5
+const_beta_flag True
 
 #specify the end time
 t_end 19.75
