@@ -26,7 +26,7 @@ class DynModel(object):
         nsamples : int
             Ensemble size.
         da_interval : float
-            Iteration interval between data assimilation steps.
+            Time interval between data assimilation steps.
         t_end : float
             Final time.
         input_file : str

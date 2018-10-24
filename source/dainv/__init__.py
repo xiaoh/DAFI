@@ -1,5 +1,5 @@
 """ Package containing modules for data assimilation and inverse modeling. """
 
-import da_filtering
-import dyn_model
-import utilities
+from dainv import da_filtering
+from dainv import dyn_model
+from dainv import utilities

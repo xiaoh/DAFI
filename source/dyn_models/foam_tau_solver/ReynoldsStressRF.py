@@ -503,7 +503,7 @@ class ReynoldsStressRF:
 
         for i in range(self.nMesh):
             VMOld = np.array([V1Old[i], V2Old[i], V3Old[i]])
-            #print VMOld
+            # print VMOld
             VMNew = np.array([V1New[i], V2New[i], V3New[i]])
             deltaV = np.zeros(len(indexDict))
 
@@ -514,20 +514,20 @@ class ReynoldsStressRF:
             VMNew_rot = np.array([VMNew[indexDict[int(indexList[i])][0]],
                                   VMNew[indexDict[int(indexList[i])][1]],
                                   VMNew[indexDict[int(indexList[i])][2]]])
-            #print VMNew_rot
+            # print VMNew_rot
             rotM = np.zeros([3, 3])
 
             # Temporary test of flipping
             if np.inner(VMOld[0], VMNew_rot[0]) < 0:
                 VMNew_rot[0] = VMNew_rot[0] * (-1)
-                #VMNew_rot[2] = VMNew_rot[2] * (-1)
+                # VMNew_rot[2] = VMNew_rot[2] * (-1)
             if np.inner(VMOld[1], VMNew_rot[1]) < 0:
                 VMNew_rot[1] = VMNew_rot[1] * (-1)
-                #VMNew_rot[2] = VMNew_rot[2] * (-1)
+                # VMNew_rot[2] = VMNew_rot[2] * (-1)
             if np.inner(VMOld[2], VMNew_rot[2]) < 0:
                 VMNew_rot[2] = VMNew_rot[2] * (-1)
 
-            #print VMNew_rot
+            # print VMNew_rot
 
             for iterN in range(3):
                 for iterP in range(3):
@@ -540,17 +540,17 @@ class ReynoldsStressRF:
             e23[i] = rotM[1, 2]
             e33[i] = rotM[2, 2]
 
-            #E[i, 0] = rotM[0, 0]
-            #E[i, 1] = rotM[0, 1]
-            #E[i, 2] = rotM[0, 2]
-            #E[i, 3] = rotM[1, 1]
-            #E[i, 4] = rotM[1, 2]
-            #E[i, 5] = rotM[2, 2]
+            # E[i, 0] = rotM[0, 0]
+            # E[i, 1] = rotM[0, 1]
+            # E[i, 2] = rotM[0, 2]
+            # E[i, 3] = rotM[1, 1]
+            # E[i, 4] = rotM[1, 2]
+            # E[i, 5] = rotM[2, 2]
             E[i, :] = rotM.reshape(9,)
 
             # self.plotEigenSystem(rotM)
             # pdb.set_trace()
-            #print rotM
+            # print rotM
         return e11, e12, e13, e22, e23, e33
         # return E
 
@@ -560,8 +560,8 @@ class ReynoldsStressRF:
         """
         kOld, V1Old, V2Old, V3Old, COld, NPOld = self._tau2PhysParams(tauOld)
         kNew, V1New, V2New, V3New, CNew, NPNew = self._tau2PhysParams(tauNew)
-        #V1Old, V2Old, V3Old = self._eigenVectors(tauOld)
-        #V1New, V2New, V3New = self._eigenVectors(tauNew)
+        # V1Old, V2Old, V3Old = self._eigenVectors(tauOld)
+        # V1New, V2New, V3New = self._eigenVectors(tauNew)
 
         indexDict = self.indexDict
 
@@ -572,7 +572,7 @@ class ReynoldsStressRF:
 
         for i in range(self.nMesh):
             VMOld = np.array([V1Old[i], V2Old[i], V3Old[i]])
-            #print VMOld
+            # print VMOld
             VMNew = np.array([V1New[i], V2New[i], V3New[i]])
             deltaV = np.zeros(len(indexDict))
 
@@ -588,26 +588,26 @@ class ReynoldsStressRF:
             # Temporary test of flipping
             if np.inner(VMOld[0], VMNew_rot[0]) < 0:
                 VMNew_rot[0] = VMNew_rot[0] * (-1)
-                #VMNew_rot[2] = VMNew_rot[2] * (-1)
+                # VMNew_rot[2] = VMNew_rot[2] * (-1)
             if np.inner(VMOld[1], VMNew_rot[1]) < 0:
                 VMNew_rot[1] = VMNew_rot[1] * (-1)
-                #VMNew_rot[2] = VMNew_rot[2] * (-1)
+                # VMNew_rot[2] = VMNew_rot[2] * (-1)
             if np.inner(VMOld[2], VMNew_rot[2]) < 0:
                 VMNew_rot[2] = VMNew_rot[2] * (-1)
 
-            #print VMNew_rot
+            # print VMNew_rot
 
             for iterN in range(3):
                 for iterP in range(3):
                     rotM[iterN, iterP] = np.inner(
                         VMOld[iterN], VMNew_rot[iterP])
             quat = self._transform2quat(rotM)
-            #quat = self._mat2quat(rotM)
+            # quat = self._mat2quat(rotM)
             theta[i] = quat[0]
             vx[i] = quat[1]
             vy[i] = quat[2]
             vz[i] = quat[3]
-            #vz[i] = np.linalg.det(VMNew_rot)
+            # vz[i] = np.linalg.det(VMNew_rot)
         return theta, vx, vy, vz
 
     def quadraticSolver(self, bb, ee, hh, cc):
@@ -947,24 +947,24 @@ class ReynoldsStressRF:
             if 1 - rotM[0, 0]**2 - rotM[0, 1]**2 > 0:
                 rotM[0, 2] = e13Sign[i] * \
                     np.sqrt(1 - rotM[0, 0]**2 - rotM[0, 1]**2)
-                #rotM[0, 2] = -1*np.sqrt(1 - rotM[0, 0]**2 -rotM[0, 1]**2)
+                # rotM[0, 2] = -1*np.sqrt(1 - rotM[0, 0]**2 -rotM[0, 1]**2)
             else:
                 rotM[0, 2] = 0.0
             if 1 - rotM[0, 1]**2 - rotM[1, 1]**2 > 0:
                 rotM[2, 1] = np.sqrt(1 - rotM[0, 1]**2 - rotM[1, 1]**2)
-                #rotM[2, 1] = -1*np.sqrt(1 - rotM[0, 1]**2 -rotM[1, 1]**2)
+                # rotM[2, 1] = -1*np.sqrt(1 - rotM[0, 1]**2 -rotM[1, 1]**2)
             else:
                 rotM[2, 1] = 0.0
             if 1 - rotM[0, 2]**2 - rotM[2, 2]**2 > 0:
                 rotM[1, 2] = e23Sign[i] * \
                     np.sqrt(1 - rotM[0, 2]**2 - rotM[2, 2]**2)
-                #rotM[2, 1] = -1*np.sqrt(1 - rotM[0, 1]**2 -rotM[1, 1]**2)
+                # rotM[2, 1] = -1*np.sqrt(1 - rotM[0, 1]**2 -rotM[1, 1]**2)
             else:
                 rotM[1, 2] = 0.0
             rotM[:, 0] = np.cross(rotM[:, 1], rotM[:, 2])
             # pdb.set_trace()
             rotM = self.setSign3(rotM)
-            #print rotM
+            # print rotM
             RMatrix[i, :] = rotM.reshape(9,)
         return RMatrix
 
@@ -1011,7 +1011,7 @@ class ReynoldsStressRF:
             V[indexDict[int(indexList[i])][1], :] = Vorg[1, :]
             V[indexDict[int(indexList[i])][2], :] = Vorg[2, :]
 
-            #print V
+            # print V
 
             t = 2 * self.k[i][0] * (np.eye(3) / 3.0 +
                                     np.dot(np.dot(np.transpose(V), Lambda), V))
@@ -1069,7 +1069,7 @@ class ReynoldsStressRF:
             V[indexDict[int(indexList[i])][1], :] = Vorg[1, :]
             V[indexDict[int(indexList[i])][2], :] = Vorg[2, :]
 
-            #print V
+            # print V
 
             t = 2 * self.k[i][0] * (np.eye(3) / 3.0 +
                                     np.dot(np.dot(np.transpose(V), Lambda), V))
@@ -1128,7 +1128,7 @@ class ReynoldsStressRF:
             V[indexDict[int(indexList[i])][1], :] = Vorg[1, :]
             V[indexDict[int(indexList[i])][2], :] = Vorg[2, :]
 
-            #print V
+            # print V
 
             t = 2 * self.k[i][0] * (np.eye(3) / 3.0 +
                                     np.dot(np.dot(np.transpose(V), Lambda), V))

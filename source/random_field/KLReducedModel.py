@@ -445,7 +445,7 @@ class KLReducedModel:
             modeFigName = prefix + 'mode-' + str(i) + '.eps'
             modei = np.array([modes[:, i + 2]]).T
             # pdb.set_trace()
-            #print i, ': ', modei.shape
+            # print i, ': ', modei.shape
             self.plotField(modei, coords, Nres, modeFigName)
 
     def plotFieldSimple(self, field, coord, Nres, label=""):

@@ -2,7 +2,7 @@
 dyn_model lorenz
 
 #specify dynamic model input file
-dyn_model_input ./forward_model_input.in
+dyn_model_input ./lorenz_input.in
 
 #specify data assimilation method
 da_filter EnRML
@@ -20,8 +20,5 @@ da_interval 0.25
 nsamples 50
 
 #specify the debug flag and folder name
-debug_flag           True
-debug_folder         ./debugData
-
-rand_seed_flag True
-rand_seed 1
+save_flag           True
+save_folder         ./results

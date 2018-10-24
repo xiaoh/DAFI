@@ -7,5 +7,4 @@ This section contains the auto-documentation for the source code of the differen
    :maxdepth: 4
 
    vt_dainv.rst
-   dainv.rst   
-
+   dainv.rst

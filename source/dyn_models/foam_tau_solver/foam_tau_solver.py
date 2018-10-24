@@ -1002,7 +1002,7 @@ class FoamTauSolver(DynModel):
             H = self._constructHMatrix()
             # pdb.set_trace()
             HX = H.dot(X)
-            #print "HX \n", HX.shape
+            # print "HX \n", HX.shape
         if self.pseudoObs == 1:
             pass
 
@@ -1521,7 +1521,7 @@ class FoamTauSolver(DynModel):
             self.deltakField = self.rfK.reconstructField(omegak, self.KLModesK)
             self.deltakM[ii, :, :] = self.deltakField
             toc = time.time()
-            #print "Time for reconstruction is: ", toc - tic, "s"
+            # print "Time for reconstruction is: ", toc - tic, "s"
 
             if (self.perturbVA) or (self.perturbVB) or (self.perturbVC):
                 omegaVA = self.omegaVAM[:, ii]
@@ -1734,7 +1734,7 @@ class FoamTauSolver(DynModel):
                                str(ii), self.deltaTau[ii, :, :])
 
                 toc = time.time()
-                #print "Time for diagnosis output is: ", toc - tic, "s"
+                # print "Time for diagnosis output is: ", toc - tic, "s"
                 ii += 1
 
         if (self.txtfileOutput):

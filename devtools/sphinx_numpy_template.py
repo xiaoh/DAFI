@@ -358,11 +358,13 @@ class ExampleClass:
 
 
 # NumPy array example
-"""
-Parameters
-----------
-arr1 : ndarray
-    2D array containing data with `float` type.
-arr2 : ndarray
-    1D mask array(containing data with boolean type).
-"""
+def example_ndarray(arr1, arr2):
+    """
+    Parameters
+    ----------
+    arr1 : ndarray
+        2D array containing data with `float` type.
+    arr2 : ndarray
+        1D mask array(containing data with boolean type).
+    """
+    pass
