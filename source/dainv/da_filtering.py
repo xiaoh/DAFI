@@ -511,7 +511,7 @@ class EnRML(DAFilter2):
     The EnRML is updated by: ``Xa = Xf + GN*(obs - HX)+P`` 
     where *Xf* is the forecasted state vector (by the forward model), 
     *Xa* is the updated vector after data-assimilation, *GN* is the 
-   	Gauss-Newton matrix, *obs* is the observation vector, and *HX* is the 
+    Gauss-Newton matrix, *obs* is the observation vector, and *HX* is the 
     forecasted state vector in observation space, *P* is Penalty matrix. 
     See the documentation for more information.
     """
@@ -530,7 +530,7 @@ class EnRML(DAFilter2):
         self.short_name = 'EnRML'
         self.beta = float(input_dict['beta'])
         self.const_beta_flag = ast.literal_eval(
-                input_dict['const_beta_flag'])
+            input_dict['const_beta_flag'])
 
     def _correct_forecasts(self):
         """ Correct the propagated ensemble (filtering step) using EnKF
@@ -558,35 +558,35 @@ class EnRML(DAFilter2):
 
         # calculate the Gauss-Newton matrix
         xp0 = _mean_subtracted_matrix(self.state_vec_prior)
-        p0= (1.0 / (self.nsamples - 1.0)) *xp0.dot(xp0.T)
+        p0 = (1.0 / (self.nsamples - 1.0)) * xp0.dot(xp0.T)
         x = self.state_vec_forecast.copy()
         for iter in range(100):
-	        xp = _mean_subtracted_matrix(x)
-	        hx = self.dyn_model.forward(x)
-        	hxp = _mean_subtracted_matrix(hx)
-        	gen = np.dot(hxp, la.pinv(xp))
-        	sen_mat = p0.dot(gen.T)
-        	coeff = (1.0 / (self.nsamples - 1.0))
-        	pht = coeff * np.dot(xp, hxp.T)
-        	hpht = coeff * hxp.dot(hxp.T)
-        	_check_condition_number(hpht)
-        	inv = la.inv(hpht + self.obs_error)
-        	inv = inv.A  # convert np.matrix to np.ndarray
-        	gauss_newton_matrix = sen_mat.dot(inv)
+            xp = _mean_subtracted_matrix(x)
+            hx = self.dyn_model.forward(x)
+            hxp = _mean_subtracted_matrix(hx)
+            gen = np.dot(hxp, la.pinv(xp))
+            sen_mat = p0.dot(gen.T)
+            coeff = (1.0 / (self.nsamples - 1.0))
+            pht = coeff * np.dot(xp, hxp.T)
+            hpht = coeff * hxp.dot(hxp.T)
+            _check_condition_number(hpht)
+            inv = la.inv(hpht + self.obs_error)
+            inv = inv.A  # convert np.matrix to np.ndarray
+            gauss_newton_matrix = sen_mat.dot(inv)
 
-        	# calculate the penalty
-        	penalty = np.dot(gauss_newton_matrix,gen.dot(
-        		self.state_vec_forecast-self.state_vec_prior)) 
+            # calculate the penalty
+            penalty = np.dot(gauss_newton_matrix, gen.dot(
+                self.state_vec_forecast-self.state_vec_prior))
 
-        	# analysis step
-        	dx = np.dot(gauss_newton_matrix, self.obs - self.model_obs) \
-        			- penalty
-        	x = self.beta*self.state_vec_prior + (
-        		1.0-self.beta)* self.state_vec_forecast + self.beta*dx
+            # analysis step
+            dx = np.dot(gauss_newton_matrix, self.obs - self.model_obs) \
+                - penalty
+            x = self.beta*self.state_vec_prior + (
+                1.0-self.beta) * self.state_vec_forecast + self.beta*dx
         self.state_vec_analysis = x
         # debug
         debug_dict = {
-            'GN': gauss_newton_matrix, 'pen': penalty, 'inv': inv, 
+            'GN': gauss_newton_matrix, 'pen': penalty, 'inv': inv,
             'HPHT': hpht, 'PHT': pht, 'HXP': hxp, 'XP': xp}
         self._save_debug(debug_dict)
 
