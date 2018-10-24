@@ -24,19 +24,28 @@
 
   
 
-  <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
-  <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
-    <link rel="index" title="Index" href="genindex.html" />
-    <link rel="search" title="Search" href="search.html" />
-    <link rel="next" title="dainv" href="dainv.html" />
-    <link rel="prev" title="Source Code" href="source_code.html" /> 
+  
+  
+    <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
+  
+
+  
+
+  
+        <link rel="index" title="Index"
+              href="genindex.html"/>
+        <link rel="search" title="Search" href="search.html"/>
+    <link rel="top" title="vt_dainv  documentation" href="index.html"/>
+        <link rel="up" title="Source Code" href="source_code.html"/>
+        <link rel="next" title="dainv" href="dainv.html"/>
+        <link rel="prev" title="Source Code" href="source_code.html"/> 
 
   
   <script src="_static/js/modernizr.min.js"></script>
 
 </head>
 
-<body class="wy-body-for-nav">
+<body class="wy-body-for-nav" role="document">
 
    
   <div class="wy-grid-for-nav">
@@ -98,7 +107,7 @@
     <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
 
       
-      <nav class="wy-nav-top" aria-label="top navigation">
+      <nav class="wy-nav-top" role="navigation" aria-label="top navigation">
         
           <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
           <a href="index.html">vt_dainv</a>
@@ -106,10 +115,9 @@
       </nav>
 
 
+      
       <div class="wy-nav-content">
-        
         <div class="rst-content">
-        
           
 
 
@@ -157,7 +165,7 @@
 <h1>vt_dainv.py (exec)<a class="headerlink" href="#vt-dainv-py-exec" title="Permalink to this headline">¶</a></h1>
 <p>Inverse modeling main executable.</p>
 <p class="rubric">Example</p>
-<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">vt_dainv</span><span class="o">.</span><span class="n">py</span> <span class="o">&lt;</span><span class="n">input_file</span><span class="o">&gt;</span>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">vt_dainv</span><span class="o">.</span><span class="n">py</span> <span class="o">&lt;</span><span class="n">input_file</span><span class="o">&gt;</span>
 </pre></div>
 </div>
 <div class="admonition note">
@@ -165,17 +173,17 @@
 <dl class="last docutils">
 <dt>Required inputs:</dt>
 <dd><ul class="first last simple">
-<li><strong>dyn_model</strong> (<code class="docutils literal notranslate"><span class="pre">str</span></code>) -
+<li><strong>dyn_model</strong> (<code class="docutils literal"><span class="pre">str</span></code>) -
 Name of dynamic model module/package.</li>
-<li><strong>dyn_model_input</strong> (<code class="docutils literal notranslate"><span class="pre">str</span></code>) -
+<li><strong>dyn_model_input</strong> (<code class="docutils literal"><span class="pre">str</span></code>) -
 Path to input file for the dynamic model.</li>
-<li><strong>da_filter</strong> (<code class="docutils literal notranslate"><span class="pre">str</span></code>) -
+<li><strong>da_filter</strong> (<code class="docutils literal"><span class="pre">str</span></code>) -
 Name of filter from dainv.da_filtering module.</li>
-<li><strong>t_end</strong> (<code class="docutils literal notranslate"><span class="pre">float</span></code>) -
+<li><strong>t_end</strong> (<code class="docutils literal"><span class="pre">float</span></code>) -
 Final time step.</li>
-<li><strong>da_interval</strong> (<code class="docutils literal notranslate"><span class="pre">float</span></code>) -
+<li><strong>da_interval</strong> (<code class="docutils literal"><span class="pre">float</span></code>) -
 Time interval to perform data assimilation.</li>
-<li><strong>nsamples</strong> (<code class="docutils literal notranslate"><span class="pre">int</span></code>) -
+<li><strong>nsamples</strong> (<code class="docutils literal"><span class="pre">int</span></code>) -
 Number of samples for ensemble.</li>
 </ul>
 </dd>
@@ -186,15 +194,15 @@ Number of samples for ensemble.</li>
 <dl class="last docutils">
 <dt>Optional inputs:</dt>
 <dd><ul class="first last simple">
-<li><strong>report_flag</strong> (<code class="docutils literal notranslate"><span class="pre">bool</span></code>, <code class="docutils literal notranslate"><span class="pre">False</span></code>) -
-Call the filter’s report method.</li>
-<li><strong>plot_flag</strong> (<code class="docutils literal notranslate"><span class="pre">bool</span></code>, <code class="docutils literal notranslate"><span class="pre">False</span></code>) -
-Call the filter’s plot method.</li>
-<li><strong>save_flag</strong> (<code class="docutils literal notranslate"><span class="pre">bool</span></code>, <code class="docutils literal notranslate"><span class="pre">False</span></code>) -
-Call the filter’s save method.</li>
-<li><strong>rand_seed_flag</strong> (<code class="docutils literal notranslate"><span class="pre">bool</span></code>, <code class="docutils literal notranslate"><span class="pre">False</span></code>) -
+<li><strong>report_flag</strong> (<code class="docutils literal"><span class="pre">bool</span></code>, <code class="docutils literal"><span class="pre">False</span></code>) -
+Call the filter&#8217;s report method.</li>
+<li><strong>plot_flag</strong> (<code class="docutils literal"><span class="pre">bool</span></code>, <code class="docutils literal"><span class="pre">False</span></code>) -
+Call the filter&#8217;s plot method.</li>
+<li><strong>save_flag</strong> (<code class="docutils literal"><span class="pre">bool</span></code>, <code class="docutils literal"><span class="pre">False</span></code>) -
+Call the filter&#8217;s save method.</li>
+<li><strong>rand_seed_flag</strong> (<code class="docutils literal"><span class="pre">bool</span></code>, <code class="docutils literal"><span class="pre">False</span></code>) -
 Use fixed random seed, for debugging.</li>
-<li><strong>rand_seed</strong> (<code class="docutils literal notranslate"><span class="pre">float</span></code>, <code class="docutils literal notranslate"><span class="pre">1</span></code>) -
+<li><strong>rand_seed</strong> (<code class="docutils literal"><span class="pre">float</span></code>, <code class="docutils literal"><span class="pre">1</span></code>) -
 Seed for numpy.random.</li>
 </ul>
 </dd>
@@ -214,7 +222,9 @@ Seed for numpy.random.</li>
 
 
            </div>
-           
+           <div class="articleComments">
+            
+           </div>
           </div>
           <footer>
   
@@ -232,11 +242,11 @@ Seed for numpy.random.</li>
 
   <div role="contentinfo">
     <p>
-        &copy; Copyright 2018, carlos
+        &copy; Copyright 2018, carlos.
 
     </p>
   </div>
-  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/rtfd/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/snide/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>. 
 
 </footer>
 
@@ -251,24 +261,36 @@ Seed for numpy.random.</li>
 
   
 
-    
-    
-      <script type="text/javascript" id="documentation_options" data-url_root="./" src="_static/documentation_options.js"></script>
-        <script type="text/javascript" src="_static/jquery.js"></script>
-        <script type="text/javascript" src="_static/underscore.js"></script>
-        <script type="text/javascript" src="_static/doctools.js"></script>
-        <script async="async" type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
-    
+    <script type="text/javascript">
+        var DOCUMENTATION_OPTIONS = {
+            URL_ROOT:'./',
+            VERSION:'',
+            COLLAPSE_INDEX:false,
+            FILE_SUFFIX:'.html',
+            HAS_SOURCE:  true,
+            SOURCELINK_SUFFIX: '.txt'
+        };
+    </script>
+      <script type="text/javascript" src="_static/jquery.js"></script>
+      <script type="text/javascript" src="_static/underscore.js"></script>
+      <script type="text/javascript" src="_static/doctools.js"></script>
+      <script type="text/javascript" src="https://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
 
   
 
-  <script type="text/javascript" src="_static/js/theme.js"></script>
+  
+  
+    <script type="text/javascript" src="_static/js/theme.js"></script>
+  
 
+  
+  
   <script type="text/javascript">
       jQuery(function () {
-          SphinxRtdTheme.Navigation.enable(true);
+          SphinxRtdTheme.StickyNav.enable();
       });
-  </script> 
+  </script>
+   
 
 </body>
 </html>

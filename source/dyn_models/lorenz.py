@@ -247,7 +247,7 @@ class Solver(DynModel):
             forecast_state = np.empty([len(time_series), self.nstate])
             for t in np.arange(len(time_series)):
                 if not self.solver.successful():
-                    print "solver failed"
+                    print("solver failed")
                     sys.exit(1)
                 self.solver.integrate(time_series[t])
                 forecast_state[t] = self.solver.y
@@ -316,7 +316,7 @@ class Solver(DynModel):
         # TODO da_step = (next_end_time - self.da_interval) / self.da_interval
         da_step = next_end_time / self.da_interval  # TODO
         # read observation at next end time
-        obs_vec = np.loadtxt('obs.txt')[int(da_step)*10, 1:-1]
+        obs_vec = np.loadtxt('obs.dat')[int(da_step)*10, 1:-1]
         # add noise in observation
         for i_dim in np.arange(self.nstate_obs):
             obs_std = self.obs_rel_std * np.abs(obs_vec[i_dim]) + 0.1  # TODO

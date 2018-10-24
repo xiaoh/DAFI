@@ -61,7 +61,7 @@ def read_input_data(input_file):
     try:
         file = open(input_file, "r")
     except IOError:
-        print 'Cannot open file: ', input_file
+        print('Cannot open file: {}'.format(input_file))
         sys.exit(1)
     else:
         for line in file:

@@ -61,7 +61,7 @@ class klExpansion:
                 self.covWeighted = covWeighted
 
         if meanField is None:
-            #print "Zero mean is adopted for random field construction"
+            # print "Zero mean is adopted for random field construction"
             pass
         else:
             print "Non-zero mean is adopted for random field construction"

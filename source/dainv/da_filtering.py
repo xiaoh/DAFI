@@ -259,7 +259,7 @@ class DAFilter2(DAFilter):
                 self.dyn_model.forecast_to_time(
                     self.state_vec_analysis, self.da_interval)
             if self.ver >= 1:
-                print "\nSensitivity study completed."
+                print("\nSensitivity study completed.")
             sys.exit(0)
         # main DA loop
         early_stop = False
@@ -424,8 +424,10 @@ class DAFilter2(DAFilter):
         conv_variance = self._misfit_norm[self.da_step - 1] < \
             self._sigma_obs_norm[self.da_step - 1]
         residual = self._iteration_residual(self._misfit_norm, self.da_step-1)
-        conv_residual = residual is not None and residual < \
-            self.convergence_residual
+        if self.convergence_residual is None:
+            conv_residual = False
+        else:
+            conv_residual = residual < self.convergence_residual
         return conv_variance, conv_residual
 
     def _report(self):

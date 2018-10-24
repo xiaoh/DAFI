@@ -24,17 +24,26 @@
 
   
 
-  <link rel="stylesheet" href="../../_static/css/theme.css" type="text/css" />
-  <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
-    <link rel="index" title="Index" href="../../genindex.html" />
-    <link rel="search" title="Search" href="../../search.html" /> 
+  
+  
+    <link rel="stylesheet" href="../../_static/css/theme.css" type="text/css" />
+  
+
+  
+
+  
+        <link rel="index" title="Index"
+              href="../../genindex.html"/>
+        <link rel="search" title="Search" href="../../search.html"/>
+    <link rel="top" title="vt_dainv  documentation" href="../../index.html"/>
+        <link rel="up" title="Module code" href="../index.html"/> 
 
   
   <script src="../../_static/js/modernizr.min.js"></script>
 
 </head>
 
-<body class="wy-body-for-nav">
+<body class="wy-body-for-nav" role="document">
 
    
   <div class="wy-grid-for-nav">
@@ -92,7 +101,7 @@
     <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
 
       
-      <nav class="wy-nav-top" aria-label="top navigation">
+      <nav class="wy-nav-top" role="navigation" aria-label="top navigation">
         
           <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
           <a href="../../index.html">vt_dainv</a>
@@ -100,10 +109,9 @@
       </nav>
 
 
+      
       <div class="wy-nav-content">
-        
         <div class="rst-content">
-        
           
 
 
@@ -132,6 +140,8 @@
     
     
       <li class="wy-breadcrumbs-aside">
+        
+            
         
       </li>
     
@@ -405,7 +415,7 @@
                 <span class="bp">self</span><span class="o">.</span><span class="n">dyn_model</span><span class="o">.</span><span class="n">forecast_to_time</span><span class="p">(</span>
                     <span class="bp">self</span><span class="o">.</span><span class="n">state_vec_analysis</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">da_interval</span><span class="p">)</span>
             <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">ver</span> <span class="o">&gt;=</span> <span class="mi">1</span><span class="p">:</span>
-                <span class="nb">print</span> <span class="s2">&quot;</span><span class="se">\n</span><span class="s2">Sensitivity study completed.&quot;</span>
+                <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;</span><span class="se">\n</span><span class="s2">Sensitivity study completed.&quot;</span><span class="p">)</span>
             <span class="n">sys</span><span class="o">.</span><span class="n">exit</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
         <span class="c1"># main DA loop</span>
         <span class="n">early_stop</span> <span class="o">=</span> <span class="kc">False</span>
@@ -570,8 +580,10 @@
         <span class="n">conv_variance</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_misfit_norm</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">da_step</span> <span class="o">-</span> <span class="mi">1</span><span class="p">]</span> <span class="o">&lt;</span> \
             <span class="bp">self</span><span class="o">.</span><span class="n">_sigma_obs_norm</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">da_step</span> <span class="o">-</span> <span class="mi">1</span><span class="p">]</span>
         <span class="n">residual</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_iteration_residual</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_misfit_norm</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">da_step</span><span class="o">-</span><span class="mi">1</span><span class="p">)</span>
-        <span class="n">conv_residual</span> <span class="o">=</span> <span class="n">residual</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">and</span> <span class="n">residual</span> <span class="o">&lt;</span> \
-            <span class="bp">self</span><span class="o">.</span><span class="n">convergence_residual</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">convergence_residual</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">conv_residual</span> <span class="o">=</span> <span class="kc">False</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">conv_residual</span> <span class="o">=</span> <span class="n">residual</span> <span class="o">&lt;</span> <span class="bp">self</span><span class="o">.</span><span class="n">convergence_residual</span>
         <span class="k">return</span> <span class="n">conv_variance</span><span class="p">,</span> <span class="n">conv_residual</span>
 
     <span class="k">def</span> <span class="nf">_report</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
@@ -617,7 +629,7 @@
 <span class="sd">        ----</span>
 <span class="sd">        See DAFilter2.__init__ for details.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
-        <span class="nb">super</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="vm">__class__</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span>
+        <span class="nb">super</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">__class__</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="n">__init__</span><span class="p">(</span>
             <span class="n">nsamples</span><span class="p">,</span> <span class="n">da_interval</span><span class="p">,</span> <span class="n">t_end</span><span class="p">,</span> <span class="n">forward_model</span><span class="p">,</span> <span class="n">input_dict</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">name</span> <span class="o">=</span> <span class="s1">&#39;Ensemble Kalman Filter&#39;</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">short_name</span> <span class="o">=</span> <span class="s1">&#39;EnKF&#39;</span></div>
@@ -634,7 +646,7 @@
             <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_verb</span> <span class="o">&gt;=</span> <span class="mi">2</span><span class="p">:</span>
                 <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;  Condition number of (HPHT + R) is </span><span class="si">{}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span>
                     <span class="n">con_inv</span><span class="p">))</span>
-            <span class="k">if</span> <span class="p">(</span><span class="n">con_inv</span> <span class="o">&gt;</span> <span class="mf">1e16</span><span class="p">):</span>
+            <span class="k">if</span> <span class="p">(</span><span class="n">con_inv</span> <span class="o">&gt;</span> <span class="mi">1</span><span class="n">e16</span><span class="p">):</span>
                 <span class="n">message</span> <span class="o">=</span> <span class="s2">&quot;The matrix (HPHT + R) is singular, inverse will&quot;</span> <span class="o">+</span> \
                     <span class="s2">&quot;fail.&quot;</span>
                 <span class="n">warnings</span><span class="o">.</span><span class="n">warn</span><span class="p">(</span><span class="n">message</span><span class="p">,</span> <span class="ne">RuntimeWarning</span><span class="p">)</span>
@@ -667,7 +679,9 @@
 </pre></div>
 
            </div>
-           
+           <div class="articleComments">
+            
+           </div>
           </div>
           <footer>
   
@@ -676,11 +690,11 @@
 
   <div role="contentinfo">
     <p>
-        &copy; Copyright 2018, carlos
+        &copy; Copyright 2018, carlos.
 
     </p>
   </div>
-  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/rtfd/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/snide/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>. 
 
 </footer>
 
@@ -695,24 +709,36 @@
 
   
 
-    
-    
-      <script type="text/javascript" id="documentation_options" data-url_root="../../" src="../../_static/documentation_options.js"></script>
-        <script type="text/javascript" src="../../_static/jquery.js"></script>
-        <script type="text/javascript" src="../../_static/underscore.js"></script>
-        <script type="text/javascript" src="../../_static/doctools.js"></script>
-        <script async="async" type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
-    
+    <script type="text/javascript">
+        var DOCUMENTATION_OPTIONS = {
+            URL_ROOT:'../../',
+            VERSION:'',
+            COLLAPSE_INDEX:false,
+            FILE_SUFFIX:'.html',
+            HAS_SOURCE:  true,
+            SOURCELINK_SUFFIX: '.txt'
+        };
+    </script>
+      <script type="text/javascript" src="../../_static/jquery.js"></script>
+      <script type="text/javascript" src="../../_static/underscore.js"></script>
+      <script type="text/javascript" src="../../_static/doctools.js"></script>
+      <script type="text/javascript" src="https://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
 
   
 
-  <script type="text/javascript" src="../../_static/js/theme.js"></script>
+  
+  
+    <script type="text/javascript" src="../../_static/js/theme.js"></script>
+  
 
+  
+  
   <script type="text/javascript">
       jQuery(function () {
-          SphinxRtdTheme.Navigation.enable(true);
+          SphinxRtdTheme.StickyNav.enable();
       });
-  </script> 
+  </script>
+   
 
 </body>
 </html>

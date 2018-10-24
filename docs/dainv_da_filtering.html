@@ -24,19 +24,28 @@
 
   
 
-  <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
-  <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
-    <link rel="index" title="Index" href="genindex.html" />
-    <link rel="search" title="Search" href="search.html" />
-    <link rel="next" title="dainv.dyn_model" href="dainv_dyn_model.html" />
-    <link rel="prev" title="dainv" href="dainv.html" /> 
+  
+  
+    <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
+  
+
+  
+
+  
+        <link rel="index" title="Index"
+              href="genindex.html"/>
+        <link rel="search" title="Search" href="search.html"/>
+    <link rel="top" title="vt_dainv  documentation" href="index.html"/>
+        <link rel="up" title="dainv" href="dainv.html"/>
+        <link rel="next" title="dainv.dyn_model" href="dainv_dyn_model.html"/>
+        <link rel="prev" title="dainv" href="dainv.html"/> 
 
   
   <script src="_static/js/modernizr.min.js"></script>
 
 </head>
 
-<body class="wy-body-for-nav">
+<body class="wy-body-for-nav" role="document">
 
    
   <div class="wy-grid-for-nav">
@@ -103,7 +112,7 @@
     <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
 
       
-      <nav class="wy-nav-top" aria-label="top navigation">
+      <nav class="wy-nav-top" role="navigation" aria-label="top navigation">
         
           <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
           <a href="index.html">vt_dainv</a>
@@ -111,10 +120,9 @@
       </nav>
 
 
+      
       <div class="wy-nav-content">
-        
         <div class="rst-content">
-        
           
 
 
@@ -178,11 +186,11 @@ The required methods are summarized below.</p>
 <col class="field-body" />
 <tbody valign="top">
 <tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
-<li><strong>nsamples</strong> (<em>int</em>) – Ensemble size.</li>
-<li><strong>da_interval</strong> (<em>float</em>) – Iteration interval between data assimilation steps.</li>
-<li><strong>t_end</strong> (<em>float</em>) – Final time.</li>
-<li><strong>forward_model</strong> (<a class="reference internal" href="dainv_dyn_model.html#dainv.dyn_model.DynModel" title="dainv.dyn_model.DynModel"><em>DynModel</em></a>) – Dynamic model.</li>
-<li><strong>input_dict</strong> (<em>dict</em><em>[</em><em>str</em><em>]</em>) – All filter-specific inputs.</li>
+<li><strong>nsamples</strong> (<em>int</em>) &#8211; Ensemble size.</li>
+<li><strong>da_interval</strong> (<em>float</em>) &#8211; Iteration interval between data assimilation steps.</li>
+<li><strong>t_end</strong> (<em>float</em>) &#8211; Final time.</li>
+<li><strong>forward_model</strong> (<a class="reference internal" href="dainv_dyn_model.html#dainv.dyn_model.DynModel" title="dainv.dyn_model.DynModel"><em>DynModel</em></a>) &#8211; Dynamic model.</li>
+<li><strong>input_dict</strong> (<em>dict</em><em>[</em><em>str</em><em>]</em><em></em>) &#8211; All filter-specific inputs.</li>
 </ul>
 </td>
 </tr>
@@ -241,11 +249,11 @@ are desired.</p>
 <col class="field-body" />
 <tbody valign="top">
 <tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
-<li><strong>nsamples</strong> (<em>int</em>) – Ensemble size.</li>
-<li><strong>da_interval</strong> (<em>float</em>) – Iteration interval between data assimilation steps.</li>
-<li><strong>t_end</strong> (<em>float</em>) – Final time.</li>
-<li><strong>forward_model</strong> (<a class="reference internal" href="dainv_dyn_model.html#dainv.dyn_model.DynModel" title="dainv.dyn_model.DynModel"><em>DynModel</em></a>) – Dynamic model.</li>
-<li><strong>input_dict</strong> (<em>dict</em><em>[</em><em>str</em><em>]</em>) – All filter-specific inputs.</li>
+<li><strong>nsamples</strong> (<em>int</em>) &#8211; Ensemble size.</li>
+<li><strong>da_interval</strong> (<em>float</em>) &#8211; Iteration interval between data assimilation steps.</li>
+<li><strong>t_end</strong> (<em>float</em>) &#8211; Final time.</li>
+<li><strong>forward_model</strong> (<a class="reference internal" href="dainv_dyn_model.html#dainv.dyn_model.DynModel" title="dainv.dyn_model.DynModel"><em>DynModel</em></a>) &#8211; Dynamic model.</li>
+<li><strong>input_dict</strong> (<em>dict</em><em>[</em><em>str</em><em>]</em><em></em>) &#8211; All filter-specific inputs.</li>
 </ul>
 </td>
 </tr>
@@ -254,31 +262,31 @@ are desired.</p>
 <div class="admonition note">
 <p class="first admonition-title">Note</p>
 <dl class="last docutils">
-<dt>Inputs in <code class="docutils literal notranslate"><span class="pre">input_dict</span></code>:</dt>
+<dt>Inputs in <code class="docutils literal"><span class="pre">input_dict</span></code>:</dt>
 <dd><ul class="first last simple">
-<li><strong>save_folder</strong> (<code class="docutils literal notranslate"><span class="pre">string</span></code>, <code class="docutils literal notranslate"><span class="pre">./results_da</span></code>) -
+<li><strong>save_folder</strong> (<code class="docutils literal"><span class="pre">string</span></code>, <code class="docutils literal"><span class="pre">./results_da</span></code>) -
 Folder where to save results.</li>
-<li><strong>debug_flag</strong> (<code class="docutils literal notranslate"><span class="pre">bool</span></code>, <code class="docutils literal notranslate"><span class="pre">False</span></code>) -
+<li><strong>debug_flag</strong> (<code class="docutils literal"><span class="pre">bool</span></code>, <code class="docutils literal"><span class="pre">False</span></code>) -
 Save extra information for debugging.</li>
-<li><strong>debug_folder</strong> (<code class="docutils literal notranslate"><span class="pre">string</span></code>, <code class="docutils literal notranslate"><span class="pre">./debug</span></code>) -
+<li><strong>debug_folder</strong> (<code class="docutils literal"><span class="pre">string</span></code>, <code class="docutils literal"><span class="pre">./debug</span></code>) -
 Folder where to save debugging information</li>
-<li><strong>verbosity</strong> (<code class="docutils literal notranslate"><span class="pre">int</span></code>, <code class="docutils literal notranslate"><span class="pre">1</span></code>) -
+<li><strong>verbosity</strong> (<code class="docutils literal"><span class="pre">int</span></code>, <code class="docutils literal"><span class="pre">1</span></code>) -
 Amount of information to print to screen.</li>
-<li><strong>sensitivity_only</strong> (<code class="docutils literal notranslate"><span class="pre">bool</span></code>, <code class="docutils literal notranslate"><span class="pre">False</span></code>) -
+<li><strong>sensitivity_only</strong> (<code class="docutils literal"><span class="pre">bool</span></code>, <code class="docutils literal"><span class="pre">False</span></code>) -
 Perform initial perturbation but no data assimilation).</li>
-<li><strong>reach_max_flag</strong> (<code class="docutils literal notranslate"><span class="pre">bool</span></code>, <code class="docutils literal notranslate"><span class="pre">True</span></code>) -
+<li><strong>reach_max_flag</strong> (<code class="docutils literal"><span class="pre">bool</span></code>, <code class="docutils literal"><span class="pre">True</span></code>) -
 Do not terminate simulation when converged.</li>
-<li><strong>convergence_option</strong> (<code class="docutils literal notranslate"><span class="pre">str</span></code>, <code class="docutils literal notranslate"><span class="pre">variance</span></code>) -
-Convergence criteria to use if <code class="docutils literal notranslate"><span class="pre">reach_max_flag</span></code> is
-<code class="docutils literal notranslate"><span class="pre">False</span></code>: <code class="docutils literal notranslate"><span class="pre">variance</span></code> to use the variance convergence
-criteria,  <code class="docutils literal notranslate"><span class="pre">residual</span></code>. See documentation for more
+<li><strong>convergence_option</strong> (<code class="docutils literal"><span class="pre">str</span></code>, <code class="docutils literal"><span class="pre">variance</span></code>) -
+Convergence criteria to use if <code class="docutils literal"><span class="pre">reach_max_flag</span></code> is
+<code class="docutils literal"><span class="pre">False</span></code>: <code class="docutils literal"><span class="pre">variance</span></code> to use the variance convergence
+criteria,  <code class="docutils literal"><span class="pre">residual</span></code>. See documentation for more
 information.</li>
-<li><strong>convergence_residual</strong> (<code class="docutils literal notranslate"><span class="pre">float</span></code>) -
-Residual value for convergence if <code class="docutils literal notranslate"><span class="pre">reach_max_flag</span></code> is
-<code class="docutils literal notranslate"><span class="pre">False</span></code> and <code class="docutils literal notranslate"><span class="pre">convergence_option</span></code> is <code class="docutils literal notranslate"><span class="pre">residual</span></code>.</li>
-<li><strong>convergence_norm</strong> (<code class="docutils literal notranslate"><span class="pre">int,</span> <span class="pre">inf</span></code>,``2``) -
+<li><strong>convergence_residual</strong> (<code class="docutils literal"><span class="pre">float</span></code>) -
+Residual value for convergence if <code class="docutils literal"><span class="pre">reach_max_flag</span></code> is
+<code class="docutils literal"><span class="pre">False</span></code> and <code class="docutils literal"><span class="pre">convergence_option</span></code> is <code class="docutils literal"><span class="pre">residual</span></code>.</li>
+<li><strong>convergence_norm</strong> (<code class="docutils literal"><span class="pre">int,</span> <span class="pre">inf</span></code>,``2``) -
 Order of norm to use for convergence criteria. can be an
-integer or <code class="docutils literal notranslate"><span class="pre">np.inf</span></code>. Default is L2 norm.</li>
+integer or <code class="docutils literal"><span class="pre">np.inf</span></code>. Default is L2 norm.</li>
 </ul>
 </dd>
 </dl>
@@ -354,10 +362,10 @@ convergence.</p>
 <dt id="dainv.da_filtering.EnKF">
 <em class="property">class </em><code class="descclassname">dainv.da_filtering.</code><code class="descname">EnKF</code><span class="sig-paren">(</span><em>nsamples</em>, <em>da_interval</em>, <em>t_end</em>, <em>forward_model</em>, <em>input_dict</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/dainv/da_filtering.html#EnKF"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#dainv.da_filtering.EnKF" title="Permalink to this definition">¶</a></dt>
 <dd><p>Implementation of the ensemble Kalman Filter (EnKF).</p>
-<p>It inherits most methods from parent class (<code class="docutils literal notranslate"><span class="pre">DAFIlter2</span></code>), but
-replaces the <code class="docutils literal notranslate"><span class="pre">correct_forecasts</span></code> method to use EnKF for the
+<p>It inherits most methods from parent class (<code class="docutils literal"><span class="pre">DAFIlter2</span></code>), but
+replaces the <code class="docutils literal"><span class="pre">correct_forecasts</span></code> method to use EnKF for the
 data-assimilation step.</p>
-<p>The EnKF is updated by: <code class="docutils literal notranslate"><span class="pre">Xa</span> <span class="pre">=</span> <span class="pre">Xf</span> <span class="pre">+</span> <span class="pre">K*(obs</span> <span class="pre">-</span> <span class="pre">HX)</span></code> where <em>Xf</em> is
+<p>The EnKF is updated by: <code class="docutils literal"><span class="pre">Xa</span> <span class="pre">=</span> <span class="pre">Xf</span> <span class="pre">+</span> <span class="pre">K*(obs</span> <span class="pre">-</span> <span class="pre">HX)</span></code> where <em>Xf</em> is
 the forecasted state vector (by the forward model), <em>Xa</em> is the
 updated vector after data-assimilation, <em>K</em> is the Kalman gain
 matrix, <em>obs</em> is the observation vector, and <em>HX</em> is the forecasted
@@ -379,7 +387,9 @@ information.</p>
 
 
            </div>
-           
+           <div class="articleComments">
+            
+           </div>
           </div>
           <footer>
   
@@ -397,11 +407,11 @@ information.</p>
 
   <div role="contentinfo">
     <p>
-        &copy; Copyright 2018, carlos
+        &copy; Copyright 2018, carlos.
 
     </p>
   </div>
-  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/rtfd/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/snide/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>. 
 
 </footer>
 
@@ -416,24 +426,36 @@ information.</p>
 
   
 
-    
-    
-      <script type="text/javascript" id="documentation_options" data-url_root="./" src="_static/documentation_options.js"></script>
-        <script type="text/javascript" src="_static/jquery.js"></script>
-        <script type="text/javascript" src="_static/underscore.js"></script>
-        <script type="text/javascript" src="_static/doctools.js"></script>
-        <script async="async" type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
-    
+    <script type="text/javascript">
+        var DOCUMENTATION_OPTIONS = {
+            URL_ROOT:'./',
+            VERSION:'',
+            COLLAPSE_INDEX:false,
+            FILE_SUFFIX:'.html',
+            HAS_SOURCE:  true,
+            SOURCELINK_SUFFIX: '.txt'
+        };
+    </script>
+      <script type="text/javascript" src="_static/jquery.js"></script>
+      <script type="text/javascript" src="_static/underscore.js"></script>
+      <script type="text/javascript" src="_static/doctools.js"></script>
+      <script type="text/javascript" src="https://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
 
   
 
-  <script type="text/javascript" src="_static/js/theme.js"></script>
+  
+  
+    <script type="text/javascript" src="_static/js/theme.js"></script>
+  
 
+  
+  
   <script type="text/javascript">
       jQuery(function () {
-          SphinxRtdTheme.Navigation.enable(true);
+          SphinxRtdTheme.StickyNav.enable();
       });
-  </script> 
+  </script>
+   
 
 </body>
 </html>

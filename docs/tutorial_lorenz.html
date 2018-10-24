@@ -24,19 +24,27 @@
 
   
 
-  <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
-  <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
-    <link rel="index" title="Index" href="genindex.html" />
-    <link rel="search" title="Search" href="search.html" />
-    <link rel="next" title="Source Code" href="source_code.html" />
-    <link rel="prev" title="Theory" href="theory.html" /> 
+  
+  
+    <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
+  
+
+  
+
+  
+        <link rel="index" title="Index"
+              href="genindex.html"/>
+        <link rel="search" title="Search" href="search.html"/>
+    <link rel="top" title="vt_dainv  documentation" href="index.html"/>
+        <link rel="next" title="Source Code" href="source_code.html"/>
+        <link rel="prev" title="Theory" href="theory.html"/> 
 
   
   <script src="_static/js/modernizr.min.js"></script>
 
 </head>
 
-<body class="wy-body-for-nav">
+<body class="wy-body-for-nav" role="document">
 
    
   <div class="wy-grid-for-nav">
@@ -108,7 +116,7 @@
     <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
 
       
-      <nav class="wy-nav-top" aria-label="top navigation">
+      <nav class="wy-nav-top" role="navigation" aria-label="top navigation">
         
           <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
           <a href="index.html">vt_dainv</a>
@@ -116,10 +124,9 @@
       </nav>
 
 
+      
       <div class="wy-nav-content">
-        
         <div class="rst-content">
-        
           
 
 
@@ -163,13 +170,13 @@
             
   <div class="section" id="tutorial-lorenz63">
 <h1>Tutorial: Lorenz63<a class="headerlink" href="#tutorial-lorenz63" title="Permalink to this headline">¶</a></h1>
-<p>This section provides the instructions to run the code for Lorenz system using the provided Tutorials (located in the ‘’$tutorials/lorenz’‘).</p>
+<p>This section provides the instructions to run the code for Lorenz system using the provided Tutorials (located in the &#8216;&#8217;$tutorials/lorenz&#8217;&#8216;).</p>
 <div class="section" id="lorenz-system">
 <h2>Lorenz System<a class="headerlink" href="#lorenz-system" title="Permalink to this headline">¶</a></h2>
 <p>The Lorenz system is a chaotic dynamic system controlled by three ordinary differential equations(ODEs).</p>
-<div class="math notranslate nohighlight">
+<div class="math">
 \[ \begin{align}\begin{aligned}\frac{dx}{dt} = \sigma (y - x)\\\frac{dy}{dt} = \rho x - y -xz\\\frac{dz}{dt} = xy - \beta z\end{aligned}\end{align} \]</div>
-<p>where <span class="math notranslate nohighlight">\(\sigma, \rho, \beta\)</span> are parameters.</p>
+<p>where <span class="math">\(\sigma, \rho, \beta\)</span> are parameters.</p>
 <p>The time-varyting trajectory for Lorenz system is shown below.</p>
 <div class="figure">
 <a class="reference internal image-reference" href="_images/Lorenz63.png"><img alt="_images/Lorenz63.png" src="_images/Lorenz63.png" style="width: 400pt;" /></a>
@@ -179,16 +186,16 @@
 <h2>Data Assimilation Method<a class="headerlink" href="#data-assimilation-method" title="Permalink to this headline">¶</a></h2>
 <p>To infer the optimal parameters for Lorenz equations based on the observation is the inverse problem in this tutorial.</p>
 <p>Data assimilation method is to solve the inverse problem,</p>
-<p>Different data assimilation methods are embeded in the code (located in the “$source/da_inv/da_filtering.py”). The list of usable data assimilation methods is shown below:</p>
+<p>Different data assimilation methods are embeded in the code (located in the &#8220;$source/da_inv/da_filtering.py&#8221;). The list of usable data assimilation methods is shown below:</p>
 <ol class="arabic simple">
 <li>Ensemble Kalman Filtering <a class="reference internal" href="#iglesias2013ensemble" id="id1">[B1]</a></li>
 </ol>
 </div>
 <div class="section" id="dynamic-model">
 <h2>Dynamic Model<a class="headerlink" href="#dynamic-model" title="Permalink to this headline">¶</a></h2>
-<p>The dynamic model in this tutorial is Lorenz model. The code for Lorenz model is located in the “source/dyn_models/lorenz.py”</p>
+<p>The dynamic model in this tutorial is Lorenz model. The code for Lorenz model is located in the &#8220;source/dyn_models/lorenz.py&#8221;</p>
 <p><em>Lorenz dynamic model</em></p>
-<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="c1"># Copyright 2018 Virginia Polytechnic Institute and State University.</span>
+<div class="highlight-python"><div class="highlight"><pre><span></span><span class="c1"># Copyright 2018 Virginia Polytechnic Institute and State University.</span>
 <span class="sd">&quot;&quot;&quot; Dynamic model for solving the Lorenz system.</span>
 <span class="sd">&quot;&quot;&quot;</span>
 
@@ -215,7 +222,7 @@
 <span class="sd">    of the position at the given time (x, y, z).</span>
 <span class="sd">    &quot;&quot;&quot;</span>
 
-    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">nsamples</span><span class="p">,</span> <span class="n">da_interval</span><span class="p">,</span> <span class="n">t_end</span><span class="p">,</span>  <span class="n">model_input</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">nsamples</span><span class="p">,</span> <span class="n">da_interval</span><span class="p">,</span> <span class="n">t_end</span><span class="p">,</span>  <span class="n">model_input</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot; Initialize the dynamic model and parse input file.</span>
 
 <span class="sd">        Parameters</span>
@@ -305,7 +312,7 @@
         <span class="c1"># dimension of observation space</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">nstate_obs</span> <span class="o">=</span> <span class="mi">3</span>
 
-    <span class="k">def</span> <span class="fm">__str__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">__str__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="n">s</span> <span class="o">=</span> <span class="s1">&#39;Lorenz 63 model.&#39;</span>
         <span class="k">return</span> <span class="n">s</span>
 
@@ -437,7 +444,7 @@
             <span class="n">forecast_state</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">empty</span><span class="p">([</span><span class="nb">len</span><span class="p">(</span><span class="n">time_series</span><span class="p">),</span> <span class="bp">self</span><span class="o">.</span><span class="n">nstate</span><span class="p">])</span>
             <span class="k">for</span> <span class="n">t</span> <span class="ow">in</span> <span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">time_series</span><span class="p">)):</span>
                 <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">solver</span><span class="o">.</span><span class="n">successful</span><span class="p">():</span>
-                    <span class="k">print</span> <span class="s2">&quot;solver failed&quot;</span>
+                    <span class="k">print</span><span class="p">(</span><span class="s2">&quot;solver failed&quot;</span><span class="p">)</span>
                     <span class="n">sys</span><span class="o">.</span><span class="n">exit</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
                 <span class="bp">self</span><span class="o">.</span><span class="n">solver</span><span class="o">.</span><span class="n">integrate</span><span class="p">(</span><span class="n">time_series</span><span class="p">[</span><span class="n">t</span><span class="p">])</span>
                 <span class="n">forecast_state</span><span class="p">[</span><span class="n">t</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">solver</span><span class="o">.</span><span class="n">y</span>
@@ -545,16 +552,16 @@
 <td><strong>Directory</strong></td>
 </tr>
 <tr class="row-even"><td>Input File</td>
-<td><code class="docutils literal notranslate"><span class="pre">main_input.in</span></code></td>
-<td><code class="docutils literal notranslate"><span class="pre">/tutorials/lorenz</span></code></td>
+<td><code class="docutils literal"><span class="pre">main_input.in</span></code></td>
+<td><code class="docutils literal"><span class="pre">/tutorials/lorenz</span></code></td>
 </tr>
 <tr class="row-odd"><td>Input File</td>
-<td><code class="docutils literal notranslate"><span class="pre">forward_model_input.in</span></code></td>
-<td><code class="docutils literal notranslate"><span class="pre">/tutorials/lorenz</span></code></td>
+<td><code class="docutils literal"><span class="pre">forward_model_input.in</span></code></td>
+<td><code class="docutils literal"><span class="pre">/tutorials/lorenz</span></code></td>
 </tr>
 <tr class="row-even"><td>Dynamic Model</td>
-<td><code class="docutils literal notranslate"><span class="pre">lorenz.py</span></code></td>
-<td><code class="docutils literal notranslate"><span class="pre">/source/dyn_models/</span></code></td>
+<td><code class="docutils literal"><span class="pre">lorenz.py</span></code></td>
+<td><code class="docutils literal"><span class="pre">/source/dyn_models/</span></code></td>
 </tr>
 </tbody>
 </table>
@@ -563,7 +570,7 @@
 <h2>Run Tutorial<a class="headerlink" href="#run-tutorial" title="Permalink to this headline">¶</a></h2>
 <div class="section" id="step-1-write-main-input-file">
 <h3>Step 1 : Write main input file<a class="headerlink" href="#step-1-write-main-input-file" title="Permalink to this headline">¶</a></h3>
-<p>Specify self-defined parameters in the ‘main_input.in’ file. The ‘main_input.in’ file is provided in the lorenz tutorial directory and shown below.</p>
+<p>Specify self-defined parameters in the &#8216;main_input.in&#8217; file. The &#8216;main_input.in&#8217; file is provided in the lorenz tutorial directory and shown below.</p>
 <div class="admonition note">
 <p class="first admonition-title">Note</p>
 <p class="last">Mainly need to specify the ensemble samples (nsamples) and the data assimilation interval (da_interval)</p>
@@ -571,7 +578,7 @@
 </div>
 <div class="section" id="step-2-write-forward-model-input-file">
 <h3>Step 2 : Write forward model input file<a class="headerlink" href="#step-2-write-forward-model-input-file" title="Permalink to this headline">¶</a></h3>
-<p>Specify self-defined parameters in the ‘forward_model_input.in’ file. The ‘forward_model_input.in’ file is provided in the lorenz tutorial directory and shown below.</p>
+<p>Specify self-defined parameters in the &#8216;forward_model_input.in&#8217; file. The &#8216;forward_model_input.in&#8217; file is provided in the lorenz tutorial directory and shown below.</p>
 <div class="admonition note">
 <p class="first admonition-title">Note</p>
 <p class="last">Mainly need to specify which augmented parameter will be perturbed, the initial value for the state varibles, the relative standard deviation for state varibles and observation</p>
@@ -579,12 +586,12 @@
 </div>
 <div class="section" id="step-3-execute">
 <h3>Step 3 : Execute<a class="headerlink" href="#step-3-execute" title="Permalink to this headline">¶</a></h3>
-<p>To execute the data assimilation for lorenz system, move to the directory of ‘$source’ and type ‘. init_da.sh’ to export the PATH. Then move to the lorenz directory($tutorials/lorenz), type ‘./run.sh’ to start the data assimilation process. The process information will be saved in ‘log.enkf’ file at lorenz tutorial directory.</p>
+<p>To execute the data assimilation for lorenz system, move to the directory of &#8216;$source&#8217; and type &#8216;. init_da.sh&#8217; to export the PATH. Then move to the lorenz directory($tutorials/lorenz), type &#8216;./run.sh&#8217; to start the data assimilation process. The process information will be saved in &#8216;log.enkf&#8217; file at lorenz tutorial directory.</p>
 </div>
 <div class="section" id="step-4-postprocessing">
 <h3>Step 4 : Postprocessing<a class="headerlink" href="#step-4-postprocessing" title="Permalink to this headline">¶</a></h3>
-<p>‘Lorenz_plot.py’ (located in ‘$tutorials/lorenz’) is the postprocessing file to plot the trajectory of state varible ‘x’ ‘y’ and ‘z’.</p>
-<p>To execute the postprocessing, type ‘./plot.sh’ to plot figures as shown below. Users can modify the ‘lorenz_plot.py’ for their own post-processing</p>
+<p>&#8216;Lorenz_plot.py&#8217; (located in &#8216;$tutorials/lorenz&#8217;) is the postprocessing file to plot the trajectory of state varible &#8216;x&#8217; &#8216;y&#8217; and &#8216;z&#8217;.</p>
+<p>To execute the postprocessing, type &#8216;./plot.sh&#8217; to plot figures as shown below. Users can modify the &#8216;lorenz_plot.py&#8217; for their own post-processing</p>
 <div class="figure">
 <a class="reference internal image-reference" href="_images/timeSeries_DA_x.png"><img alt="_images/timeSeries_DA_x.png" src="_images/timeSeries_DA_x.png" style="width: 400pt;" /></a>
 </div>
@@ -610,7 +617,9 @@
 
 
            </div>
-           
+           <div class="articleComments">
+            
+           </div>
           </div>
           <footer>
   
@@ -628,11 +637,11 @@
 
   <div role="contentinfo">
     <p>
-        &copy; Copyright 2018, carlos
+        &copy; Copyright 2018, carlos.
 
     </p>
   </div>
-  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/rtfd/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/snide/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>. 
 
 </footer>
 
@@ -647,24 +656,36 @@
 
   
 
-    
-    
-      <script type="text/javascript" id="documentation_options" data-url_root="./" src="_static/documentation_options.js"></script>
-        <script type="text/javascript" src="_static/jquery.js"></script>
-        <script type="text/javascript" src="_static/underscore.js"></script>
-        <script type="text/javascript" src="_static/doctools.js"></script>
-        <script async="async" type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
-    
+    <script type="text/javascript">
+        var DOCUMENTATION_OPTIONS = {
+            URL_ROOT:'./',
+            VERSION:'',
+            COLLAPSE_INDEX:false,
+            FILE_SUFFIX:'.html',
+            HAS_SOURCE:  true,
+            SOURCELINK_SUFFIX: '.txt'
+        };
+    </script>
+      <script type="text/javascript" src="_static/jquery.js"></script>
+      <script type="text/javascript" src="_static/underscore.js"></script>
+      <script type="text/javascript" src="_static/doctools.js"></script>
+      <script type="text/javascript" src="https://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
 
   
 
-  <script type="text/javascript" src="_static/js/theme.js"></script>
+  
+  
+    <script type="text/javascript" src="_static/js/theme.js"></script>
+  
 
+  
+  
   <script type="text/javascript">
       jQuery(function () {
-          SphinxRtdTheme.Navigation.enable(true);
+          SphinxRtdTheme.StickyNav.enable();
       });
-  </script> 
+  </script>
+   
 
 </body>
 </html>

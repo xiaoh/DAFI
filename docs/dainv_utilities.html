@@ -24,18 +24,27 @@
 
   
 
-  <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
-  <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
-    <link rel="index" title="Index" href="genindex.html" />
-    <link rel="search" title="Search" href="search.html" />
-    <link rel="prev" title="dainv.dyn_model" href="dainv_dyn_model.html" /> 
+  
+  
+    <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
+  
+
+  
+
+  
+        <link rel="index" title="Index"
+              href="genindex.html"/>
+        <link rel="search" title="Search" href="search.html"/>
+    <link rel="top" title="vt_dainv  documentation" href="index.html"/>
+        <link rel="up" title="dainv" href="dainv.html"/>
+        <link rel="prev" title="dainv.dyn_model" href="dainv_dyn_model.html"/> 
 
   
   <script src="_static/js/modernizr.min.js"></script>
 
 </head>
 
-<body class="wy-body-for-nav">
+<body class="wy-body-for-nav" role="document">
 
    
   <div class="wy-grid-for-nav">
@@ -102,7 +111,7 @@
     <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
 
       
-      <nav class="wy-nav-top" aria-label="top navigation">
+      <nav class="wy-nav-top" role="navigation" aria-label="top navigation">
         
           <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
           <a href="index.html">vt_dainv</a>
@@ -110,10 +119,9 @@
       </nav>
 
 
+      
       <div class="wy-nav-content">
-        
         <div class="rst-content">
-        
           
 
 
@@ -164,20 +172,20 @@
 <p>Collection of I/O functions and other utilities.</p>
 <dl class="function">
 <dt id="dainv.utilities.extract_list_from_string">
-<code class="descclassname">dainv.utilities.</code><code class="descname">extract_list_from_string</code><span class="sig-paren">(</span><em>string</em>, <em>sep='</em>, <em>'</em>, <em>type_func=&lt;type 'str'&gt;</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/dainv/utilities.html#extract_list_from_string"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#dainv.utilities.extract_list_from_string" title="Permalink to this definition">¶</a></dt>
+<code class="descclassname">dainv.utilities.</code><code class="descname">extract_list_from_string</code><span class="sig-paren">(</span><em>string</em>, <em>sep='</em>, <em>'</em>, <em>type_func=&lt;class 'str'&gt;</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/dainv/utilities.html#extract_list_from_string"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#dainv.utilities.extract_list_from_string" title="Permalink to this definition">¶</a></dt>
 <dd><p>Extract a list from a string.</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
 <tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
-<li><strong>string</strong> (<em>str</em>) – String containing the list.</li>
-<li><strong>sep</strong> (<em>str</em>) – The separator in the string.</li>
-<li><strong>type_func</strong> (<em>Function to convert the string to desired type.</em>) – </li>
+<li><strong>string</strong> (<em>str</em>) &#8211; String containing the list.</li>
+<li><strong>sep</strong> (<em>str</em>) &#8211; The separator in the string.</li>
+<li><strong>type_func</strong> (<em>Function to convert the string to desired type.</em>) &#8211; </li>
 </ul>
 </td>
 </tr>
-<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first"><strong>value_list</strong> – List of sub-strings extracted from input string.</p>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first"><strong>value_list</strong> &#8211; List of sub-strings extracted from input string.</p>
 </td>
 </tr>
 <tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><p class="first last">list</p>
@@ -186,7 +194,7 @@
 </tbody>
 </table>
 <p class="rubric">Example</p>
-<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">extract_list_from_string</span><span class="p">(</span><span class="s1">&#39;1; 2;3.6 ; 10&#39;</span><span class="p">,</span> <span class="s1">&#39;;&#39;</span><span class="p">,</span> <span class="nb">int</span><span class="p">)</span>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">extract_list_from_string</span><span class="p">(</span><span class="s1">&#39;1; 2;3.6 ; 10&#39;</span><span class="p">,</span> <span class="s1">&#39;;&#39;</span><span class="p">,</span> <span class="nb">int</span><span class="p">)</span>
 <span class="go">[1, 2, 3, 10]</span>
 </pre></div>
 </div>
@@ -197,8 +205,8 @@
 <code class="descclassname">dainv.utilities.</code><code class="descname">read_input_data</code><span class="sig-paren">(</span><em>input_file</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/dainv/utilities.html#read_input_data"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#dainv.utilities.read_input_data" title="Permalink to this definition">¶</a></dt>
 <dd><p>Parse an input file into a dictionary.</p>
 <p>The input file should contain two entries per line separated by any
-number of white space characters or ‘:’ or ‘=’. Comments are
-indicated with ‘#’. Each non-empty, non-comment, line is stored in
+number of white space characters or &#8216;:&#8217; or &#8216;=&#8217;. Comments are
+indicated with &#8216;#&#8217;. Each non-empty, non-comment, line is stored in
 the output dictionary with the first entry as the key (input name)
 and the second as the argument(input value). Both keys and
 arguments are strings.</p>
@@ -206,9 +214,9 @@ arguments are strings.</p>
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>input_file</strong> (<em>str</em>) – Name of the input file.</td>
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>input_file</strong> (<em>str</em>) &#8211; Name of the input file.</td>
 </tr>
-<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><strong>param_dict</strong> – Dictionary containing input names and values.</td>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><strong>param_dict</strong> &#8211; Dictionary containing input names and values.</td>
 </tr>
 <tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body">dict</td>
 </tr>
@@ -225,9 +233,9 @@ arguments are strings.</p>
 <col class="field-body" />
 <tbody valign="top">
 <tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
-<li><strong>file</strong> (<em>str</em>) – The file to modify.</li>
-<li><strong>pattern</strong> (<em>str</em>) – The old character string which you want replace.</li>
-<li><strong>subst</strong> (<em>str</em>) – The new character string.</li>
+<li><strong>file</strong> (<em>str</em>) &#8211; The file to modify.</li>
+<li><strong>pattern</strong> (<em>str</em>) &#8211; The old character string which you want replace.</li>
+<li><strong>subst</strong> (<em>str</em>) &#8211; The new character string.</li>
 </ul>
 </td>
 </tr>
@@ -239,7 +247,9 @@ arguments are strings.</p>
 
 
            </div>
-           
+           <div class="articleComments">
+            
+           </div>
           </div>
           <footer>
   
@@ -255,11 +265,11 @@ arguments are strings.</p>
 
   <div role="contentinfo">
     <p>
-        &copy; Copyright 2018, carlos
+        &copy; Copyright 2018, carlos.
 
     </p>
   </div>
-  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/rtfd/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/snide/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>. 
 
 </footer>
 
@@ -274,24 +284,36 @@ arguments are strings.</p>
 
   
 
-    
-    
-      <script type="text/javascript" id="documentation_options" data-url_root="./" src="_static/documentation_options.js"></script>
-        <script type="text/javascript" src="_static/jquery.js"></script>
-        <script type="text/javascript" src="_static/underscore.js"></script>
-        <script type="text/javascript" src="_static/doctools.js"></script>
-        <script async="async" type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
-    
+    <script type="text/javascript">
+        var DOCUMENTATION_OPTIONS = {
+            URL_ROOT:'./',
+            VERSION:'',
+            COLLAPSE_INDEX:false,
+            FILE_SUFFIX:'.html',
+            HAS_SOURCE:  true,
+            SOURCELINK_SUFFIX: '.txt'
+        };
+    </script>
+      <script type="text/javascript" src="_static/jquery.js"></script>
+      <script type="text/javascript" src="_static/underscore.js"></script>
+      <script type="text/javascript" src="_static/doctools.js"></script>
+      <script type="text/javascript" src="https://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
 
   
 
-  <script type="text/javascript" src="_static/js/theme.js"></script>
+  
+  
+    <script type="text/javascript" src="_static/js/theme.js"></script>
+  
 
+  
+  
   <script type="text/javascript">
       jQuery(function () {
-          SphinxRtdTheme.Navigation.enable(true);
+          SphinxRtdTheme.StickyNav.enable();
       });
-  </script> 
+  </script>
+   
 
 </body>
 </html>

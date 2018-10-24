@@ -1,3 +1,4 @@
+#!/usr/bin/env python
 
 # standard library imports
 import unittest
@@ -59,7 +60,7 @@ class TestEnKF(unittest.TestCase):
         os.makedirs(self.dir)
         self.main_input_file = 'dainv.in'
         self.model_input_file = 'lorenz.in'
-        self.obs_file = self.dir + os.sep + 'obs.txt'
+        self.obs_file = self.dir + os.sep + 'obs.dat'
 
         def _create_main_input(filename):
             main_str = ''

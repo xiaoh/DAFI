@@ -24,19 +24,27 @@
 
   
 
-  <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
-  <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
-    <link rel="index" title="Index" href="genindex.html" />
-    <link rel="search" title="Search" href="search.html" />
-    <link rel="next" title="Tutorial: Lorenz63" href="tutorial_lorenz.html" />
-    <link rel="prev" title="VT-DA_Inv Documentation" href="index.html" /> 
+  
+  
+    <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
+  
+
+  
+
+  
+        <link rel="index" title="Index"
+              href="genindex.html"/>
+        <link rel="search" title="Search" href="search.html"/>
+    <link rel="top" title="vt_dainv  documentation" href="index.html"/>
+        <link rel="next" title="Tutorial: Lorenz63" href="tutorial_lorenz.html"/>
+        <link rel="prev" title="VT-DA_Inv Documentation" href="index.html"/> 
 
   
   <script src="_static/js/modernizr.min.js"></script>
 
 </head>
 
-<body class="wy-body-for-nav">
+<body class="wy-body-for-nav" role="document">
 
    
   <div class="wy-grid-for-nav">
@@ -100,7 +108,7 @@
     <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
 
       
-      <nav class="wy-nav-top" aria-label="top navigation">
+      <nav class="wy-nav-top" role="navigation" aria-label="top navigation">
         
           <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
           <a href="index.html">vt_dainv</a>
@@ -108,10 +116,9 @@
       </nav>
 
 
+      
       <div class="wy-nav-content">
-        
         <div class="rst-content">
-        
           
 
 
@@ -158,17 +165,17 @@
 <div class="section" id="inverse-problem">
 <h2>Inverse Problem<a class="headerlink" href="#inverse-problem" title="Permalink to this headline">¶</a></h2>
 <p>Considering a time-independent system, it can be prescribed as the following model:</p>
-<div class="math notranslate nohighlight">
+<div class="math">
 \[x= [\theta, \alpha]\]</div>
-<p>where <span class="math notranslate nohighlight">\(x\)</span> is state vector, <span class="math notranslate nohighlight">\(\theta\)</span> is the state variables characterizing the system behaviors and <span class="math notranslate nohighlight">\(\alpha\)</span> represents the state augmentation parameters for system design.</p>
+<p>where <span class="math">\(x\)</span> is state vector, <span class="math">\(\theta\)</span> is the state variables characterizing the system behaviors and <span class="math">\(\alpha\)</span> represents the state augmentation parameters for system design.</p>
 <p>Then the stochastic formulation of state vector and observation can be constructed for the system by adding an addictive random term in deterministic formulation as following:</p>
-<div class="math notranslate nohighlight">
+<div class="math">
 \[x=x_0+\eta\]</div>
-<div class="math notranslate nohighlight">
+<div class="math">
 \[y=y_o+\epsilon\]</div>
-<p>where <span class="math notranslate nohighlight">\(\eta\)</span> is the random perturbation on the initial state vector <span class="math notranslate nohighlight">\(x_0\)</span>, <span class="math notranslate nohighlight">\(y_o\)</span> is the available observation of the system. <span class="math notranslate nohighlight">\(\epsilon\)</span> is random observation error.
-With random state vector and observation, we can leverage the Bayes’s Theorem to get a posterior distribution by combining the prior distribution and data distribution which is called <strong>inverse problem</strong>.</p>
-<div class="math notranslate nohighlight">
+<p>where <span class="math">\(\eta\)</span> is the random perturbation on the initial state vector <span class="math">\(x_0\)</span>, <span class="math">\(y_o\)</span> is the available observation of the system. <span class="math">\(\epsilon\)</span> is random observation error.
+With random state vector and observation, we can leverage the Bayes&#8217;s Theorem to get a posterior distribution by combining the prior distribution and data distribution which is called <strong>inverse problem</strong>.</p>
+<div class="math">
 \[p(x \mid y)  \propto p(x)p(y \mid x)\]</div>
 <p>Thus the problem can be solved with data assimilation by finding state vector to maximize a posterior(MAP).</p>
 </div>
@@ -182,20 +189,20 @@ The variational method use the optimal control theory <a class="reference intern
 <div class="section" id="ensemble-kalman-filtering-enkf">
 <h2>Ensemble Kalman Filtering (EnKF)<a class="headerlink" href="#ensemble-kalman-filtering-enkf" title="Permalink to this headline">¶</a></h2>
 <p>In EnKF, the prior statistics is estimated by ensemble Monte Carlo sampling and each sample in kth DA step can be defined as:</p>
-<div class="math notranslate nohighlight" id="equation-bayes">
+<div class="math" id="equation-bayes">
 <span class="eqno">(1)<a class="headerlink" href="#equation-bayes" title="Permalink to this equation">¶</a></span>\[x_k^{(j)} = [\theta_k^{(j)},\alpha_k^{(j)}] \qquad 1 \leq j \leq N_{en}\]</div>
-<p>where <span class="math notranslate nohighlight">\(N_{en}\)</span> is the ensemble size.</p>
+<p>where <span class="math">\(N_{en}\)</span> is the ensemble size.</p>
 <p>In <a class="reference internal" href="#equation-bayes">(1)</a>, MAP is equivalent to the determination of a variance minimizing analysis. Accordingly, the matrix is updated as:</p>
-<div class="math notranslate nohighlight" id="equation-stateupdate-enkf">
-<span class="eqno">(2)<a class="headerlink" href="#equation-stateupdate-enkf" title="Permalink to this equation">¶</a></span>\[x_{k+1}^{(j)}=x_k^{(j)}+K(y^{(j)}-H(x_k^{(j)}))\]</div>
-<p>with gain matrix <span class="math notranslate nohighlight">\(K=PH^T(HPH^T+C)^{-1}\)</span>, <span class="math notranslate nohighlight">\(P = \frac{1}{N_{en}-1}X'X'^T\)</span>, <span class="math notranslate nohighlight">\(X'=(x^{(1)}-x^{(e)},x^{(2)}-x^{(e)},\dot,x^{(N_{en})}-x^{(e)})\)</span>
+<div class="math" id="equation-stateupdate_EnKF">
+<span class="eqno">(2)<a class="headerlink" href="#equation-stateupdate_EnKF" title="Permalink to this equation">¶</a></span>\[x_{k+1}^{(j)}=x_k^{(j)}+K(y^{(j)}-H(x_k^{(j)}))\]</div>
+<p>with gain matrix <span class="math">\(K=PH^T(HPH^T+C)^{-1}\)</span>, <span class="math">\(P = \frac{1}{N_{en}-1}X'X'^T\)</span>, <span class="math">\(X'=(x^{(1)}-x^{(e)},x^{(2)}-x^{(e)},\dot,x^{(N_{en})}-x^{(e)})\)</span>
 where H is operator that map from the state space to observation space, C is observation covariance error.</p>
 <p>The procedure of EnKF can be summarized as follows:</p>
 <ol class="arabic simple">
-<li>Give a first guessed or prior state vector <span class="math notranslate nohighlight">\(x^{(e)}\)</span>, and prescribe the prior and observation statistics respectively;</li>
-<li>Realize Nen initial samples <span class="math notranslate nohighlight">\(\{x^{(j)}\}_{j=1}^N\)</span> around <span class="math notranslate nohighlight">\(x^{(e)}\)</span>;</li>
+<li>Give a first guessed or prior state vector <span class="math">\(x^{(e)}\)</span>, and prescribe the prior and observation statistics respectively;</li>
+<li>Realize Nen initial samples <span class="math">\(\{x^{(j)}\}_{j=1}^N\)</span> around <span class="math">\(x^{(e)}\)</span>;</li>
 <li>Map the state vector to observation space by solving the RANS equation based on each sample and obtain HX;</li>
-<li>Obtain gain matrix K and update the prior distribution based on <a class="reference internal" href="#equation-stateupdate-enkf">(2)</a>;</li>
+<li>Obtain gain matrix K and update the prior distribution based on <a class="reference internal" href="#equation-stateupdate_EnKF">(2)</a>;</li>
 <li>Return to step 3 until further minimization cannot be achieved.</li>
 </ol>
 <p>For more information, please refer to <a class="reference internal" href="#xiao2016" id="id4">[A4]</a></p>
@@ -232,7 +239,9 @@ where H is operator that map from the state space to observation space, C is obs
 
 
            </div>
-           
+           <div class="articleComments">
+            
+           </div>
           </div>
           <footer>
   
@@ -250,11 +259,11 @@ where H is operator that map from the state space to observation space, C is obs
 
   <div role="contentinfo">
     <p>
-        &copy; Copyright 2018, carlos
+        &copy; Copyright 2018, carlos.
 
     </p>
   </div>
-  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/rtfd/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/snide/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>. 
 
 </footer>
 
@@ -269,24 +278,36 @@ where H is operator that map from the state space to observation space, C is obs
 
   
 
-    
-    
-      <script type="text/javascript" id="documentation_options" data-url_root="./" src="_static/documentation_options.js"></script>
-        <script type="text/javascript" src="_static/jquery.js"></script>
-        <script type="text/javascript" src="_static/underscore.js"></script>
-        <script type="text/javascript" src="_static/doctools.js"></script>
-        <script async="async" type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
-    
+    <script type="text/javascript">
+        var DOCUMENTATION_OPTIONS = {
+            URL_ROOT:'./',
+            VERSION:'',
+            COLLAPSE_INDEX:false,
+            FILE_SUFFIX:'.html',
+            HAS_SOURCE:  true,
+            SOURCELINK_SUFFIX: '.txt'
+        };
+    </script>
+      <script type="text/javascript" src="_static/jquery.js"></script>
+      <script type="text/javascript" src="_static/underscore.js"></script>
+      <script type="text/javascript" src="_static/doctools.js"></script>
+      <script type="text/javascript" src="https://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
 
   
 
-  <script type="text/javascript" src="_static/js/theme.js"></script>
+  
+  
+    <script type="text/javascript" src="_static/js/theme.js"></script>
+  
 
+  
+  
   <script type="text/javascript">
       jQuery(function () {
-          SphinxRtdTheme.Navigation.enable(true);
+          SphinxRtdTheme.StickyNav.enable();
       });
-  </script> 
+  </script>
+   
 
 </body>
 </html>

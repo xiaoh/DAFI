@@ -1,4 +1,4 @@
-#!/usr/bin/env python2
+#!/usr/bin/env python
 # Copyright 2018 Virginia Polytechnic Institute and State University.
 """ Inverse modeling main executable.
 
@@ -67,7 +67,7 @@ def _get_input():
     # get the input file.
     try:
         input_file = sys.argv[1]
-    except IndexError, e:
+    except IndexError as e:
         print(e)
         _print_usage()
         sys.exit(1)
