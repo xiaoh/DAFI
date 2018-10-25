@@ -11,7 +11,7 @@ import tempfile
 import pdb
 
 # local import
-import utilities as Tool
+from dainv import utilities as Tool
 
 global unitTest
 unitTest = False

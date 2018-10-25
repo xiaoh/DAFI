@@ -4,8 +4,8 @@ dt_interval 0.025
 
 # determine which variable will be perturbed
 perturb_rho         True
-perturb_beta        True
-perturb_sigma       True
+perturb_beta        False
+perturb_sigma       False
 
 # set initial value for state variables
 x 1.

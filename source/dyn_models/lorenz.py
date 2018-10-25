@@ -25,7 +25,7 @@ class Solver(DynModel):
     of the position at the given time (x, y, z).
     """
 
-    def __init__(self, nsamples, da_interval, t_end,  model_input):
+    def __init__(self, nsamples, da_interval, t_end, forward_interval, max_pseudo_time, model_input):
         """ Initialize the dynamic model and parse input file.
 
         Parameters
@@ -254,11 +254,9 @@ class Solver(DynModel):
             # Save current state in state matrix state_vec_current
             state_vec_forecast[:, isamp] = forecast_state[-1]
         # Construct observation operator
-        h_matrix = self._construct_h_matrix()
-        model_obs = h_matrix.dot(state_vec_forecast)
-        return state_vec_forecast, model_obs
+        return state_vec_forecast
 
-    def forward(self, X):
+    def forward(self, X, next_pseudo_time):
         """
         Returns states at the next end time.
 
@@ -277,9 +275,9 @@ class Solver(DynModel):
             ensemble in observation space
         """
         # Construct observation operator
-        H = self._constructHMatrix()
-        HX = H.dot(X)
-        return HX
+        h_matrix = self._construct_h_matrix()
+        model_obs = h_matrix.dot(X)
+        return X, model_obs
 
     def get_obs(self, next_end_time):
         """ Return the observation and observation covariance.
@@ -298,9 +296,9 @@ class Solver(DynModel):
             Observation error covariance. ``dtype=float``, ``ndim=2``,
             ``shape=(nstate_obs, nstate_obs)``
         """
-        obs = self.observe(next_end_time)
+        obs, obs_perturb = self.observe(next_end_time)
         obs_error = self.get_obs_error()
-        return obs, obs_error
+        return obs, obs_perturb, obs_error
 
     def get_obs_error(self):
         """ Return the observation error covariance. """
@@ -351,7 +349,10 @@ class Solver(DynModel):
             obs_mat[:, i] = obs
         # construct the observation error covariance
         self.obs_error = sp.diags(obs_std_vec**2, 0)
-        return obs_mat
+        import pdb
+        # pdb.set_trace()
+        self.obs_perturb = obs_mat - np.tile(obs_vec, (self.nsamples, 1)).T
+        return obs_mat, self.obs_perturb
 
     def _construct_h_matrix(self):
         """ Construct the observation operator. """

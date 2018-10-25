@@ -106,6 +106,17 @@ def main():
             rand_seed = int(param_dict['rand_seed'])
         except:
             rand_seed = 1.0
+    try:
+        max_pseudo_time = int(
+            param_dict['max_pseudo_time'])
+    except:
+        max_pseudo_time = 1
+
+    try:
+        forward_interval = int(
+            param_dict['forward_interval'])
+    except:
+        forward_interval = 1
     # remove all the inputs meant for this file, mfu_main.py.
     # what is left are inputs meant for the specific DA filter method used.
     main_inputs = [
@@ -122,19 +133,20 @@ def main():
     # random seed: do this before importing local modules that use np.random
     if rand_seed_flag:
         np.random.seed(rand_seed)
-    # forward model
+    # dynamic model
     DynModel = getattr(
         importlib.import_module('dyn_models.' + dyn_model), 'Solver')
-    forward_model = DynModel(nsamples, da_interval, t_end, input_file_dm)
+    dynamic_model = DynModel(nsamples, da_interval, t_end, forward_interval,
+                             max_pseudo_time, input_file_dm)
     # inverse model
     InvFilter = getattr(importlib.import_module('dainv.da_filtering'),
                         da_filter)
-    inverse_model = InvFilter(nsamples, da_interval, t_end, forward_model,
+    inverse_model = InvFilter(nsamples, da_interval, t_end, dynamic_model,
                               param_dict)
 
     # solve the inverse problem
     print("Solving the inverse problem:" +
-          "\n  Model:  {}".format(forward_model.name) +
+          "\n  Model:  {}".format(dynamic_model.name) +
           "\n  Filter: {}".format(inverse_model.name))
     start_time = time.time()
     inverse_model.solve()

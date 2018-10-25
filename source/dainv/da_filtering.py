@@ -143,6 +143,11 @@ class DAFilter2(DAFilter):
 
         # filter-specific inputs
         try:
+            self.stationary_flag = ast.literal_eval(
+                input_dict['stationary_flag'])
+        except:
+            self.stationary_flag = True
+        try:
             self.reach_max_flag = ast.literal_eval(
                 input_dict['reach_max_flag'])
         except:
@@ -190,13 +195,27 @@ class DAFilter2(DAFilter):
             self._verb = int(input_dict['verbosity'])
         except:
             self._verb = int(1)
+        try:
+            self.max_pseudo_time = int(
+                input_dict['max_pseudo_time'])
+        except:
+            self.max_pseudo_time = 1
+
+        try:
+            self.forward_interval = float(
+                input_dict['forward_interval'])
+        except:
+            self.forward_interval = 1
 
         # initialize iteration array
         self.time_array = np.arange(0.0, self.t_end, self.da_interval)
-
+        self.pseudo_time_array = np.arange(
+            0.0, self.max_pseudo_time, self.forward_interval)
         # initialize states: these change at every iteration
         self.time = 0.0  # current time
+        self.pseudo_time = 0.0  # pseudo_time step for each real time
         self.da_step = int(0)  # current DA step
+        self.forward_step = int(0)  # current forward step
         # ensemble matrix (nsamples, nstate)
         self.state_vec_prior = np.zeros(
             [self.dyn_model.nstate, self.nsamples])
@@ -208,6 +227,9 @@ class DAFilter2(DAFilter):
         self.model_obs = np.zeros([self.dyn_model.nstate_obs, self.nsamples])
         # observation matrix (nstate_obs, nsamples)
         self.obs = np.zeros([self.dyn_model.nstate_obs, self.nsamples])
+        # observation perturbation matrix (nstate_obs, nsamples)
+        self.obs_perturbation = np.zeros(
+            [self.dyn_model.nstate_obs, self.nsamples])
         # observation covariance matrix (nstate_obs, nstate_obs)
         self.obs_error = np.zeros(
             [self.dyn_model.nstate_obs, self.dyn_model.nstate_obs])
@@ -255,7 +277,7 @@ class DAFilter2(DAFilter):
         # Generate initial state Ensemble
         self.state_vec_analysis, self.model_obs = \
             self.dyn_model.generate_ensemble()
-        self.state_vec_prior = self.state_vec_analysis.copy()
+
         # sensitivity only
         if self._sensitivity_only:
             self.state_vec_forecast, self.model_obs = \
@@ -274,35 +296,55 @@ class DAFilter2(DAFilter):
                       "\n  Time: {}".format(self.time))
             # dyn_model: propagate the state ensemble to, and
             #   get observations at, next DA time.
-            self.state_vec_forecast, self.model_obs = \
+            self.state_vec_forecast = \
                 self.dyn_model.forecast_to_time(
-                    self.state_vec_analysis, self.time)
-            self.obs, self.obs_error = self.dyn_model.get_obs(self.time)
-            # data assimilation
-            self._correct_forecasts()
-            self._calc_misfits()
-            # save results
-            self.obs_all.append(self.obs.copy())
-            self.model_obs_all.append(self.model_obs.copy())
-            self.obs_error_all.append(self.obs_error.copy())
-            self.state_vec_analysis_all.append(self.state_vec_analysis.copy())
-            self.state_vec_forecast_all.append(self.state_vec_forecast.copy())
-            # check convergence and report
-            if self._verb >= 2:
-                print(self._report())
-            conv_var, conv_res = self._check_convergence()
-            if self.convergence_option is 'variance':
-                conv = conv_var
-            else:
-                conv = conv_res
-            if conv and not self.reach_max_flag:
-                early_stop = True
-                break
-        if self._verb >= 1:
-            if early_stop:
-                print("\nDA Filtering completed: convergence early stop.")
-            else:
-                print("\nDA Filtering completed: Max iteration reached.")
+                    self.state_vec_analysis.copy(), self.time)
+            self.state_vec_prior = self.state_vec_forecast.copy()
+            self.forward_step = 0
+            for pseudo_time in self.pseudo_time_array:
+                self.pseudo_time = pseudo_time + self.forward_interval
+                self.forward_step += 1
+                if self._verb >= 1:
+                    print("\nforward step: {}".format(self.forward_step) +
+                          "\n Pseudo Time: {}".format(self.pseudo_time))
+                self.state_vec_forecast, self.model_obs = \
+                    self.dyn_model.forward(
+                        self.state_vec_forecast, self.pseudo_time)
+                self.obs, self.obs_perturb, self.obs_error = \
+                    self.dyn_model.get_obs(self.time)
+                # data assimilation
+                self._correct_forecasts()
+                self._calc_misfits()
+                self.state_vec_forecast = self.state_vec_analysis.copy()
+                if self.stationary_flag:
+                    self.save_report()
+                conv_var, conv_res = self._check_convergence()
+                if self.convergence_option is 'variance':
+                    conv = conv_var
+                else:
+                    conv = conv_res
+                if conv and not self.reach_max_flag:
+                    early_stop = True
+                    break
+
+            if not self.stationary_flag:
+                self.save_report()
+            if self._verb >= 1:
+                if early_stop:
+                    print("\nDA Filtering completed: convergence early stop.")
+                else:
+                    print("\nDA Filtering completed: Max iteration reached.")
+
+    def save_report(self):
+        # save results
+        self.obs_all.append(self.obs.copy())
+        self.model_obs_all.append(self.model_obs.copy())
+        self.obs_error_all.append(self.obs_error.copy())
+        self.state_vec_analysis_all.append(self.state_vec_analysis.copy())
+        self.state_vec_forecast_all.append(self.state_vec_forecast.copy())
+        # report
+        if self._verb >= 2:
+            print(self._report())
 
     def correct_forecasts(self):
         """ Correct the propagated ensemble (filtering step).
@@ -554,8 +596,8 @@ class EnRML(DAFilter2):
         self.name = 'Ensemble Randomized Maximal Likelihood'
         self.short_name = 'EnRML'
         self.beta = float(input_dict['beta'])
-        self.const_beta_flag = ast.literal_eval(
-            input_dict['const_beta_flag'])
+        self.criteria = ast.literal_eval(
+            input_dict['criteria'])
 
     def _correct_forecasts(self):
         """ Correct the propagated ensemble (filtering step) using EnKF
@@ -585,33 +627,198 @@ class EnRML(DAFilter2):
         xp0 = _mean_subtracted_matrix(self.state_vec_prior)
         p0 = (1.0 / (self.nsamples - 1.0)) * xp0.dot(xp0.T)
         x = self.state_vec_forecast.copy()
-        for iter in range(100):
-            xp = _mean_subtracted_matrix(x)
-            hx = self.dyn_model.forward(x)
-            hxp = _mean_subtracted_matrix(hx)
-            gen = np.dot(hxp, la.pinv(xp))
-            sen_mat = p0.dot(gen.T)
-            coeff = (1.0 / (self.nsamples - 1.0))
-            pht = coeff * np.dot(xp, hxp.T)
-            hpht = coeff * hxp.dot(hxp.T)
-            _check_condition_number(hpht)
-            inv = la.inv(hpht + self.obs_error)
-            inv = inv.A  # convert np.matrix to np.ndarray
-            gauss_newton_matrix = sen_mat.dot(inv)
+        xp = _mean_subtracted_matrix(x)
+        hxp = _mean_subtracted_matrix(self.model_obs)
+        gen = np.dot(hxp, la.pinv(xp))
+        sen_mat = p0.dot(gen.T)
 
-            # calculate the penalty
-            penalty = np.dot(gauss_newton_matrix, gen.dot(
-                self.state_vec_forecast-self.state_vec_prior))
+        cyyi = np.dot(np.dot(gen, p0), gen.T)
+        _check_condition_number(cyyi)
+        inv = la.inv(cyyi + self.obs_error)
+        inv = inv.A  # convert np.matrix to np.ndarray
+        gauss_newton_matrix = sen_mat.dot(inv)
 
-            # analysis step
-            dx = np.dot(gauss_newton_matrix, self.obs - self.model_obs) \
-                - penalty
-            x = self.beta*self.state_vec_prior + (
-                1.0-self.beta) * self.state_vec_forecast + self.beta*dx
-        self.state_vec_analysis = x
+        # calculate the penalty
+        penalty = np.dot(gauss_newton_matrix, gen.dot(
+            x-self.state_vec_prior))
+
+        # analysis step
+        dx = np.dot(gauss_newton_matrix, self.obs - hx) + penalty
+        x = self.beta * self.state_vec_prior + (
+            1.0-self.beta) * x + self.beta*dx
+
+        self.state_vec_analysis = x.copy()
         # debug
         debug_dict = {
             'GN': gauss_newton_matrix, 'pen': penalty, 'inv': inv,
-            'HPHT': hpht, 'PHT': pht, 'HXP': hxp, 'XP': xp}
+            'cyyi': cyyi, 'HXP': hxp, 'XP': xp}
         self._save_debug(debug_dict)
 
+
+# child classes (specific filtering techniques)
+class EnKF_MDA(DAFilter2):
+    """ Implementation of the ensemble Kalman Filter-Multi data 
+    assimilaton (EnKF-MDA).
+
+    It inherits most methods from parent class (``DAFIlter2``), but
+    replaces the ``correct_forecasts`` method to use EnKF for the
+    data-assimilation step.
+
+    The EnKF-MDA is updated by: ``Xa = Xf + K_mda*(obs - HX - err_mda)
+    `` where *Xf* is the forecasted state vector (by the dynamic model), 
+    *Xa* is the updated vector after data-assimilation, *K_mda* is the 
+    modified Kalman gain matrix, *obs* is the observation vector, and 
+    *HX* is the forwarded state vector in observation space, 'err_mda' 
+    is inflated error. See the documentation for more information.
+    """
+
+    def __init__(self, nsamples, da_interval, t_end, forward_model,
+                 input_dict):
+        """ Parse input file and assign values to class attributes.
+
+        Note
+        ----
+        See DAFilter2.__init__ for details.
+        """
+        super(self.__class__, self).__init__(
+            nsamples, da_interval, t_end, forward_model, input_dict)
+        self.name = 'Ensemble Kalman Filter-Multi Data Assimilation'
+        self.short_name = 'EnKF-MDA'
+
+    def _correct_forecasts(self):
+        """ Correct the propagated ensemble (filtering step) using EnKF
+
+        **Updates:**
+            * self.state_vec_analysis
+        """
+
+        def _check_condition_number(hpht):
+            con_inv = la.cond(hpht + self.obs_error)
+            if self._verb >= 2:
+                print("  Condition number of (HPHT + R) is {}".format(
+                    con_inv))
+            if (con_inv > 1e16):
+                message = "The matrix (HPHT + R) is singular, inverse will" + \
+                    "fail."
+                warnings.warn(message, RuntimeWarning)
+
+        def _mean_subtracted_matrix(mat, samps=self.nsamples):
+            mean_vec = np.array([np.mean(mat, axis=1)])
+            mean_vec = mean_vec.T
+            mean_vec = np.tile(mean_vec, (1, samps))
+            mean_sub_mat = mat - mean_vec
+            return mean_sub_mat
+
+        alpha = self.max_pseudo_time/self.forward_interval
+        # calculate the Kalman gain matrix
+        xp = _mean_subtracted_matrix(self.state_vec_forecast)
+        hxp = _mean_subtracted_matrix(self.model_obs)
+        coeff = (1.0 / (self.nsamples - 1.0))
+        pht = coeff * np.dot(xp, hxp.T)
+        hpht = coeff * hxp.dot(hxp.T)
+        _check_condition_number(hpht)
+        inv = la.inv(hpht + alpha * self.obs_error)
+        inv = inv.A  # convert np.matrix to np.ndarray
+        kalman_gain_matrix = pht.dot(inv)
+        # analysis step
+        d = self.obs - self.obs_perturb
+        dx = np.dot(kalman_gain_matrix, d - self.model_obs +
+                    np.sqrt(alpha) * self.obs_perturb)
+        self.state_vec_analysis = self.state_vec_forecast + dx
+        # debug
+        debug_dict = {
+            'K': kalman_gain_matrix, 'inv': inv, 'HPHT': hpht, 'PHT': pht,
+            'HXP': hxp, 'XP': xp}
+        self._save_debug(debug_dict)
+
+
+# child classes (specific filtering techniques)
+# developing
+class EnKF_Lasso(DAFilter2):
+    """ Implementation of the ensemble Kalman Filter with Lasso (EnKF-Lasso).
+
+    It inherits most methods from parent class (``DAFIlter2``), but
+    replaces the ``correct_forecasts`` method to use EnKF for the
+    data-assimilation step.
+
+    The EnKF_lasso is updated by: ``Xa = Xf + K*(obs - HX) - penalty`` 
+    where *Xf* is the forecasted state vector (by the forward model), 
+    *Xa* is the updated vector after data-assimilation, *K* is the 
+    Kalman gain matrix, *obs* is the observation vector, and *HX* is 
+    the forecasted state vector in observation space. See the 
+    documentation for more information.
+    """
+
+    def __init__(self, nsamples, da_interval, t_end, forward_model,
+                 input_dict):
+        """ Parse input file and assign values to class attributes.
+
+        Note
+        ----
+        See DAFilter2.__init__ for details.
+        """
+        super(self.__class__, self).__init__(
+            nsamples, da_interval, t_end, forward_model, input_dict)
+        self.name = 'Ensemble Kalman Filter - Lasso'
+        self.short_name = 'EnKF-Lasso'
+
+    def _correct_forecasts(self):
+        """ Correct the propagated ensemble (filtering step) using EnKF
+
+        **Updates:**
+            * self.state_vec_analysis
+        """
+
+        def _check_condition_number(hpht):
+            con_inv = la.cond(hpht + self.obs_error)
+            if self._verb >= 2:
+                print("  Condition number of (HPHT + R) is {}".format(
+                    con_inv))
+            if (con_inv > 1e16):
+                message = "The matrix (HPHT + R) is singular, inverse will" + \
+                    "fail."
+                warnings.warn(message, RuntimeWarning)
+
+        def _mean_subtracted_matrix(mat, samps=self.nsamples):
+            mean_vec = np.array([np.mean(mat, axis=1)])
+            mean_vec = mean_vec.T
+            mean_vec = np.tile(mean_vec, (1, samps))
+            mean_sub_mat = mat - mean_vec
+            return mean_sub_mat
+
+        # calculate the Kalman gain matrix
+        xp = _mean_subtracted_matrix(self.state_vec_forecast)
+        hxp = _mean_subtracted_matrix(self.model_obs)
+        coeff = (1.0 / (self.nsamples - 1.0))
+        p = coeff * xp.dot(xp.T)
+        pht = coeff * np.dot(xp, hxp.T)
+        hpht = coeff * hxp.dot(hxp.T)
+        _check_condition_number(hpht)
+        inv = la.inv(hpht + self.obs_error)
+        inv = inv.A  # convert np.matrix to np.ndarray
+        kalman_gain_matrix = pht.dot(inv)
+
+        # calculate the lasso penalty
+        lamda = 1e-6
+        h_mat = hxp.dot(la.pinv(xp))
+        inv_obs_error = la.inv(self.obs_error)
+
+        htrh = np.dot(h_mat.T, inv_obs_error.dot(h_mat))
+        inv_lasso = la.pinv(htrh) + p  # htrh is singular
+        weight_lasso_vec = np.zeros(htrh.shape[0])
+
+        for i in range(self.nstate):
+            if i >= 3000*3-1 and i <= self.nstate - 3:
+                for j in range(3):
+                    weight_lasso_vec[j+i] = (int((i-8999))/3+1)**2
+
+        weight_lasso_mat = np.tile(weight_lasso_vec, (self.nsamples, 1)).T
+        penalty_lasso = inv_lasso.dot(weight_lasso_mat)
+        # analysis step
+        dx = np.dot(kalman_gain_matrix, self.obs - self.model_obs)
+        self.state_vec_analysis = self.state_vec_forecast + dx - lamda * penalty_lasso
+        # debug
+        debug_dict = {
+            'K': kalman_gain_matrix, 'inv': inv, 'HPHT': hpht, 'PHT': pht,
+            'HXP': hxp, 'XP': xp}
+        self._save_debug(debug_dict)

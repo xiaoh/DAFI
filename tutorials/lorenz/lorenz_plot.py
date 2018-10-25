@@ -25,7 +25,7 @@ def plot_samples(para):
     if para == 'z':
         state_ind = 2
     # read time series
-    t = np.loadtxt('obs.txt')[:, 0]
+    t = np.loadtxt('obs.dat')[:, 0]
     # get observed time point
     da_t = t[10:-1:10]
     da_step = len(da_t)
@@ -56,7 +56,7 @@ def plot_samples(para):
 def plot_truth(para):
     """ Plot truth. """
     # read truth file
-    obs = np.loadtxt('obs.txt')
+    obs = np.loadtxt('obs.dat')
     # set which state varible to plot
     if para == 'x':
         state_ind = 1
@@ -79,7 +79,7 @@ def plot_obs(para):
     if para == 'z':
         state_ind = 2
     # read time series
-    time = np.loadtxt('obs.txt')[:, 0]
+    time = np.loadtxt('obs.dat')[:, 0]
     # get observed time point
     da_t = time[10:-1:10]
     da_step = len(da_t)

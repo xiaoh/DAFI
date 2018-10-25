@@ -58,7 +58,7 @@ class FoamTauSolver(DynModel):
 
     # overide parent methods
 
-    def __init__(self, Ns, DAInterval, Tend, ModelInput):
+    def __init__(self, Ns, DAInterval, Tend, forward_interval, max_pseudo_time, ModelInput):
         """
         Initialization
         """
@@ -66,11 +66,11 @@ class FoamTauSolver(DynModel):
         # Extract forward Model Input parameters
         paramDict = read_input_data(ModelInput)
         # baseline case folder name
-        self.caseName = paramDict['caseName']
+        self.caseName = paramDict['case_name']
         # name of case that generate observation
         self.caseNameObservation = self.caseName + "-observation"
         # foward Model's solver name (example: PisoFoam, SimpleFoam etc.)
-        self.caseSolver = paramDict['caseSolver']
+        self.caseSolver = paramDict['case_solver']
         # PseudoObs 1: using forward model to generate observation; 0: real
         # experiment data as observation
         self.pseudoObs = int(paramDict['pseudoObs'])
@@ -868,11 +868,12 @@ class FoamTauSolver(DynModel):
         self.normalizeFlag = False
         self.U0 = 0.5
         self.K0 = 1e-3
-
-        self.DAInterval = DAInterval            # DA step interval
+        self.forward_interval = forward_interval
+        # DA step interval Todo:
         # Used in main driver
         self.iDAStep = 0
-        self.TotalDASteps = np.int_(np.ceil(Tend / DAInterval))
+        self.TotalDASteps = np.int_(
+            np.ceil(max_pseudo_time / self.forward_interval))
         self.tPlot = np.zeros(self.TotalDASteps)
         self.XPlot = np.zeros([self.TotalDASteps, self.nstate, Ns])
         self.XCMeanPlot = np.zeros([self.TotalDASteps, self.Npara])
@@ -901,10 +902,10 @@ class FoamTauSolver(DynModel):
         # generate cases folders for each ensemble members (Tau is replaced by perturbed Tau)
         # generate observation folder (benchmark case)
         foamOp.genFolders(self.Npara, self.Ns, self.caseName,
-                          self.caseNameObservation, self.DAInterval, self.Tau)
+                          self.caseNameObservation, self.forward_interval, self.Tau)
         # pdb.set_trace()
-        # make value of DAInterval to e-6 string
-        writeInterval = "%.6f" % self.DAInterval
+        # make value of forward_interval to e-6 string
+        writeInterval = "%.6f" % self.forward_interval
 
         X = np.zeros([self.nstate, self.Ns])
         HX = np.zeros([self.nstate_obs, self.Ns])
@@ -1022,6 +1023,10 @@ class FoamTauSolver(DynModel):
         return (X, HX)
 
     def forecast_to_time(self, X, nextEndTime):
+
+        return X
+
+    def forward(self, X, nextEndTime):
         """ Call the dynamic core to evolve the ensemble states to time $tDest$
 
         Args:
@@ -1046,8 +1051,10 @@ class FoamTauSolver(DynModel):
 
         # modify OpenFoam files
         # To rewrite all files that changed for OpenFOAM
-        newStartTime = nextEndTime - self.DAInterval
-        # pdb.set_trace()
+
+        nextEndTime += self.forward_interval
+        newStartTime = nextEndTime - self.forward_interval
+
         self._modifyOpenFOAM(X, newStartTime)
         # pdb.set_trace()
         self.deltaTau = self.Tau - self.TauOld
@@ -1122,7 +1129,7 @@ class FoamTauSolver(DynModel):
         # make state ensemble matrix: X = [u,v,w,omegaXi,omegaEta]
         X = np.vstack((self.XU, self.XC))
 
-        DAstep = (nextEndTime - self.DAInterval) / self.DAInterval
+        DAstep = (nextEndTime - self.forward_interval) / self.forward_interval
 
         if (self.txtfileOutput):
             np.savetxt(self._debugFolderName + 'XC_' + str(DAstep), self.XC)
@@ -1148,74 +1155,9 @@ class FoamTauSolver(DynModel):
         return (X, HX)
 
     def get_obs(self, next_end_time):
-        obs = self.Observe(next_end_time)
+        obs, obs_perturb = self.Observe(next_end_time)
         R_obs = self.get_Robs()
-        return obs, R_obs
-
-    # def getBackgroundVars(self, HX, XP, nextEndTime):
-    #
-    #     """ Function is to generate observation and get kalman Gain Matrix
-    #
-    #     Args:
-    #     HX: ensemble matrix of whole state in observation space
-    #     P: covariance matrix of ensemble
-    #     nextEndTime: next DA interval
-    #
-    #     Returns:
-    #     Obs: state matrix of observation
-    #     KalmanGainMatrix
-    #     """
-    #     DAstep = (nextEndTime - self.DAInterval) / self.DAInterval
-    #     if self.pseudoObs == 0:
-    #         #TO implement experiment observation
-    #         Obs = self.Observe(nextEndTime)
-    #         #pdb.set_trace()
-    #         H = self._constructHMatrix()
-    #         #pdb.set_trace()
-    #         #print "H", H.shape
-    #         #print "XP", XP.shape
-    #         HXP = H.dot(XP)
-    #         #pdb.set_trace()
-    #         #PHT = (1.0 / (self.Ns - 1.0)) * XP.dot(HXP.T)
-    #         PHT = (1.0 / (self.Ns - 1.0)) * np.dot(XP, HXP.T)
-    #         #pdb.set_trace()
-    #         HPHT = (1.0 / (self.Ns - 1.0)) * HXP.dot(HXP.T)
-    #         #pdb.set_trace()
-    #         conInv = la.cond(HPHT + self.Robs)
-    #         print "conditional number of (HPHT + R) is " + str(conInv)
-    #         if (conInv > 1e16):
-    #             print "!!! warning: the matrix (HPHT + R) are singular, inverse would be failed"
-    #         INV = la.inv(HPHT + self.Robs)
-    #         INV = INV.A #convert np.matrix to np.ndarray
-    #         #pdb.set_trace()
-    #         KalmanGainMatrix = PHT.dot(INV)
-    #         #pdb.set_trace()
-    #         if (self._iDebug):
-    #             #pdb.set_trace()
-    #             dotXP_HXPT = np.dot(XP, HXP.T)
-    #             coeff =  (1.0 / (self.Ns - 1.0))
-    #             np.savetxt(self._debugFolderName+'dotXP_HXPT_'+str(DAstep), dotXP_HXPT)
-    #             np.savetxt(self._debugFolderName+'XP_'+str(DAstep), XP)
-    #             np.savetxt(self._debugFolderName+'H_'+str(DAstep), H.todense())
-    #             np.savetxt(self._debugFolderName+'HXP_'+str(DAstep), HXP)
-    #             np.savetxt(self._debugFolderName+'HXPT_'+str(DAstep), HXP.T)
-    #             np.savetxt(self._debugFolderName+'dotXP_HXPT_'+str(DAstep), dotXP_HXPT)
-    #             np.savetxt(self._debugFolderName+'PHT_'+str(DAstep), PHT)
-    #             np.savetxt(self._debugFolderName+'HPHT_'+str(DAstep), HPHT)
-    #             np.savetxt(self._debugFolderName+'INV_'+str(DAstep), INV)
-    #             np.savetxt(self._debugFolderName+'R_'+str(DAstep), self.Robs.todense())
-    #         #pdb.set_trace()
-    #
-    #
-    #
-    #     elif self.pseudoObs == 1:
-    #         pass
-    #         #pdb.set_trace()
-    #     else:
-    #         assert self.pseudoObs == 0|1, "pseudoObs should be 0 or 1"
-    #
-    #
-    #     return Obs, KalmanGainMatrix
+        return obs, obs_perturb, R_obs
 
     def get_Robs(self):
         ''' Return the observation covariance.
@@ -1480,7 +1422,7 @@ class FoamTauSolver(DynModel):
         #      as well
         ii = 0
         caseCount = np.linspace(1, self.Ns, self.Ns)
-        DAstep = newStartTime / self.DAInterval
+        DAstep = newStartTime / self.forward_interval
         if (self._iDebug):
             os.system('mkdir ' + self._debugFolderName + 'DA-' + str(DAstep))
             os.system(
@@ -1856,7 +1798,8 @@ class FoamTauSolver(DynModel):
                 self.caseNameObservation,
                 'observationData/' +
                 ObsFile))
-
+        obs_perturb_vec = np.zeros(ObsVec.shape)
+        obs_perturb = np.zeros([self.nstate_obs, self.Ns])
         iobs = 0
         smallVal = 1e-10
         rSigmaVec = np.zeros(self.nstate_obs)
@@ -1882,6 +1825,7 @@ class FoamTauSolver(DynModel):
 
                     ObsVec[iobs + j] = ObsVec[iobs + j] + \
                         (absErr[j] + relErr[j]) * self.ObsErrCoeff
+                    obs_perturb_vec[iobs + j] = relErrSigma[j] + absErrSigma[j]
                     rSigmaVec[iobs + j] = (relErrSigma[j] + absErrSigma[j])**2
                 iobs = iobs + 9
         else:
@@ -1931,11 +1875,12 @@ class FoamTauSolver(DynModel):
         irow = 0
         while True:
             self.ObsX[:, irow] = ObsVec
+            obs_perturb[:, irow] = obs_perturb_vec
             irow = irow + 1
             if irow == self.Ns:
                 break
             Obs = self.ObsX
-        return Obs
+        return Obs, obs_perturb
 
     def _constructHMatrix(self):
 
@@ -2046,205 +1991,6 @@ class FoamTauSolver(DynModel):
             elif Vec[i] < lowBound:
                 Vec[i] = lowBound
         return Vec
-
-    # new methods
-
-    def getGaussNewtonVars(self, HX, X, Xpr, XP, XP0, Obs, nextEndTime):
-        """ Function is to generate observation and get Gauss-Newton gradient
-
-        Args:
-            HX: ensemble matrix of whole state in observation space
-            X:  ensemble state matrix
-            Xpr: Prior ensemble state matrix
-            XP:  ensemble anomaly of X
-            XP0: ensemble anomaly of prior X
-            Obs: Observation
-            nextEndTime: next DA interval
-
-        Returns:
-            Obs: state matrix of observation
-            Penalty:
-            GNGainMatrix
-        """
-        DAstep = (nextEndTime - self.DAInterval) / self.DAInterval
-        if self.pseudoObs == 0:
-            # TO implement experiment observation
-            # Obs = self.Observe(nextEndTime) #with non-fixed obs
-            # pdb.set_trace()
-            H = self._constructHMatrix()
-            HXP = H.dot(XP)
-            Cxy = (1.0 / (self.Ns - 1.0)) * XP.dot(HXP.T)
-            Cxxi = (1.0 / (self.Ns - 1.0)) * XP.dot(XP.T)
-           # pdb.set_trace()
-            Cxxe = (1.0 / (self.Ns - 1.0)) * XP0.dot(XP0.T)
-            # pdb.set_trace()
-            Gen = np.dot(H.dot(XP), la.pinv(XP))
-            # pdb.set_trace()
-            senmat = Cxxe.dot(Gen.T)
-            #Cyyi = (1.0 / (self.Ns - 1.0)) * HXP.dot(HXP.T)
-            Cyyi = np.dot(np.dot(Gen, Cxxe), Gen.T)
-           # pdb.set_trace()
-            conInv = la.cond(Cyyi + self.Robs)
-            print "conditional number of (Cyyi + R) is " + str(conInv)
-            if (conInv > 1e16):
-                print "!!! warning: the matrix (Cyyi + R) are singular, inverse would be failed"
-            INV = la.inv(Cyyi + self.Robs)
-            INV = INV.A  # convert np.matrix to np.ndarray
-            # pdb.set_trace()
-            GNGainMatrix = senmat.dot(INV)
-            penalty = np.dot(senmat.dot(INV), Gen.dot(X - Xpr))
-            # pdb.set_trace()
-            if (self._iDebug):
-                # pdb.set_trace()
-                dotXP_HXPT = np.dot(XP, HXP.T)
-                coeff = (1.0 / (self.Ns - 1.0))
-                np.savetxt(
-                    self._debugFolderName +
-                    'dotXP_HXPT_' +
-                    str(DAstep),
-                    dotXP_HXPT)
-                np.savetxt(self._debugFolderName + 'XP_' + str(DAstep), XP)
-                np.savetxt(
-                    self._debugFolderName +
-                    'H_' +
-                    str(DAstep),
-                    H.todense())
-                np.savetxt(self._debugFolderName + 'HXP_' + str(DAstep), HXP)
-                np.savetxt(
-                    self._debugFolderName +
-                    'HXPT_' +
-                    str(DAstep),
-                    HXP.T)
-                np.savetxt(
-                    self._debugFolderName +
-                    'dotXP_HXPT_' +
-                    str(DAstep),
-                    dotXP_HXPT)
-                np.savetxt(
-                    self._debugFolderName +
-                    'Senmat_' +
-                    str(DAstep),
-                    senmat)
-                np.savetxt(self._debugFolderName + 'HPHT_' + str(DAstep), Cyyi)
-                np.savetxt(self._debugFolderName + 'INV_' + str(DAstep), INV)
-                np.savetxt(
-                    self._debugFolderName +
-                    'R_' +
-                    str(DAstep),
-                    self.Robs.todense())
-            # pdb.set_trace()
-
-        elif self.pseudoObs == 1:
-            pass
-            # pdb.set_trace()
-        else:
-            assert self.pseudoObs == 0 | 1, "pseudoObs should be 0 or 1"
-        return GNGainMatrix, penalty
-
-    def getBackgroundVarsMDA(self, Nmda, HX, XP, nextEndTime):
-        """ Function is to generate observation and get kalman Gain Matrix for EnKF-MDA
-
-        Args:
-        Nmda: coeffcient to split likehood function
-        HX: ensemble matrix of whole state in observation space
-        P: covariance matrix of ensemble
-        nextEndTime: next DA interval
-
-        Returns:
-        Obs: state matrix of observation
-        KalmanGainMatrix
-        """
-        DAstep = (nextEndTime - self.DAInterval) / self.DAInterval
-        if self.pseudoObs == 0:
-            # TO implement experiment observation
-            Obs, pertObs = self.ObservePertObs(nextEndTime)
-            # pdb.set_trace()
-            H = self._constructHMatrix()
-            # pdb.set_trace()
-            HXP = H.dot(XP)
-            # pdb.set_trace()
-            PHT = (1.0 / (self.Ns - 1.0)) * np.dot(XP, HXP.T)
-            # pdb.set_trace()
-            HPHT = (1.0 / (self.Ns - 1.0)) * HXP.dot(HXP.T)
-            # pdb.set_trace()
-            conInv = la.cond(HPHT + Nmda * self.Robs)
-            print "conditional number of (HPHT + R) is " + str(conInv)
-            if (conInv > 1e16):
-                print "!!! warning: the matrix (HPHT + R) are singular, inverse would be failed"
-            INV = la.inv(HPHT + Nmda * self.Robs)
-            INV = INV.A  # convert np.matrix to np.ndarray
-            # pdb.set_trace()
-            KalmanGainMatrix = PHT.dot(INV)
-            # pdb.set_trace()
-            if (self._iDebug):
-                # pdb.set_trace()
-                dotXP_HXPT = np.dot(XP, HXP.T)
-                coeff = (1.0 / (self.Ns - 1.0))
-                np.savetxt(
-                    self._debugFolderName +
-                    'dotXP_HXPT_' +
-                    str(DAstep),
-                    dotXP_HXPT)
-                np.savetxt(self._debugFolderName + 'XP_' + str(DAstep), XP)
-                np.savetxt(
-                    self._debugFolderName +
-                    'H_' +
-                    str(DAstep),
-                    H.todense())
-                np.savetxt(self._debugFolderName + 'HXP_' + str(DAstep), HXP)
-                np.savetxt(
-                    self._debugFolderName +
-                    'HXPT_' +
-                    str(DAstep),
-                    HXP.T)
-                np.savetxt(
-                    self._debugFolderName +
-                    'dotXP_HXPT_' +
-                    str(DAstep),
-                    dotXP_HXPT)
-                np.savetxt(self._debugFolderName + 'PHT_' + str(DAstep), PHT)
-                np.savetxt(self._debugFolderName + 'HPHT_' + str(DAstep), HPHT)
-                np.savetxt(self._debugFolderName + 'INV_' + str(DAstep), INV)
-                np.savetxt(
-                    self._debugFolderName +
-                    'R_' +
-                    str(DAstep),
-                    self.Robs.todense())
-            # pdb.set_trace()
-        elif self.pseudoObs == 1:
-            pass
-            # pdb.set_trace()
-        else:
-            assert self.pseudoObs == 0 | 1, "pseudoObs should be 0 or 1"
-        return Obs, pertObs, KalmanGainMatrix
-
-    def getControlVec(self, beta, XP0, HX, nextEndTime, bundlevar):
-        """
-        Function is to generate observation and get updated control vector
-
-            Args:
-        beta: control vector
-            HX: ensemble matrix of whole state in observation space
-            XP0: prior ensemble anomalies
-            nextEndTime: next DA interval
-
-            Returns:
-            Obs: state matrix of observation
-        Hess: Hessian of cost function
-            beta
-            """
-        DAstep = (nextEndTime - self.DAInterval) / self.DAInterval
-        if self.pseudoObs == 0:
-            # TO implement experiment observation
-            Obs = self.Observe(nextEndTime)
-            H = self._constructHMatrix()
-            HXM = np.mean(HX, axis=1)
-            # pdb.set_trace()
-            Jac = self.Grad_J(beta, XP0, HX, HXM, Obs, bundlevar)
-            Hess = self.Hes_J(beta, XP0, HX, HXM, bundlevar)
-            # Todo: tunable Parameter Move to EnsembleMethodInputFile
-            beta = beta - 0.5 * la.inv(Hess).dot(Jac)
-            return Obs, beta, Hess
 
     def ObservePertObs(self, nextEndTime):
         """ Function is to get observation Data from experiment
