@@ -643,7 +643,7 @@ class EnRML(DAFilter2):
             x-self.state_vec_prior))
 
         # analysis step
-        dx = np.dot(gauss_newton_matrix, self.obs - hx) + penalty
+        dx = np.dot(gauss_newton_matrix, self.obs - self.model_obs) + penalty
         x = self.beta * self.state_vec_prior + (
             1.0-self.beta) * x + self.beta*dx
 

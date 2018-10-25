@@ -5,11 +5,11 @@ dyn_model lorenz
 dyn_model_input ./lorenz.in
 
 #specify data assimilation method
-da_filter EnKF_MDA
+da_filter EnKF
 
 # specify filter method parameters(EnRML)
 beta 0.1
-max_pseudo_time 20
+max_pseudo_time 1
 forward_interval 1
 criteria 1e-3
 
