@@ -799,7 +799,7 @@ class EnKF_Lasso(DAFilter2):
         kalman_gain_matrix = pht.dot(inv)
 
         # calculate the lasso penalty
-        lamda = 1e-6
+        lamda = 1e-8
         h_mat = hxp.dot(la.pinv(xp))
         inv_obs_error = la.inv(self.obs_error)
 
@@ -810,13 +810,15 @@ class EnKF_Lasso(DAFilter2):
         for i in range(self.nstate):
             if i >= 3000*3-1 and i <= self.nstate - 3:
                 for j in range(3):
-                    weight_lasso_vec[j+i] = (int((i-8999))/3+1)**2
+                    weight_lasso_vec[j+i] = (int((i-8999))/3+1)/60.0
 
         weight_lasso_mat = np.tile(weight_lasso_vec, (self.nsamples, 1)).T
         penalty_lasso = inv_lasso.dot(weight_lasso_mat)
+        penalty_lasso = penalty_lasso.A
         # analysis step
         dx = np.dot(kalman_gain_matrix, self.obs - self.model_obs)
         self.state_vec_analysis = self.state_vec_forecast + dx - lamda * penalty_lasso
+
         # debug
         debug_dict = {
             'K': kalman_gain_matrix, 'inv': inv, 'HPHT': hpht, 'PHT': pht,

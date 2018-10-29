@@ -1,0 +1,11 @@
+
+# set how many modes to be used
+nmodes 3
+
+# give the synthetic value for each mode coefficient
+true_omega1     22
+true_omega2	8
+true_omega3	10
+
+# parameters for observation
+obs_rel_std      0.01

@@ -8,6 +8,7 @@ VT-DA_Inv Documentation
 
    theory.rst
    tutorial_lorenz.rst
+   tutorial_diffusion.rst
    source_code.rst
 
 Indices and tables

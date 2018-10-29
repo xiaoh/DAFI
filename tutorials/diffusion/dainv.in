@@ -1,0 +1,32 @@
+#specify dynamic model
+dyn_model diffusion
+
+#specify dynamic model input file
+dyn_model_input ./diffusion.in
+
+#specify data assimilation method
+da_filter EnKF
+
+# specify filter method parameters(EnRML)
+beta 0.1
+
+# specify the forward model parameters
+max_pseudo_time 100
+forward_interval 1
+criteria 1e-3
+
+# stationary system or not
+stationary_flag True
+
+# specify the end time
+t_end 1
+
+# specify the data assimilation inverval
+da_interval 1
+
+#specify the ensemble samples
+nsamples 80
+
+#specify the debug flag and folder name
+save_flag           True
+save_folder         ./results

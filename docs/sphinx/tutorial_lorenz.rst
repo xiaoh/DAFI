@@ -33,6 +33,8 @@ Data assimilation method is to solve the inverse problem,
 Different data assimilation methods are embeded in the code (located in the "$source/da_inv/da_filtering.py"). The list of usable data assimilation methods is shown below:
 
 #. Ensemble Kalman Filtering :cite:`iglesias2013ensemble`
+#. Ensemble Randomized Maximal Likelihood :cite:`gu2007iterative`
+#. Ensemble Kalman Filtering-Multi Data Assimilation :cite:`evensen2018analysis`
 
 Dynamic Model
 -------------
@@ -51,9 +53,9 @@ Below is an overview of the files required to run the data assimilation for Lore
 
 ==================   =============================  =============================
 **File Type**        **File Name**                  **Directory**
-Input File           ``main_input.in``              ``/tutorials/lorenz``
-Input File           ``forward_model_input.in``     ``/tutorials/lorenz``
-Dynamic Model        ``lorenz.py``   		        ``/source/dyn_models/``
+Input File           ``dainv.in``                   ``/tutorials/lorenz``
+Input File           ``lorenz.in``                  ``/tutorials/lorenz``
+Dynamic Model        ``lorenz.py``   		          ``/source/dyn_models/``
 ==================   =============================  =============================
 
 Run Tutorial
@@ -62,21 +64,21 @@ Run Tutorial
 Step 1 : Write main input file
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-Specify self-defined parameters in the 'main_input.in' file. The 'main_input.in' file is provided in the lorenz tutorial directory and shown below.
+Specify self-defined parameters in the 'dainv.in' file. The 'dainv.in' file is provided in the lorenz tutorial directory and shown below.
 
-.. literalinclude::../../../tutorials/lorenz/main_input.in
+.. literalinclude::../../../tutorials/lorenz/dainv.in
    :language: python
 
 .. Note::
 
 		Mainly need to specify the ensemble samples (nsamples) and the data assimilation interval (da_interval)
 
-Step 2 : Write forward model input file
+Step 2 : Write dynamic model input file
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-Specify self-defined parameters in the 'forward_model_input.in' file. The 'forward_model_input.in' file is provided in the lorenz tutorial directory and shown below.
+Specify self-defined parameters in the 'lorenz.in' file. The 'lorenz.in' file is provided in the lorenz tutorial directory and shown below.
 
-.. literalinclude::../../../tutorials/lorenz/forward_model_input.in
+.. literalinclude::../../../tutorials/lorenz/lorenz.in
    :language: python
 
 .. Note::
@@ -106,6 +108,6 @@ To execute the postprocessing, type './plot.sh' to plot figures as shown below. 
 
 References
 ------------------------
-.. bibliography:: Lorenz_Tutorials.bib
+.. bibliography:: tutorial.bib
    :style: unsrt
    :labelprefix: B

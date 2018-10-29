@@ -15,7 +15,6 @@ It  consist of 3 founctions:
 import sys
 import os
 import os.path as ospt
-import pdb
 import ast
 import time
 
@@ -559,7 +558,6 @@ class FoamTauSolver(DynModel):
         toc = time.time()
         print "\ncollapse time for getting All KL modes is ", toc - tic, "s"
 
-        # pdb.set_trace()
         tic = time.time()
         # initilize Tau mapping class
         if (self.capBaseline):
@@ -877,7 +875,6 @@ class FoamTauSolver(DynModel):
         self.tPlot = np.zeros(self.TotalDASteps)
         self.XPlot = np.zeros([self.TotalDASteps, self.nstate, Ns])
         self.XCMeanPlot = np.zeros([self.TotalDASteps, self.Npara])
-        # pdb.set_trace()
 
     def __str__(self):
         s = 'FoamTauSolver dynamic model with:' + \
@@ -903,7 +900,6 @@ class FoamTauSolver(DynModel):
         # generate observation folder (benchmark case)
         foamOp.genFolders(self.Npara, self.Ns, self.caseName,
                           self.caseNameObservation, self.forward_interval, self.Tau)
-        # pdb.set_trace()
         # make value of forward_interval to e-6 string
         writeInterval = "%.6f" % self.forward_interval
 
@@ -1001,7 +997,6 @@ class FoamTauSolver(DynModel):
 
         if self.pseudoObs == 0:
             H = self._constructHMatrix()
-            # pdb.set_trace()
             HX = H.dot(X)
             # print "HX \n", HX.shape
         if self.pseudoObs == 1:
@@ -1056,7 +1051,6 @@ class FoamTauSolver(DynModel):
         newStartTime = nextEndTime - self.forward_interval
 
         self._modifyOpenFOAM(X, newStartTime)
-        # pdb.set_trace()
         self.deltaTau = self.Tau - self.TauOld
         newStopTime = "%.6f" % nextEndTime
 
@@ -1133,14 +1127,12 @@ class FoamTauSolver(DynModel):
 
         if (self.txtfileOutput):
             np.savetxt(self._debugFolderName + 'XC_' + str(DAstep), self.XC)
-            # pdb.set_trace()
         self.XPlot[self.iDAStep] = X
         self.tPlot[self.iDAStep] = nextEndTime
         self.iDAStep += self.iDAStep
 
         if self.pseudoObs == 0:
             #os.system('sample -case ' + self.caseNameObservation)
-            # pdb.set_trace()
             H = self._constructHMatrix()
             HX = H.dot(X)
         if self.pseudoObs == 1:
@@ -1443,10 +1435,8 @@ class FoamTauSolver(DynModel):
             omegaXi = self.omegaXiM[:, ii]
             omegaXi = np.array([omegaXi])
             omegaXi = omegaXi.T
-            # pdb.set_trace()
             self.deltaXiField = self.rfXi.reconstructField(
                 omegaXi, self.KLModesXi)
-            # pdb.set_trace()
             self.deltaXiM[ii, :, :] = self.deltaXiField
 
             omegaEta = self.omegaEtaM[:, ii]
@@ -1459,7 +1449,6 @@ class FoamTauSolver(DynModel):
             omegak = self.omegakM[:, ii]
             omegak = np.array([omegak])
             omegak = omegak.T
-            # pdb.set_trace()
             self.deltakField = self.rfK.reconstructField(omegak, self.KLModesK)
             self.deltakM[ii, :, :] = self.deltakField
             toc = time.time()
