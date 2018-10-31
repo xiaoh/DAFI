@@ -1,0 +1,18 @@
+#!/usr/bin/env bash
+#
+# Possible usage:
+#   >>> nohup ./run.sh &
+#
+# To monitor:
+#   >>> watch -n 5 "ps -ef | grep mfuMain.py"
+#   or
+#   >>>tail -f log.enkf
+
+START=$(date +%s.%N)
+
+vt_dainv.py dainv.in &> log.dainv
+
+END=$(date +%s.%N)
+DIFF=$(echo "$END - $START" | bc)
+echo $DIFF  > log.time
+
