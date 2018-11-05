@@ -25,7 +25,8 @@ class Solver(DynModel):
     of the position at the given time (x, y, z).
     """
 
-    def __init__(self, nsamples, da_interval, t_end, forward_interval, max_pseudo_time, model_input):
+    def __init__(self, nsamples, da_interval, t_end, max_da_iteration,
+                 model_input):
         """ Initialize the dynamic model and parse input file.
 
         Parameters
@@ -36,7 +37,9 @@ class Solver(DynModel):
             Time interval between data assimilation steps.
         t_end : float
             Final time.
-        input_file : str
+        max_da_iteration : int
+            Maximum number of DA iterations at a given time-step.
+        model_input : str
             Input file name.
 
         Note
@@ -69,6 +72,7 @@ class Solver(DynModel):
             * **perturb_sigma** (``bool``) -
               Whether to infer the value of sigma.
         """
+        # TODO: Simplify
         self.name = 'Lorenz63'
         # number of samples in the ensemble
         self.nsamples = nsamples
@@ -116,8 +120,9 @@ class Solver(DynModel):
         self.nstate_obs = 3
 
     def __str__(self):
-        s = 'Lorenz 63 model.'
-        return s
+        str_info = 'Lorenz 63 model.'
+        # TODO: expand with truth
+        return str_info
 
     def generate_ensemble(self):
         """ Generate initial ensemble state X and observation HX
@@ -256,53 +261,54 @@ class Solver(DynModel):
         # Construct observation operator
         return state_vec_forecast
 
-    def forward(self, X, next_pseudo_time):
+    def forward(self, X):
         """
-        Returns states at the next end time.
+        Forwards the states from X to HX.
 
         Parameters
         ----------
         X: ndarray
-            current state variables
-        next_end_time: float
-            next end time
+            Current state variables.
 
         Returns
         -------
-        X: ndarray
-            forwarded ensemble state variables by forward model
         HX: ndarray
-            ensemble in observation space
+            Ensemble in observation space.
         """
         # Construct observation operator
         h_matrix = self._construct_h_matrix()
         model_obs = h_matrix.dot(X)
-        return X, model_obs
+        return model_obs
 
-    def get_obs(self, next_end_time):
+    def get_obs(self, time):
         """ Return the observation and observation covariance.
 
         Parameters
         ----------
-        next_end_time : float
-            Next end time.
+        time : float
+            Time at which observation is requested.
 
         Returns
         -------
-        obs : ndarray
-            Ensemble observations. ``dtype=float``, ``ndim=2``,
-            ``shape=(nstate_obs, nsamples)``
+        obs_vec : ndarray
+            Vector of observation data. ``dtype=float``, ``ndim=1``,
+            ``shape=(nstate_obs)``
         obs_error : ndarray
             Observation error covariance. ``dtype=float``, ``ndim=2``,
             ``shape=(nstate_obs, nstate_obs)``
         """
-        obs, obs_perturb = self.observe(next_end_time)
-        obs_error = self.get_obs_error()
-        return obs, obs_perturb, obs_error
-
-    def get_obs_error(self):
-        """ Return the observation error covariance. """
-        return self.obs_error.todense()
+        # get truth
+        da_step = time / self.da_interval
+        truth = np.loadtxt('truth.dat')[int(da_step)*10, 1:]
+        # create synthetic observation
+        obs_std_vec = self.obs_rel_std * np.abs(truth) + 0.1
+        obs_vec = truth + np.random.normal(0, obs_std_vec)
+        # calculate observation error matrix
+        # obs_std_vec = self.obs_rel_std * np.abs(obs_vec) + 0.1
+        # TODO: change truth to obs_vec, add 0.1 as some abs_err option, modify the test.
+        obs_error = sp.diags(obs_std_vec**2, 0)
+        obs_error = obs_error.todense()
+        return obs_vec, obs_error
 
     def report(self):
         """ Report summary information. """
@@ -315,44 +321,6 @@ class Solver(DynModel):
     def clean(self):
         """ Perform any necessary cleanup before exiting. """
         pass
-
-    def observe(self, next_end_time):
-        """ Return the observation data at a given time.
-
-        Parameters
-        ----------
-        next_end_time: float
-            Next end time.
-
-        Returns
-        -------
-        obs_mat: ndarray
-            Ensemble observations. ``dtype=float``, ``ndim=2``,
-            ``shape=(nstate_obs, nsamples)``
-        """
-        # initial observation and observation standard deviation
-        obs = np.empty(self.nstate_obs)
-        obs_std_vec = np.empty(self.nstate_obs)
-        # calculate current da_step
-        # TODO da_step = (next_end_time - self.da_interval) / self.da_interval
-        da_step = next_end_time / self.da_interval  # TODO
-        # read observation at next end time
-        obs_vec = np.loadtxt('obs.dat')[int(da_step)*10, 1:-1]
-        # add noise in observation
-        for i_dim in np.arange(self.nstate_obs):
-            obs_std = self.obs_rel_std * np.abs(obs_vec[i_dim]) + 0.1  # TODO
-            obs_std_vec[i_dim] = obs_std
-            obs[i_dim] = obs_vec[i_dim] + np.random.normal(0, obs_std, 1)
-        # construct ensemble observation
-        obs_mat = np.empty([self.nstate_obs, self.nsamples])
-        for i in np.arange(self.nsamples):
-            obs_mat[:, i] = obs
-        # construct the observation error covariance
-        self.obs_error = sp.diags(obs_std_vec**2, 0)
-        import pdb
-        # pdb.set_trace()
-        self.obs_perturb = obs_mat - np.tile(obs_vec, (self.nsamples, 1)).T
-        return obs_mat, self.obs_perturb
 
     def _construct_h_matrix(self):
         """ Construct the observation operator. """

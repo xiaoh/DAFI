@@ -21,7 +21,7 @@ class DAFilter(object):
     The required methods are summarized below.
     """
 
-    def __init__(self, nsamples, da_interval, t_end, forward_model,
+    def __init__(self, nsamples, da_interval, t_end, dyn_model,
                  input_dict):
         """ Parse input file and assign values to class attributes.
 
@@ -33,12 +33,12 @@ class DAFilter(object):
             Iteration interval between data assimilation steps.
         t_end : float
             Final time.
-        forward_model : DynModel
+        dyn_model : DynModel
             Dynamic model.
         input_dict : dict[str]
             All filter-specific inputs.
         """
-        self.dyn_model = forward_model
+        self.dyn_model = dyn_model
 
     def __str__(self):
         str_info = 'An empty data assimilation filtering technique.'
@@ -88,8 +88,8 @@ class DAFilter2(DAFilter):
     are desired.
     """
 
-    def __init__(self, nsamples, da_interval, t_end, forward_model,
-                 input_dict):
+    def __init__(self, nsamples, da_interval, t_end, max_da_iteration,
+                 dyn_model, input_dict):
         """ Parse input file and assign values to class attributes.
 
         Parameters
@@ -100,7 +100,9 @@ class DAFilter2(DAFilter):
             Iteration interval between data assimilation steps.
         t_end : float
             Final time.
-        forward_model : DynModel
+        max_da_iteration : int
+            Maximum number of DA iterations at a given time-step.
+        dyn_model : DynModel
             Dynamic model.
         input_dict : dict[str]
             All filter-specific inputs.
@@ -134,19 +136,19 @@ class DAFilter2(DAFilter):
         """
         self.name = 'Generic DA filtering technique'
         self.short_name = None
-        self.dyn_model = forward_model
+        self.dyn_model = dyn_model
         self.nsamples = nsamples  # number of samples in ensemble
         self.nstate = self.dyn_model.nstate  # number of states
         self.nstate_obs = self.dyn_model.nstate_obs  # number of observations
         self.da_interval = da_interval  # DA time step interval
         self.t_end = t_end  # total run time
+        self.max_da_iteration = max_da_iteration  # max iterations per  DA step
+        if t_end == da_interval:
+            self._stationary_flag = True
+        else:
+            self._stationary_flag = False
 
         # filter-specific inputs
-        try:
-            self.stationary_flag = ast.literal_eval(
-                input_dict['stationary_flag'])
-        except:
-            self.stationary_flag = True
         try:
             self.reach_max_flag = ast.literal_eval(
                 input_dict['reach_max_flag'])
@@ -195,22 +197,10 @@ class DAFilter2(DAFilter):
             self._verb = int(input_dict['verbosity'])
         except:
             self._verb = int(1)
-        try:
-            self.max_pseudo_time = int(
-                input_dict['max_pseudo_time'])
-        except:
-            self.max_pseudo_time = 1
-
-        try:
-            self.forward_interval = float(
-                input_dict['forward_interval'])
-        except:
-            self.forward_interval = 1
 
         # initialize iteration array
         self.time_array = np.arange(0.0, self.t_end, self.da_interval)
-        self.pseudo_time_array = np.arange(
-            0.0, self.max_pseudo_time, self.forward_interval)
+        self.pseudo_time_array = np.arange(0, self.max_da_iteration)
         # initialize states: these change at every iteration
         self.time = 0.0  # current time
         self.pseudo_time = 0.0  # pseudo_time step for each real time
@@ -274,6 +264,7 @@ class DAFilter2(DAFilter):
             * self.state_vec_analysis_all
             * self.state_vec_forecast_all
         """
+        # TODO: [added: carlos, assigned: xinlei] update the list of attributes that get updated.
         # Generate initial state Ensemble
         self.state_vec_analysis, self.model_obs = \
             self.dyn_model.generate_ensemble()
@@ -281,12 +272,12 @@ class DAFilter2(DAFilter):
         # sensitivity only
         if self._sensitivity_only:
             self.state_vec_forecast, self.model_obs = \
-                self.dyn_model.forecast_to_time(
+                self.dyn_model.forward(
                     self.state_vec_analysis, self.da_interval)
             if self.ver >= 1:
                 print("\nSensitivity study completed.")
             sys.exit(0)
-        # main DA loop
+        # main DA loop - through time
         early_stop = False
         for time in self.time_array:
             self.time = time + self.da_interval
@@ -294,30 +285,36 @@ class DAFilter2(DAFilter):
             if self._verb >= 1:
                 print("\nData-assimilation step: {}".format(self.da_step) +
                       "\n  Time: {}".format(self.time))
-            # dyn_model: propagate the state ensemble to, and
-            #   get observations at, next DA time.
+            # dyn_model: propagate the state ensemble to next DA time.
             self.state_vec_forecast = \
                 self.dyn_model.forecast_to_time(
-                    self.state_vec_analysis.copy(), self.time)
-            self.state_vec_prior = self.state_vec_forecast.copy()
+                    self.state_vec_analysis, self.time)
+            self.state_vec_prior = self.state_vec_forecast
             self.forward_step = 0
+            # DA iterations at fixed time-step.
             for pseudo_time in self.pseudo_time_array:
-                self.pseudo_time = pseudo_time + self.forward_interval
+                self.pseudo_time = pseudo_time + 1
                 self.forward_step += 1
                 if self._verb >= 1:
-                    print("\nforward step: {}".format(self.forward_step) +
+                    print("\nForward step: {}".format(self.forward_step) +
                           "\n Pseudo Time: {}".format(self.pseudo_time))
-                self.state_vec_forecast, self.model_obs = \
-                    self.dyn_model.forward(
-                        self.state_vec_forecast, self.pseudo_time)
-                self.obs, self.obs_perturb, self.obs_error = \
-                    self.dyn_model.get_obs(self.time)
+                # forward the state vector to observation space
+                if self.forward_step is 1:
+                    state_vec = self.state_vec_forecast
+                else:
+                    state_vec = self.state_vec_analysis
+                self.model_obs = self.dyn_model.forward(state_vec)
+                # get observation data at current step
+                obs_vec, self.obs_error = self.dyn_model.get_obs(self.time)
+                self.obs = self._vec_to_mat(obs_vec, self.nsamples)
                 # data assimilation
                 self._correct_forecasts()
                 self._calc_misfits()
-                if self.stationary_flag:
-                    self.save_report()
-		self.state_vec_forecast = self.state_vec_analysis.copy()
+                # iteration: store results, report, check convergence
+                if self._stationary_flag:
+                    self._store_vars()
+                    if self._verb >= 2:
+                        print(self._report())
                 conv_var, conv_res = self._check_convergence()
                 if self.convergence_option is 'variance':
                     conv = conv_var
@@ -326,34 +323,17 @@ class DAFilter2(DAFilter):
                 if conv and not self.reach_max_flag:
                     early_stop = True
                     break
-
-            if not self.stationary_flag:
-                self.save_report()
+            # time-step: store results, report
+            if not self._stationary_flag:
+                self._store_vars()
+                if self._verb >= 2:
+                    print(self._report())
             if self._verb >= 1:
                 if early_stop:
                     print("\nDA Filtering completed: convergence early stop.")
                 else:
-                    print("\nDA Filtering completed: Max iteration reached.")
-
-    def save_report(self):
-        # save results
-        self.obs_all.append(self.obs.copy())
-        self.model_obs_all.append(self.model_obs.copy())
-        self.obs_error_all.append(self.obs_error.copy())
-        self.state_vec_analysis_all.append(self.state_vec_analysis.copy())
-        self.state_vec_forecast_all.append(self.state_vec_forecast.copy())
-        # report
-        if self._verb >= 2:
-            print(self._report())
-
-    def correct_forecasts(self):
-        """ Correct the propagated ensemble (filtering step).
-
-        **Updates:**
-            * self.state_vec
-        """
-        raise NotImplementedError(
-            "Needs to be implemented in the child class!")
+                    print("\nDA Filtering completed: max iteration reached.")
+                print("  Iteration: {}".format(self.da_step))
 
     def plot(self):
         """ Plot iteration convergence. """
@@ -421,11 +401,43 @@ class DAFilter2(DAFilter):
             pass
 
     # private methods
+    def _correct_forecasts(self):
+        """ Correct the propagated ensemble (filtering step).
+
+        **Updates:**
+            * self.state_vec
+        """
+        raise NotImplementedError(
+            "Needs to be implemented in the child class!")
+
+    def _vec_to_mat(self, vec, ncol):
+        "Tile a vector ncol times to form a matrix"
+        return np.tile(vec, (ncol, 1)).T
+
+    def _store_vars(self):
+        """ Store the important variables at each iterationself.
+
+        **Updates:**
+            * self.obs_all
+            * self.model_obs_all
+            * self.obs_error_all
+            * self.state_vec_analysis_all
+            * self.state_vec_forecast_all
+        """
+        # save results
+        self.obs_all.append(self.obs.copy())
+        self.model_obs_all.append(self.model_obs.copy())
+        self.obs_error_all.append(self.obs_error.copy())
+        self.state_vec_analysis_all.append(self.state_vec_analysis.copy())
+        self.state_vec_forecast_all.append(self.state_vec_forecast.copy())
+
     def _create_folder(self, folder):
+        """ Create a folder if does not exist. """
         if not os.path.exists(folder):
             os.makedirs(folder)
 
     def _save_debug(self, debug_dict):
+        """ Save specified ndarrays to the debug folder. """
         if self._debug_flag:
             for key, value in debug_dict.items():
                 fname = self._debug_folder + os.sep + key + \
@@ -458,6 +470,7 @@ class DAFilter2(DAFilter):
         self._sigma_obs_norm.append(sigma_obs_norm)
 
     def _iteration_residual(self, list, iter):
+        """ Calculate the residual at a given iteration. """
         if iter > 0:
             iterative_residual = abs(list[iter] - list[iter-1]) / abs(list[0])
         else:
@@ -465,7 +478,7 @@ class DAFilter2(DAFilter):
         return iterative_residual
 
     def _check_convergence(self):
-        # Check iteration convergence.
+        """ Check iteration convergence. """
         conv_variance = self._misfit_norm[self.da_step - 1] < \
             self._sigma_obs_norm[self.da_step - 1]
         residual = self._iteration_residual(self._misfit_norm, self.da_step-1)
@@ -476,7 +489,7 @@ class DAFilter2(DAFilter):
         return conv_variance, conv_residual
 
     def _report(self):
-        """ Report at each iteration. """
+        """ Create report for current iteration. """
         residual = self._iteration_residual(self._misfit_norm, self.da_step-1)
         conv_var, conv_res = self._check_convergence()
         str_report = ''
@@ -510,8 +523,8 @@ class EnKF(DAFilter2):
     information.
     """
 
-    def __init__(self, nsamples, da_interval, t_end, forward_model,
-                 input_dict):
+    def __init__(self, nsamples, da_interval, t_end, max_da_iteration,
+                 dyn_model, input_dict):
         """ Parse input file and assign values to class attributes.
 
         Note
@@ -519,7 +532,8 @@ class EnKF(DAFilter2):
         See DAFilter2.__init__ for details.
         """
         super(self.__class__, self).__init__(
-            nsamples, da_interval, t_end, forward_model, input_dict)
+            nsamples, da_interval, t_end, max_da_iteration, dyn_model,
+            input_dict)
         self.name = 'Ensemble Kalman Filter'
         self.short_name = 'EnKF'
 
@@ -530,6 +544,7 @@ class EnKF(DAFilter2):
             * self.state_vec_analysis
         """
 
+        # TODO: [added: carlos, assigned: xinlei] Consider moving these two functions to DAFilter2. Remove from all the child classes. Add one-line docstring.
         def _check_condition_number(hpht):
             con_inv = la.cond(hpht + self.obs_error)
             if self._verb >= 2:
@@ -567,32 +582,34 @@ class EnKF(DAFilter2):
         self._save_debug(debug_dict)
 
 
-# child classes (specific filtering techniques)
 class EnRML(DAFilter2):
-    """ Implementation of the ensemble Randomized Maximal Likelihood (EnRML).
+    """ Implementation of the ensemble Randomized Maximal Likelihood
+    (EnRML).
 
     It inherits most methods from parent class (``DAFIlter2``), but
-    replaces the ``correct_forecasts`` method to use EnKF for the
+    replaces the ``correct_forecasts`` method to use EnRML for the
     data-assimilation step.
 
-    The EnRML is updated by: ``Xa = Xf + GN*(obs - HX)+P`` 
-    where *Xf* is the forecasted state vector (by the forward model), 
-    *Xa* is the updated vector after data-assimilation, *GN* is the 
-    Gauss-Newton matrix, *obs* is the observation vector, and *HX* is the 
-    forecasted state vector in observation space, *P* is Penalty matrix. 
-    See the documentation for more information.
+    The EnRML is updated by: ``Xa = Xf + GN*(obs - HX)+P``
+    where *Xf* is the forecasted state vector (by the forward model),
+    *Xa* is the updated vector after data-assimilation, *GN* is the
+    Gauss-Newton matrix, *obs* is the observation vector, and *HX* is
+    the forecasted state vector in observation space, *P* is Penalty
+    matrix. See the documentation for more information.
     """
 
-    def __init__(self, nsamples, da_interval, t_end, forward_model,
-                 input_dict):
+    def __init__(self, nsamples, da_interval, t_end, max_da_iteration,
+                 dyn_model, input_dict):
         """ Parse input file and assign values to class attributes.
 
         Note
         ----
         See DAFilter2.__init__ for details.
         """
+        # TODO: [added: carlos, assigned: xinlei] add the additional inputs to the docstring as in DAFilter2.__init__
         super(self.__class__, self).__init__(
-            nsamples, da_interval, t_end, forward_model, input_dict)
+            nsamples, da_interval, t_end, max_da_iteration, dyn_model,
+            input_dict)
         self.name = 'Ensemble Randomized Maximal Likelihood'
         self.short_name = 'EnRML'
         self.beta = float(input_dict['beta'])
@@ -600,7 +617,7 @@ class EnRML(DAFilter2):
             input_dict['criteria'])
 
     def _correct_forecasts(self):
-        """ Correct the propagated ensemble (filtering step) using EnKF
+        """ Correct the propagated ensemble (filtering step) using EnRML
 
         **Updates:**
             * self.state_vec_analysis
@@ -627,6 +644,7 @@ class EnRML(DAFilter2):
         xp0 = _mean_subtracted_matrix(self.state_vec_prior)
         p0 = (1.0 / (self.nsamples - 1.0)) * xp0.dot(xp0.T)
         x = self.state_vec_forecast.copy()
+        # TODO: [added: carlos, assigned: xinlei] I'm pretty sure this copy is unnecesary. Check.
         xp = _mean_subtracted_matrix(x)
         hxp = _mean_subtracted_matrix(self.model_obs)
         gen = np.dot(hxp, la.pinv(xp))
@@ -648,6 +666,7 @@ class EnRML(DAFilter2):
             1.0-self.beta) * x + self.beta*dx
 
         self.state_vec_analysis = x.copy()
+        # TODO: [added: carlos, assigned: xinlei] I'm pretty sure this copy is unnecesary. Check.
         # debug
         debug_dict = {
             'GN': gauss_newton_matrix, 'pen': penalty, 'inv': inv,
@@ -657,23 +676,24 @@ class EnRML(DAFilter2):
 
 # child classes (specific filtering techniques)
 class EnKF_MDA(DAFilter2):
-    """ Implementation of the ensemble Kalman Filter-Multi data 
+    """ Implementation of the ensemble Kalman Filter-Multi data
     assimilaton (EnKF-MDA).
 
     It inherits most methods from parent class (``DAFIlter2``), but
-    replaces the ``correct_forecasts`` method to use EnKF for the
+    replaces the ``correct_forecasts`` method to use EnKF-MDA for the
     data-assimilation step.
 
-    The EnKF-MDA is updated by: ``Xa = Xf + K_mda*(obs - HX - err_mda)
-    `` where *Xf* is the forecasted state vector (by the dynamic model), 
-    *Xa* is the updated vector after data-assimilation, *K_mda* is the 
-    modified Kalman gain matrix, *obs* is the observation vector, and 
-    *HX* is the forwarded state vector in observation space, 'err_mda' 
+    The EnKF-MDA is updated by:
+    ``Xa = Xf + K_mda*(obs - HX - err_mda)`` where *Xf* is the
+    forecasted state vector (by the dynamic model),
+    *Xa* is the updated vector after data-assimilation, *K_mda* is the
+    modified Kalman gain matrix, *obs* is the observation vector, and
+    *HX* is the forwarded state vector in observation space, 'err_mda'
     is inflated error. See the documentation for more information.
     """
 
-    def __init__(self, nsamples, da_interval, t_end, forward_model,
-                 input_dict):
+    def __init__(self, nsamples, da_interval, t_end, max_da_iteration,
+                 dyn_model, input_dict):
         """ Parse input file and assign values to class attributes.
 
         Note
@@ -681,12 +701,14 @@ class EnKF_MDA(DAFilter2):
         See DAFilter2.__init__ for details.
         """
         super(self.__class__, self).__init__(
-            nsamples, da_interval, t_end, forward_model, input_dict)
+            nsamples, da_interval, t_end, max_da_iteration, dyn_model,
+            input_dict)
         self.name = 'Ensemble Kalman Filter-Multi Data Assimilation'
         self.short_name = 'EnKF-MDA'
 
     def _correct_forecasts(self):
-        """ Correct the propagated ensemble (filtering step) using EnKF
+        """ Correct the propagated ensemble (filtering step) using
+        EnKF_MDA.
 
         **Updates:**
             * self.state_vec_analysis
@@ -709,7 +731,7 @@ class EnKF_MDA(DAFilter2):
             mean_sub_mat = mat - mean_vec
             return mean_sub_mat
 
-        alpha = self.max_pseudo_time/self.forward_interval
+        alpha = self.max_da_iteration
         # calculate the Kalman gain matrix
         xp = _mean_subtracted_matrix(self.state_vec_forecast)
         hxp = _mean_subtracted_matrix(self.model_obs)
@@ -735,22 +757,23 @@ class EnKF_MDA(DAFilter2):
 # child classes (specific filtering techniques)
 # developing
 class EnKF_Lasso(DAFilter2):
-    """ Implementation of the ensemble Kalman Filter with Lasso (EnKF-Lasso).
+    """ Implementation of the ensemble Kalman Filter with Lasso
+    (EnKF-Lasso).
 
     It inherits most methods from parent class (``DAFIlter2``), but
-    replaces the ``correct_forecasts`` method to use EnKF for the
+    replaces the ``correct_forecasts`` method to use EnKF-Lasso for the
     data-assimilation step.
 
-    The EnKF_lasso is updated by: ``Xa = Xf + K*(obs - HX) - penalty`` 
-    where *Xf* is the forecasted state vector (by the forward model), 
-    *Xa* is the updated vector after data-assimilation, *K* is the 
-    Kalman gain matrix, *obs* is the observation vector, and *HX* is 
-    the forecasted state vector in observation space. See the 
+    The EnKF_lasso is updated by: ``Xa = Xf + K*(obs - HX) - penalty``
+    where *Xf* is the forecasted state vector (by the forward model),
+    *Xa* is the updated vector after data-assimilation, *K* is the
+    Kalman gain matrix, *obs* is the observation vector, and *HX* is
+    the forecasted state vector in observation space. See the
     documentation for more information.
     """
 
-    def __init__(self, nsamples, da_interval, t_end, forward_model,
-                 input_dict):
+    def __init__(self, nsamples, da_interval, t_end, max_da_iteration,
+                 dyn_model, input_dict):
         """ Parse input file and assign values to class attributes.
 
         Note
@@ -758,12 +781,14 @@ class EnKF_Lasso(DAFilter2):
         See DAFilter2.__init__ for details.
         """
         super(self.__class__, self).__init__(
-            nsamples, da_interval, t_end, forward_model, input_dict)
+            nsamples, da_interval, t_end, max_da_iteration, dyn_model,
+            input_dict)
         self.name = 'Ensemble Kalman Filter - Lasso'
         self.short_name = 'EnKF-Lasso'
 
     def _correct_forecasts(self):
-        """ Correct the propagated ensemble (filtering step) using EnKF
+        """ Correct the propagated ensemble (filtering step) using
+        EnKF-Lasso
 
         **Updates:**
             * self.state_vec_analysis

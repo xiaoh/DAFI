@@ -2,21 +2,21 @@
 # specify the time interval
 dt_interval 0.025
 
-# determine which variable will be perturbed
-perturb_rho         True
-perturb_beta        False
-perturb_sigma       False
+# specify which variables will be perturbed
+perturb_rho True
+perturb_beta False
+perturb_sigma False
 
-# set initial value for state variables
-x 1.
+# specify the initial value for state variables
+x 1.0
 y 1.2
-z 1.
-rho 33.
+z 1.0
+rho 33.0
 beta 2.66667
-sigma 10.
+sigma 10.0
 
-# set the relative standard deviation for state variables
+# specify the relative standard deviation for the state variables
 x_rel_std 0.1
 
-# parameters for observation
-obs_rel_std      0.1
+# specify the relative standard deviation for the observations
+obs_rel_std 0.1

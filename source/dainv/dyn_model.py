@@ -18,7 +18,8 @@ class DynModel(object):
         nstate_obs: Number of states in the observation vector.
     """
 
-    def __init__(self, nsamples, da_interval, t_end,  input_file):
+    def __init__(self, nsamples, da_interval, t_end, max_da_iteration,
+                 input_file):
         """ Parse input file and assign values to class attributes.
 
         Parameters
@@ -29,6 +30,8 @@ class DynModel(object):
             Time interval between data assimilation steps.
         t_end : float
             Final time.
+        max_da_iteration : int
+            Maximum number of DA iterations at a given time-step.
         input_file : str
             Input file name.
         """
@@ -39,8 +42,8 @@ class DynModel(object):
         pass
 
     def __str__(self):
-        s = 'An empty dynamic model.'
-        return s
+        str_info = 'An empty dynamic model.'
+        return str_info
 
     def generate_ensemble(self):
         """ Return states at the first data assimilation time-step.
@@ -83,13 +86,30 @@ class DynModel(object):
         model_obs = np.zeros([self.nstate_obs, self._nsamples])
         return state_vec, model_obs
 
-    def get_obs(next_end_time):
+    def forward(self, X):
+        """
+        Forward the states to observation space (from X to HX).
+
+        Parameters
+        ----------
+        X: ndarray
+            Current state variables.
+
+        Returns
+        -------
+        HX: ndarray
+            Ensemble in observation space.
+        """
+        model_obs = np.zeros([self.nstate_obs, self._nsamples])
+        return model_obs
+
+    def get_obs(time):
         """ Return the observation and error matrix.
 
         Parameters
         ----------
-        next_end_time : float
-            Next end time.
+        time : float
+            Time at which observation is requested.
 
         Returns
         -------
