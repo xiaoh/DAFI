@@ -315,9 +315,9 @@ class DAFilter2(DAFilter):
                 # data assimilation
                 self._correct_forecasts()
                 self._calc_misfits()
-                self.state_vec_forecast = self.state_vec_analysis.copy()
                 if self.stationary_flag:
                     self.save_report()
+		self.state_vec_forecast = self.state_vec_analysis.copy()
                 conv_var, conv_res = self._check_convergence()
                 if self.convergence_option is 'variance':
                     conv = conv_var
