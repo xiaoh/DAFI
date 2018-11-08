@@ -121,8 +121,7 @@ def plot_inferred_mu(step, nmodes):
     """Plot inferred diffusivity field"""
     x_coor = np.loadtxt('x_coor.dat')
     KLmodes = np.loadtxt('KLmodes.dat')
-    i = step
-    omega_all = np.loadtxt('./results/Xa_'+str(i+1))[-nmodes:, :]
+    omega_all = np.loadtxt('./results/Xa_'+str(step))[-nmodes:, :]
     vx = np.zeros((len(x_coor), len(omega_all[0, :])))
     for i in range(len(omega_all[0, :])):
         for j in range(len(omega_all[:, 0])):

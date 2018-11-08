@@ -57,7 +57,7 @@ class FoamTauSolver(DynModel):
 
     # overide parent methods
 
-    def __init__(self, Ns, DAInterval, Tend, forward_interval, max_pseudo_time, ModelInput):
+    def __init__(self, Ns, DAInterval, Tend, max_pseudo_time, ModelInput):
         """
         Initialization
         """
@@ -866,7 +866,7 @@ class FoamTauSolver(DynModel):
         self.normalizeFlag = False
         self.U0 = 0.5
         self.K0 = 1e-3
-        self.forward_interval = forward_interval
+        self.forward_interval = float(paramDict['forward_interval'])
         # DA step interval Todo:
         # Used in main driver
         self.iDAStep = 0
@@ -1144,12 +1144,12 @@ class FoamTauSolver(DynModel):
             self.caseSolver,
             self.pseudoObs)
 
-        return (X, HX)
+        return HX # (X, HX) TODO
 
     def get_obs(self, next_end_time):
-        obs, obs_perturb = self.Observe(next_end_time)
+        obs = self.Observe(next_end_time) #obs_perturb = self.Observe(next_end_time)
         R_obs = self.get_Robs()
-        return obs, obs_perturb, R_obs
+        return obs, R_obs #obs_perturb, R_obs
 
     def get_Robs(self):
         ''' Return the observation covariance.
@@ -1869,7 +1869,7 @@ class FoamTauSolver(DynModel):
             if irow == self.Ns:
                 break
             Obs = self.ObsX
-        return Obs, obs_perturb
+        return ObsVec #, obs_perturb TODO
 
     def _constructHMatrix(self):
 

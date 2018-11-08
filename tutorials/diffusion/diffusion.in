@@ -14,4 +14,4 @@ x_abs_std 0.8
 std_coef 2
 
 # relative standard deviation for observation
-obs_rel_std      0.05
+obs_rel_std      0.1

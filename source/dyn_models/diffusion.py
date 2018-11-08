@@ -26,8 +26,8 @@ class Solver(DynModel):
     position.
     """
 
-    def __init__(self, nsamples, da_interval, t_end, forward_interval,
-                 max_pseudo_time, model_input):
+    def __init__(self, nsamples, da_interval, t_end, max_pseudo_time,
+                 model_input):
         """ Initialize the dynamic model and parse input file.
 
         Parameters
@@ -66,7 +66,7 @@ class Solver(DynModel):
         # Extract forward Model Input parameters
         param_dict = read_input_data(model_input)
         # forward time inverval
-        self.forward_interval = forward_interval
+        self.forward_interval = 1
         # forward maximum pseudo step
         self.max_pseudo_time = max_pseudo_time
         # diffential space step Todo move to input file
@@ -182,7 +182,7 @@ class Solver(DynModel):
                 np.random.normal(0, dx_std, self.nsamples)
         # augment the state with KL expansion coefficient
         augstate_init = np.concatenate((state_init, para_init))
-        augstate_init, model_obs = self.forward(augstate_init, 0)
+        model_obs = self.forward(augstate_init)
         return augstate_init, model_obs
 
     def forecast_to_time(self, state_vec_current, next_end_time):
@@ -190,7 +190,7 @@ class Solver(DynModel):
 
         return state_vec_current
 
-    def forward(self, X, next_pseudo_time):
+    def forward(self, X):
         """
         Returns states at the next pseudo time.
 
@@ -257,7 +257,7 @@ class Solver(DynModel):
             u_mat[:, i_nsample] = u
         for j in range(1, 11):
             model_obs[j-1, :] = u_mat[5*j, :]
-        return X, model_obs
+        return model_obs
 
     def get_obs(self, next_end_time):
         """ Return the observation and observation covariance.
@@ -280,9 +280,9 @@ class Solver(DynModel):
             ``shape=(nstate_obs, nstate_obs)``
         """
 
-        obs, obs_perturb = self.observe(next_end_time)
+        obs = self.observe(next_end_time)
         obs_error = self.get_obs_error()
-        return obs, obs_perturb, obs_error
+        return obs, obs_error
 
     def get_obs_error(self):
         """ Return the observation error covariance. """
@@ -327,11 +327,7 @@ class Solver(DynModel):
         self.obs_error = sp.diags((self.obs_rel_std*observe_vec)**2, 0)
         R = self.obs_error.todense()
         obs_error_mean = np.zeros(self.nstate_obs)
-
-        obs_perturb = np.random.multivariate_normal(
-            obs_error_mean, R, self.nsamples)
-        obs_mat = np.tile(observe_vec, (self.nsamples, 1)) + obs_perturb
-        return obs_mat.T, obs_perturb.T
+        return observe_vec
 
     # private method
     def _obs_forward(self):

@@ -92,6 +92,22 @@ class Solver(DynModel):
         self.rho = float(param_dict['rho'])
         self.beta = float(param_dict['beta'])
         self.sigma = float(param_dict['sigma'])
+        '''
+        # read the synthectic truth
+        try:
+            self.rho_truth = float(param_dict['rho_truth'])
+        except:
+            self.rho_truth = self.rho
+        
+        try:
+            self.beta_truth = float(param_dict['beta_truth'])
+        except:
+            self.beta_truth = self.beta
+        try:
+            self.sigma_truth = float(param_dict['sigma_truth'])
+        except:
+            self.sigma_truth = self.sigma.copy()
+        '''
         # relative standard deviation of observation
         self.obs_rel_std = float(param_dict['obs_rel_std'])
         # relative standard deviation of x, y, z, rho, beta, sigma
@@ -102,18 +118,26 @@ class Solver(DynModel):
         self.perturb_sigma = ast.literal_eval(param_dict['perturb_sigma'])
         # initial  state condition
         self.x_init = [self.x, self.y, self.z]
-
+        self.x_truth = [self.x, self.y, self.z]
         # specify state augmented by which parameter and count
         self.num_params = 0
         if self.perturb_rho:
             self.x_init.append(self.rho)
+            self.rho_truth = float(param_dict['rho_truth'])
+            self.x_truth.append(self.rho_truth)
             self.num_params += 1
         if self.perturb_beta:
             self.x_init.append(self.beta)
+            self.beta_truth = float(param_dict['beta_truth'])
+            self.x_truth.append(self.beta_truth)
             self.num_params += 1
         if self.perturb_sigma:
             self.x_init.append(self.sigma)
+            self.sigma_truth = float(param_dict['sigma_truth'])
+            self.x_truth.append(self.sigma_truth)
             self.num_params += 1
+        self.x_truth = np.array(self.x_truth)
+        self.truth_all = np.empty([3 + self.num_params, 1]).T
         # dimension of state space
         self.nstate = len(self.x_init)
         # dimension of observation space
@@ -151,7 +175,6 @@ class Solver(DynModel):
                 np.random.normal(0, dx_std, self.nsamples)
         # operation operator
         h_matrix = self._construct_h_matrix()
-        # h_matrix = np.array([[1, 0, 0], [0, 1, 0], [0, 0, 1], [0, 0, 0]]).T
         model_obs = h_matrix.dot(state_vec)
         return state_vec, model_obs
 
@@ -192,10 +215,10 @@ class Solver(DynModel):
             if not self.perturb_rho:
                 beta = state_vec[3]
                 sigma = state_vec[4]
-            if self.perturb_beta:
+            if not self.perturb_beta:
                 rho = state_vec[3]
                 sigma = state_vec[4]
-            if self.perturb_sigma:
+            if not self.perturb_sigma:
                 rho = state_vec[3]
                 beta = state_vec[4]
         if self.nstate == 6:
@@ -263,7 +286,7 @@ class Solver(DynModel):
 
     def forward(self, X):
         """
-        Forwards the states from X to HX.
+        Forward the states from X to model_obs.
 
         Parameters
         ----------
@@ -272,7 +295,7 @@ class Solver(DynModel):
 
         Returns
         -------
-        HX: ndarray
+        model_obs: ndarray
             Ensemble in observation space.
         """
         # Construct observation operator
@@ -297,9 +320,15 @@ class Solver(DynModel):
             Observation error covariance. ``dtype=float``, ``ndim=2``,
             ``shape=(nstate_obs, nstate_obs)``
         """
-        # get truth
-        da_step = time / self.da_interval
-        truth = np.loadtxt('truth.dat')[int(da_step)*10, 1:]
+        current_truth = np.tile(self.x_truth.T, (self.nsamples, 1)).T
+        forecast_truth = self.forecast_to_time(current_truth, time)
+
+        self.x_truth = forecast_truth[:, 0]
+        truth = self.forward(forecast_truth)[:, 0]
+        truth_plot = np.hstack((time, truth))
+        self.truth_all = np.vstack((self.truth_all, truth_plot))
+        if time == self.t_end:
+            np.savetxt('truth_plot.dat', self.truth_all)
         # create synthetic observation
         obs_std_vec = self.obs_rel_std * np.abs(truth) + 0.1
         obs_vec = truth + np.random.normal(0, obs_std_vec)

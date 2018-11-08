@@ -7,6 +7,9 @@ perturb_rho True
 perturb_beta False
 perturb_sigma False
 
+# specify synthetic truth for perturbed value
+rho_truth 28.0
+
 # specify the initial value for state variables
 x 1.0
 y 1.2
