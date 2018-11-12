@@ -12,6 +12,8 @@ import numpy as np
 from numpy import linalg as la
 import matplotlib.pyplot as plt
 
+# local import
+import dainv.utilities as utils
 
 # parent classes (templates)
 class DAFilter(object):
@@ -127,7 +129,7 @@ class DAFilter2(DAFilter):
               ``False``: ``variance`` to use the variance convergence
               criteria,  ``residual``. See documentation for more
               information.
-            * **convergence_residual** (``float``) -
+            * **convergence_residual** (``float``, None) -
               Residual value for convergence if ``reach_max_flag`` is
               ``False`` and ``convergence_option`` is ``residual``.
             * **convergence_norm** (``int, inf``,``2``) -
@@ -188,7 +190,7 @@ class DAFilter2(DAFilter):
         except:
             self._debug_folder = os.curdir + os.sep + 'debug'
         if self._debug_flag:
-            self._create_folder(self._debug_folder)
+            utils.create_folder(self._debug_folder)
         try:
             self._save_folder = input_dict['save_folder']
         except:
@@ -200,10 +202,9 @@ class DAFilter2(DAFilter):
 
         # initialize iteration array
         self.time_array = np.arange(0.0, self.t_end, self.da_interval)
-        self.pseudo_time_array = np.arange(0, self.max_da_iteration)
+        self.forwad_iteration_array = np.arange(0, self.max_da_iteration)
         # initialize states: these change at every iteration
         self.time = 0.0  # current time
-        self.pseudo_time = 0.0  # pseudo_time step for each real time
         self.da_step = int(0)  # current DA step
         self.forward_step = int(0)  # current forward step
         # ensemble matrix (nsamples, nstate)
@@ -213,7 +214,8 @@ class DAFilter2(DAFilter):
             [self.dyn_model.nstate, self.nsamples])
         self.state_vec_analysis = np.zeros(
             [self.dyn_model.nstate, self.nsamples])
-        # ensemble matrix projected to observed space (nsamples, nstateSample)
+        # ensemble matrix projected to observation space
+        # (nsamples, nstateSample)
         self.model_obs = np.zeros([self.dyn_model.nstate_obs, self.nsamples])
         # observation matrix (nstate_obs, nsamples)
         self.obs = np.zeros([self.dyn_model.nstate_obs, self.nsamples])
@@ -228,6 +230,9 @@ class DAFilter2(DAFilter):
         self._misfit_norm = []
         self._sigma_hx_norm = []
         self._sigma_obs_norm = []
+        self._misfit_norm_store = []
+        self._sigma_hx_norm_store = []
+        self._sigma_obs_norm_store = []
 
         # for storage and saving: these grow each iteration
         self.state_vec_analysis_all = []
@@ -284,20 +289,20 @@ class DAFilter2(DAFilter):
             self.da_step += 1
             if self._verb >= 1:
                 print("\nData-assimilation step: {}".format(self.da_step) +
-                      "\n  Time: {}".format(self.time))
+                      "\nTime: {}".format(self.time))
             # dyn_model: propagate the state ensemble to next DA time.
             self.state_vec_forecast = \
                 self.dyn_model.forecast_to_time(
                     self.state_vec_analysis, self.time)
             self.state_vec_prior = self.state_vec_forecast
-            self.forward_step = 0
             # DA iterations at fixed time-step.
-            for pseudo_time in self.pseudo_time_array:
-                self.pseudo_time = pseudo_time + 1
-                self.forward_step += 1
+            self._misfit_norm = []
+            self._sigma_hx_norm = []
+            self._sigma_obs_norm = []
+            for forward_step in self.forwad_iteration_array:
+                self.forward_step = forward_step + 1
                 if self._verb >= 1:
-                    print("\nForward step: {}".format(self.forward_step) +
-                          "\n Pseudo Time: {}".format(self.pseudo_time))
+                    print("\n  Forward step: {}".format(self.forward_step))
                 # forward the state vector to observation space
                 if self.forward_step is 1:
                     state_vec = self.state_vec_forecast
@@ -322,7 +327,10 @@ class DAFilter2(DAFilter):
                     conv = conv_res
                 if conv and not self.reach_max_flag:
                     early_stop = True
+                    self._store_misfits()
                     break
+                if self.forward_step == self.max_da_iteration:
+                    self._store_misfits()
             # time-step: store results, report
             if not self._stationary_flag:
                 self._store_vars()
@@ -330,27 +338,34 @@ class DAFilter2(DAFilter):
                     print(self._report())
             if self._verb >= 1:
                 if early_stop:
-                    print("\nDA Filtering completed: convergence early stop.")
+                    print("    DA Filtering completed: convergence early stop.")
                 else:
-                    print("\nDA Filtering completed: max iteration reached.")
-                print("  Iteration: {}".format(self.da_step))
+                    print("    DA Filtering completed: max iteration reached.")
+        # pass final results to dynamic model
+        self.dyn_model.final_analysis(self.state_vec_analysis)
 
     def plot(self):
         """ Plot iteration convergence. """
-        self._create_folder(self._save_folder)
+        utils.create_folder(self._save_folder)
+        if self._stationary_flag:
+            iter = np.arange(self.forward_step) + 1
+        else:
+            iter = np.arange(self.da_step) + 1
         fig, ax = plt.subplots()
         iter = np.arange(self.da_step) + 1
-        ax.plot(iter, self._misfit_norm, '.-', label='norm(obs-HX)')
-        ax.plot(iter, self._sigma_hx_norm, '.-', label='norm(std(HX))')
-        ax.plot(iter, self._sigma_obs_norm, '.-', label='norm(std(obs))')
-        ax.set_title('Iteration Convergence')
+        ax.plot(iter, self._misfit_norm_store, '.-', label='norm(obs-HX)')
+        ax.plot(iter, self._sigma_hx_norm_store, '.-', label='norm(std(HX))')
+        ax.plot(iter, self._sigma_obs_norm_store, '.-', label='norm(std(obs))')
         ax.set_xlabel('Data-Assimilation Step')
-        ax.legend(loc='upper right')
-        fig.savefig(self._save_folder + os.sep + 'iteration_convergence.pdf')
+        box = ax.get_position()
+        ax.set_position([box.x0, box.y0, box.width * 0.8, box.height])
+        ax.legend(loc='center left', bbox_to_anchor=(1, 0.5))
+        fig.savefig(self._save_folder + os.sep + 'iteration_errors_plot.pdf')
+        plt.close(fig)
         try:
             self.dyn_model.plot()
         except:
-            pass
+           pass
 
     def report(self):
         """ Report summary information. """
@@ -359,10 +374,10 @@ class DAFilter2(DAFilter):
         str_report += self._report()
         print(str_report)
         print('\n\nForward Modeling Report\n' + '='*23)
-        try:
-            self.dyn_model.report()
-        except:
-            pass
+        # try: # TODO: uncomment
+        self.dyn_model.report()
+        # except:
+            # pass
 
     def clean(self):
         """ Cleanup before exiting. """
@@ -373,13 +388,13 @@ class DAFilter2(DAFilter):
 
     def save(self):
         """ Saves results to text files. """
-        self._create_folder(self._save_folder)
+        utils.create_folder(self._save_folder)
         np.savetxt(self._save_folder + os.sep + 'misfit_norm', np.array(
-            self._misfit_norm))
+            self._misfit_norm_store))
         np.savetxt(self._save_folder + os.sep + 'sigma_HX', np.array(
-            self._sigma_hx_norm))
+            self._sigma_hx_norm_store))
         np.savetxt(self._save_folder + os.sep + 'sigma_obs', np.array(
-            self._sigma_obs_norm))
+            self._sigma_obs_norm_store))
         for da_step, value in enumerate(self.state_vec_analysis_all):
             np.savetxt(self._save_folder + os.sep + 'Xa_{}'.format(da_step+1),
                        value)
@@ -405,10 +420,16 @@ class DAFilter2(DAFilter):
         """ Correct the propagated ensemble (filtering step).
 
         **Updates:**
-            * self.state_vec
+            * self.state_vec_analysis
         """
         raise NotImplementedError(
             "Needs to be implemented in the child class!")
+
+    def _store_misfits(self):
+        """ Store the values of misfits at end of DA loop """
+        self._misfit_norm_store.append(self._misfit_norm[-1])
+        self._sigma_hx_norm_store.append(self._sigma_hx_norm[-1])
+        self._sigma_obs_norm_store.append(self._sigma_obs_norm[-1])
 
     def _vec_to_mat(self, vec, ncol):
         "Tile a vector ncol times to form a matrix"
@@ -430,11 +451,6 @@ class DAFilter2(DAFilter):
         self.obs_error_all.append(self.obs_error.copy())
         self.state_vec_analysis_all.append(self.state_vec_analysis.copy())
         self.state_vec_forecast_all.append(self.state_vec_forecast.copy())
-
-    def _create_folder(self, folder):
-        """ Create a folder if does not exist. """
-        if not os.path.exists(folder):
-            os.makedirs(folder)
 
     def _save_debug(self, debug_dict):
         """ Save specified ndarrays to the debug folder. """
@@ -464,7 +480,6 @@ class DAFilter2(DAFilter):
         sigma_hx_norm = la.norm(sigma_hx, self.convergence_norm) / nnorm_vec
         sigma_obs = np.sqrt(np.diag(self.obs_error))
         sigma_obs_norm = la.norm(sigma_obs, self.convergence_norm) / nnorm_vec
-        # store values
         self._misfit_norm.append(misfit_norm)
         self._sigma_hx_norm.append(sigma_hx_norm)
         self._sigma_obs_norm.append(sigma_obs_norm)
@@ -479,9 +494,10 @@ class DAFilter2(DAFilter):
 
     def _check_convergence(self):
         """ Check iteration convergence. """
-        conv_variance = self._misfit_norm[self.da_step - 1] < \
-            self._sigma_obs_norm[self.da_step - 1]
-        residual = self._iteration_residual(self._misfit_norm, self.da_step-1)
+        conv_variance = self._misfit_norm[self.forward_step - 1] < \
+            self._sigma_obs_norm[self.forward_step - 1]
+        residual = self._iteration_residual(
+            self._misfit_norm, self.forward_step-1)
         if self.convergence_residual is None:
             conv_residual = False
         else:
@@ -490,19 +506,20 @@ class DAFilter2(DAFilter):
 
     def _report(self):
         """ Create report for current iteration. """
-        residual = self._iteration_residual(self._misfit_norm, self.da_step-1)
+        residual = self._iteration_residual(
+            self._misfit_norm, self.forward_step-1)
         conv_var, conv_res = self._check_convergence()
         str_report = ''
-        str_report += "  Norm of standard deviation of HX: {}".format(
-            self._sigma_hx_norm[self.da_step - 1]) + \
-            "\n  Norm of standard deviation of observation: {}".format(
-            self._sigma_obs_norm[self.da_step - 1])
+        str_report += "    Norm of standard deviation of HX: {}".format(
+            self._sigma_hx_norm[self.forward_step - 1]) + \
+            "\n    Norm of standard deviation of observation: {}".format(
+            self._sigma_obs_norm[self.forward_step - 1])
         str_report += "\n  Norm of misfit: {}".format(
-            self._misfit_norm[self.da_step - 1])
-        str_report += "\n  Convergence (variance): {}".format(conv_var)
-        str_report += "\n  Convergence (residual): {}".format(conv_res) \
-            + "\n    Relative iterative residual: {}".format(residual) \
-            + "\n    Relative convergence criterion: {}".format(
+            self._misfit_norm[self.forward_step - 1])
+        str_report += "\n    Convergence (variance): {}".format(conv_var)
+        str_report += "\n    Convergence (residual): {}".format(conv_res) \
+            + "\n      Relative iterative residual: {}".format(residual) \
+            + "\n      Relative convergence criterion: {}".format(
             self.convergence_residual)
         return str_report
 
@@ -570,7 +587,6 @@ class EnKF(DAFilter2):
         hpht = coeff * hxp.dot(hxp.T)
         _check_condition_number(hpht)
         inv = la.inv(hpht + self.obs_error)
-        inv = inv.A  # convert np.matrix to np.ndarray
         kalman_gain_matrix = pht.dot(inv)
         # analysis step
         dx = np.dot(kalman_gain_matrix, self.obs - self.model_obs)
@@ -674,7 +690,6 @@ class EnRML(DAFilter2):
         self._save_debug(debug_dict)
 
 
-# child classes (specific filtering techniques)
 class EnKF_MDA(DAFilter2):
     """ Implementation of the ensemble Kalman Filter-Multi data
     assimilaton (EnKF-MDA).
@@ -754,7 +769,6 @@ class EnKF_MDA(DAFilter2):
         self._save_debug(debug_dict)
 
 
-# child classes (specific filtering techniques)
 # developing
 class EnKF_Lasso(DAFilter2):
     """ Implementation of the ensemble Kalman Filter with Lasso
