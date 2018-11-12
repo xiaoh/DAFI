@@ -276,7 +276,7 @@ class DAFilter2(DAFilter):
 
         # sensitivity only
         if self._sensitivity_only:
-            self.state_vec_forecast, self.model_obs = \
+            self.model_obs = \
                 self.dyn_model.forward(
                     self.state_vec_analysis, self.da_interval)
             if self.ver >= 1:
@@ -305,10 +305,10 @@ class DAFilter2(DAFilter):
                     print("\n  Forward step: {}".format(self.forward_step))
                 # forward the state vector to observation space
                 if self.forward_step is 1:
-                    state_vec = self.state_vec_forecast
+                    self.state_vec_forecast = self.state_vec_forecast
                 else:
-                    state_vec = self.state_vec_analysis
-                self.model_obs = self.dyn_model.forward(state_vec)
+                    self.state_vec_forecast = self.state_vec_analysis.copy()
+                self.model_obs = self.dyn_model.forward(self.state_vec_forecast)
                 # get observation data at current step
                 obs_vec, self.obs_error = self.dyn_model.get_obs(self.time)
                 self.obs = self._vec_to_mat(obs_vec, self.nsamples)
@@ -838,7 +838,7 @@ class EnKF_Lasso(DAFilter2):
         kalman_gain_matrix = pht.dot(inv)
 
         # calculate the lasso penalty
-        lamda = 1e-8
+        lamda = 1e-10
         h_mat = hxp.dot(la.pinv(xp))
         inv_obs_error = la.inv(self.obs_error)
 
@@ -847,18 +847,19 @@ class EnKF_Lasso(DAFilter2):
         weight_lasso_vec = np.zeros(htrh.shape[0])
 
         for i in range(self.nstate):
-            if i >= 3000*3-1 and i <= self.nstate - 3:
+            if i >= 3000*3 and i <= self.nstate - 3:
                 for j in range(3):
-                    weight_lasso_vec[j+i] = (int((i-8999))/3+1)/60.0
+                    weight_lasso_vec[j+i] = (int((i-9000))/3)/30.0
 
         weight_lasso_mat = np.tile(weight_lasso_vec, (self.nsamples, 1)).T
-        penalty_lasso = inv_lasso.dot(weight_lasso_mat)
+        weight_lasso_mat2 = weight_lasso_mat.dot(weight_lasso_mat.T)
+
+        penalty_lasso = inv_lasso.dot(weight_lasso_mat2)
         penalty_lasso = penalty_lasso.A
         # analysis step
         dx = np.dot(kalman_gain_matrix, self.obs - self.model_obs)
-        self.state_vec_analysis = self.state_vec_forecast + dx \
-            - lamda * penalty_lasso
-
+        self.state_vec_analysis = self.state_vec_forecast + dx - \
+            lamda * penalty_lasso.dot(self.state_vec_forecast)
         # debug
         debug_dict = {
             'K': kalman_gain_matrix, 'inv': inv, 'HPHT': hpht, 'PHT': pht,

@@ -2,10 +2,16 @@
 # set how many modes to be used
 nmodes 3
 
-# give the synthetic value for each mode coefficient
-true_omega1     22
-true_omega2	8
-true_omega3	10
+# prior diffusivity
+mu_init 0.8
 
-# parameters for observation
-obs_rel_std      0.01
+# constant sigma
+sigma 5
+
+# relative standard deviation for coefficient of KL expansion
+x_rel_std  0.1
+x_abs_std 0.8
+std_coef 2
+
+# relative standard deviation for observation
+obs_rel_std      0.1

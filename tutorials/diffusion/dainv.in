@@ -11,7 +11,7 @@ da_filter EnKF
 beta 0.1
 
 # specify the forward model parameters
-max_pseudo_time 100
+max_da_iteration 100
 forward_interval 1
 criteria 1e-3
 

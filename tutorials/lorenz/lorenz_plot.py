@@ -16,7 +16,7 @@ if not os.path.exists('figures/'):
     os.mkdir('figures/')
 
 
-def plot_samples(para):
+def plot_samples(para, da_interval):
     """ Plot samples and sample mean."""
     if para == 'x':
         state_ind = 0
@@ -25,9 +25,9 @@ def plot_samples(para):
     if para == 'z':
         state_ind = 2
     # read time series
-    t = np.loadtxt('obs.dat')[:, 0]
+    t = np.loadtxt('truth.dat')[:, 0]
     # get observed time point
-    da_t = t[10:-1:10]
+    da_t = t[da_interval: -1: da_interval]
     da_step = len(da_t)
 
     # intialize sequential Xa and mean
@@ -56,7 +56,7 @@ def plot_samples(para):
 def plot_truth(para):
     """ Plot truth. """
     # read truth file
-    obs = np.loadtxt('obs.dat')
+    obs = np.loadtxt('truth_plot.dat', skiprows=1)
     # set which state varible to plot
     if para == 'x':
         state_ind = 1
@@ -69,7 +69,7 @@ def plot_truth(para):
     return p4
 
 
-def plot_obs(para):
+def plot_obs(para, da_interval):
     """ Plot observations. """
     # set which state varible to plot
     if para == 'x':
@@ -79,9 +79,9 @@ def plot_obs(para):
     if para == 'z':
         state_ind = 2
     # read time series
-    time = np.loadtxt('obs.dat')[:, 0]
+    time = np.loadtxt('truth.dat')[:, 0]
     # get observed time point
-    da_t = time[10:-1:10]
+    da_t = time[da_interval:-1:da_interval]
     da_step = len(da_t)
     # get sequential noised observation
     obs_seq = []
@@ -99,9 +99,10 @@ def main():
     for para in ['x', 'y', 'z']:
         fig, ax1 = plt.subplots()
         ax1 = plt.subplot(111)
-        p1, p2 = plot_samples(para)
+        da_interval = 5
+        p1, p2 = plot_samples(para, da_interval)
         p4 = plot_truth(para)
-        p5 = plot_obs(para)
+        p5 = plot_obs(para, da_interval)
         plt.xlabel('time')
         plt.ylabel(para)
         line = Line2D([0], [0], linestyle='-', color='g', alpha=0.5)
