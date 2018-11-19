@@ -1,25 +1,33 @@
 
 # specify the time interval
-dt_interval 0.025
+dt_interval: 0.01
 
-# specify which variables will be perturbed
-perturb_rho True
-perturb_beta False
-perturb_sigma False
+# initial distribution (Gaussian) of the infered parameters.
+x_init_mean = -8.5
+y_init_mean = -7.0
+z_init_mean = 27.0
+rho_init_mean = 29.0 
 
-# specify synthetic truth for perturbed value
-rho_truth 28.0
+x_init_std = 0.4
+y_init_std = 2.0
+z_init_std = 1.4
+rho_init_std = 4.0
 
-# specify the initial value for state variables
-x 1.0
-y 1.2
-z 1.0
-rho 33.0
-beta 2.66667
-sigma 10.0
+# values of fixed parameters
+beta = 2.7
+sigma = 10.0 
 
-# specify the relative standard deviation for the state variables
-x_rel_std 0.1
+# observation error: stddev(x) = error_relative * x
+x_obs_rel_std = 0.10
+z_obs_rel_std = 0.10
+x_obs_abs_std = 0.05
+z_obs_abs_std = 0.05
 
-# specify the relative standard deviation for the observations
-obs_rel_std 0.1
+# truth for creating synthetic measurements
+x_true = -8.0
+y_true = -9.0
+z_true = 28.0
+rho_true = 28.0
+beta_true = 2.7
+sigma_true = 10.0
+

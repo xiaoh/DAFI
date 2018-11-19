@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
 
-rm -rf results
+rm -rf results_da
+rm -rf results_lorenz
 rm -rf figures
 rm -f log.*
 

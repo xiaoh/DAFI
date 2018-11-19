@@ -1,0 +1,628 @@
+
+
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>Tutorial: Lorenz63 &mdash; vt_dainv  documentation</title>
+  
+
+  
+  
+  
+  
+
+  
+
+  
+  
+    
+
+  
+
+  <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
+  <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" /> 
+
+  
+  <script src="_static/js/modernizr.min.js"></script>
+
+</head>
+
+<body class="wy-body-for-nav">
+
+   
+  <div class="wy-grid-for-nav">
+
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search">
+          
+
+          
+            <a href="index.html" class="icon icon-home"> vt_dainv
+          
+
+          
+          </a>
+
+          
+            
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <p class="caption"><span class="caption-text">Contents:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="theory.html">Theory</a></li>
+<li class="toctree-l1"><a class="reference internal" href="tutorial_lorenz.html">Tutorial: Lorenz63</a></li>
+<li class="toctree-l1"><a class="reference internal" href="source_code.html">Source Code</a></li>
+</ul>
+
+            
+          
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="index.html">vt_dainv</a>
+        
+      </nav>
+
+
+      <div class="wy-nav-content">
+        
+        <div class="rst-content">
+        
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="index.html">Docs</a> &raquo;</li>
+        
+      <li>Tutorial: Lorenz63</li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+            
+            <a href="_sources/tutorial_lorenz_org.rst.txt" rel="nofollow"> View page source</a>
+          
+        
+      </li>
+    
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <div class="section" id="tutorial-lorenz63">
+<h1>Tutorial: Lorenz63<a class="headerlink" href="#tutorial-lorenz63" title="Permalink to this headline">¶</a></h1>
+<p>This section provides the instructions to run the code for Lorenz system using the provided Tutorials (located in the ‘’$tutorials/lorenz’‘).</p>
+<div class="section" id="lorenz-system">
+<h2>Lorenz System<a class="headerlink" href="#lorenz-system" title="Permalink to this headline">¶</a></h2>
+<p>The Lorenz system is a chaotic dynamic system controlled by three ordinary differential equations(ODEs).</p>
+<div class="math notranslate nohighlight">
+\[ \begin{align}\begin{aligned}\frac{dx}{dt} = \sigma (y - x)\\\frac{dy}{dt} = \rho x - y -xz\\\frac{dz}{dt} = xy - \beta z\end{aligned}\end{align} \]</div>
+<p>where <span class="math notranslate nohighlight">\(\sigma, \rho, \beta\)</span> are parameters.</p>
+<p>The time-varyting trajectory for Lorenz system is shown below.</p>
+<div class="figure">
+<a class="reference internal image-reference" href="_images/Lorenz63.png"><img alt="_images/Lorenz63.png" src="_images/Lorenz63.png" style="width: 400pt;" /></a>
+</div>
+</div>
+<div class="section" id="data-assimilation-method">
+<h2>Data Assimilation Method<a class="headerlink" href="#data-assimilation-method" title="Permalink to this headline">¶</a></h2>
+<p>To infer the optimal parameters for Lorenz equations based on the observation is the inverse problem in this tutorial.</p>
+<p>Data assimilation method is to solve the inverse problem,</p>
+<p>Different data assimilation methods are embeded in the code (located in the “$source/da_inv/da_filtering.py”). The list of usable data assimilation methods is shown below:</p>
+<ol class="arabic simple">
+<li>Ensemble Kalman Filtering <a class="reference internal" href="#iglesias2013ensemble" id="id1">[B1]</a></li>
+<li>Ensemble Randomized Maximal Likelihood <a class="reference internal" href="#gu2007iterative" id="id2">[B2]</a></li>
+<li>Ensemble Kalman Filtering-Multi Data Assimilation <a class="reference internal" href="#evensen2018analysis" id="id3">[B3]</a></li>
+</ol>
+</div>
+<div class="section" id="dynamic-model">
+<h2>Dynamic Model<a class="headerlink" href="#dynamic-model" title="Permalink to this headline">¶</a></h2>
+<p>The dynamic model in this tutorial is Lorenz model. The code for Lorenz model is located in the “source/dyn_models/lorenz.py”</p>
+<p><em>Lorenz dynamic model</em></p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="c1"># Copyright 2018 Virginia Polytechnic Institute and State University.</span>
+<span class="sd">&quot;&quot;&quot; Dynamic model for solving the Lorenz system. &quot;&quot;&quot;</span>
+
+<span class="c1"># standard library imports</span>
+<span class="kn">import</span> <span class="nn">os</span>
+
+<span class="c1"># third party imports</span>
+<span class="kn">import</span> <span class="nn">numpy</span> <span class="kn">as</span> <span class="nn">np</span>
+<span class="kn">from</span> <span class="nn">scipy.integrate</span> <span class="kn">import</span> <span class="n">ode</span>
+
+<span class="c1"># local import</span>
+<span class="kn">from</span> <span class="nn">dainv.dyn_model</span> <span class="kn">import</span> <span class="n">DynModel</span>
+<span class="kn">import</span> <span class="nn">dainv.utilities</span> <span class="kn">as</span> <span class="nn">utils</span>
+
+<span class="k">def</span> <span class="nf">solve_lorenz</span><span class="p">(</span><span class="n">time_series</span><span class="p">,</span> <span class="n">init_position</span><span class="p">,</span> <span class="n">parameters</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot; Solve the Lorenz 63 equations for given initial condition.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    time_series : list</span>
+<span class="sd">        Time-series for the integration of the Lorenz system.</span>
+<span class="sd">        The first entry is the initial time.</span>
+<span class="sd">        ``len=3``, ``type=float``</span>
+<span class="sd">    init_position : list</span>
+<span class="sd">        The position [x, y, z] at the initial time.</span>
+<span class="sd">        ``len=3``, ``type=float``</span>
+<span class="sd">    parameters : list</span>
+<span class="sd">        The values of the three parameters [rho, beta, sigma].</span>
+<span class="sd">        ``len=3``, ``type=float``</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    position : ndarray</span>
+<span class="sd">        The position [x, y, z] at all times specified in the time_series.</span>
+<span class="sd">        ``dtype=float``, ``ndim=2``, ``shape=(len(time_series), 3)``</span>
+
+
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="c1"># define Lorenz system</span>
+    <span class="k">def</span> <span class="nf">lorenz63</span><span class="p">(</span><span class="n">time</span><span class="p">,</span> <span class="n">position</span><span class="p">,</span> <span class="n">parameters</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot; Calculate the velocity at a given position.</span>
+
+<span class="sd">        This function is integrated using scipy.integrate.ode.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ---------</span>
+<span class="sd">        time : float</span>
+<span class="sd">            The time.</span>
+<span class="sd">            Not used. Required input for the integrator.</span>
+<span class="sd">        position : list</span>
+<span class="sd">            The position [x, y, z] position at the current time.</span>
+<span class="sd">            ``len=3``, ``type=float``</span>
+<span class="sd">        parameters : list</span>
+<span class="sd">            The values of the three parameters [rho, beta, sigma].</span>
+<span class="sd">            ``len=3``, ``type=float``</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        velocities : list</span>
+<span class="sd">            The derivative with respect to time of the 3 position components.</span>
+<span class="sd">            ``len=3``, ``type=float``</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">xpos</span><span class="p">,</span> <span class="n">ypos</span><span class="p">,</span> <span class="n">zpos</span> <span class="o">=</span> <span class="n">position</span>
+        <span class="n">rho</span><span class="p">,</span> <span class="n">beta</span><span class="p">,</span> <span class="n">sigma</span> <span class="o">=</span> <span class="n">parameters</span>
+        <span class="n">ddt_x</span> <span class="o">=</span> <span class="n">sigma</span> <span class="o">*</span> <span class="p">(</span><span class="n">ypos</span> <span class="o">-</span> <span class="n">xpos</span><span class="p">)</span>
+        <span class="n">ddt_y</span> <span class="o">=</span> <span class="n">rho</span><span class="o">*</span><span class="n">xpos</span> <span class="o">-</span> <span class="n">ypos</span> <span class="o">-</span> <span class="n">xpos</span><span class="o">*</span><span class="n">zpos</span>
+        <span class="n">ddt_z</span> <span class="o">=</span> <span class="n">xpos</span><span class="o">*</span><span class="n">ypos</span> <span class="o">-</span> <span class="n">beta</span><span class="o">*</span><span class="n">zpos</span>
+        <span class="k">return</span> <span class="p">[</span><span class="n">ddt_x</span><span class="p">,</span> <span class="n">ddt_y</span><span class="p">,</span> <span class="n">ddt_z</span><span class="p">]</span>
+
+    <span class="c1"># solve lorenz system</span>
+    <span class="n">solver</span> <span class="o">=</span> <span class="n">ode</span><span class="p">(</span><span class="n">lorenz63</span><span class="p">)</span>
+    <span class="n">solver</span><span class="o">.</span><span class="n">set_integrator</span><span class="p">(</span><span class="s1">&#39;dopri5&#39;</span><span class="p">)</span>
+    <span class="n">solver</span><span class="o">.</span><span class="n">set_initial_value</span><span class="p">(</span><span class="n">init_position</span><span class="p">,</span> <span class="n">time_series</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
+    <span class="n">solver</span><span class="o">.</span><span class="n">set_f_params</span><span class="p">(</span><span class="n">parameters</span><span class="p">)</span>
+    <span class="n">position</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">expand_dims</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">init_position</span><span class="p">),</span> <span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+    <span class="k">for</span> <span class="n">time</span> <span class="ow">in</span> <span class="n">time_series</span><span class="p">[</span><span class="mi">1</span><span class="p">:]:</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">solver</span><span class="o">.</span><span class="n">successful</span><span class="p">():</span>
+            <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="s1">&#39;Solver failed at time: {} s&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">time</span><span class="p">))</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">solver</span><span class="o">.</span><span class="n">integrate</span><span class="p">(</span><span class="n">time</span><span class="p">)</span>
+        <span class="n">position</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">vstack</span><span class="p">((</span><span class="n">position</span><span class="p">,</span> <span class="n">solver</span><span class="o">.</span><span class="n">y</span><span class="p">))</span>
+    <span class="k">return</span> <span class="n">position</span>
+
+<span class="k">class</span> <span class="nc">Solver</span><span class="p">(</span><span class="n">DynModel</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot; Dynamic model for solving the Lorenz system. &quot;&quot;&quot;</span>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">nsamples</span><span class="p">,</span> <span class="n">da_interval</span><span class="p">,</span> <span class="n">t_end</span><span class="p">,</span> <span class="n">max_da_iteration</span><span class="p">,</span>
+                 <span class="n">model_input</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot; Parse input file and assign values to class attributes.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        nsamples : int</span>
+<span class="sd">            Ensemble size.</span>
+<span class="sd">        da_interval : float</span>
+<span class="sd">            Time interval between data assimilation steps.</span>
+<span class="sd">        t_end : float</span>
+<span class="sd">            Final time.</span>
+<span class="sd">        max_da_iteration : int</span>
+<span class="sd">            Maximum number of DA iterations at a given time-step.</span>
+<span class="sd">        input_file : str</span>
+<span class="sd">            Input file name.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="c1"># save the main inputs</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">nsamples</span> <span class="o">=</span> <span class="n">nsamples</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">da_interval</span> <span class="o">=</span> <span class="n">da_interval</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">t_end</span> <span class="o">=</span> <span class="n">t_end</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">max_da_iteration</span> <span class="o">=</span> <span class="n">max_da_iteration</span>
+
+        <span class="c1"># read input file</span>
+        <span class="n">param_dict</span> <span class="o">=</span> <span class="n">utils</span><span class="o">.</span><span class="n">read_input_data</span><span class="p">(</span><span class="n">model_input</span><span class="p">)</span>
+        <span class="n">dt_interval</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">param_dict</span><span class="p">[</span><span class="s1">&#39;dt_interval&#39;</span><span class="p">])</span>
+        <span class="n">x_init_mean</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">param_dict</span><span class="p">[</span><span class="s1">&#39;x_init_mean&#39;</span><span class="p">])</span>
+        <span class="n">y_init_mean</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">param_dict</span><span class="p">[</span><span class="s1">&#39;y_init_mean&#39;</span><span class="p">])</span>
+        <span class="n">z_init_mean</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">param_dict</span><span class="p">[</span><span class="s1">&#39;z_init_mean&#39;</span><span class="p">])</span>
+        <span class="n">rho_init_mean</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">param_dict</span><span class="p">[</span><span class="s1">&#39;rho_init_mean&#39;</span><span class="p">])</span>
+        <span class="n">x_init_std</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">param_dict</span><span class="p">[</span><span class="s1">&#39;x_init_std&#39;</span><span class="p">])</span>
+        <span class="n">y_init_std</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">param_dict</span><span class="p">[</span><span class="s1">&#39;y_init_std&#39;</span><span class="p">])</span>
+        <span class="n">z_init_std</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">param_dict</span><span class="p">[</span><span class="s1">&#39;z_init_std&#39;</span><span class="p">])</span>
+        <span class="n">rho_init_std</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">param_dict</span><span class="p">[</span><span class="s1">&#39;rho_init_std&#39;</span><span class="p">])</span>
+        <span class="n">beta</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">param_dict</span><span class="p">[</span><span class="s1">&#39;beta&#39;</span><span class="p">])</span>
+        <span class="n">sigma</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">param_dict</span><span class="p">[</span><span class="s1">&#39;sigma&#39;</span><span class="p">])</span>
+        <span class="n">x_obs_rel_std</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">param_dict</span><span class="p">[</span><span class="s1">&#39;x_obs_rel_std&#39;</span><span class="p">])</span>
+        <span class="n">z_obs_rel_std</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">param_dict</span><span class="p">[</span><span class="s1">&#39;z_obs_rel_std&#39;</span><span class="p">])</span>
+        <span class="n">x_obs_abs_std</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">param_dict</span><span class="p">[</span><span class="s1">&#39;x_obs_abs_std&#39;</span><span class="p">])</span>
+        <span class="n">z_obs_abs_std</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">param_dict</span><span class="p">[</span><span class="s1">&#39;z_obs_abs_std&#39;</span><span class="p">])</span>
+        <span class="n">x_true</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">param_dict</span><span class="p">[</span><span class="s1">&#39;x_true&#39;</span><span class="p">])</span>
+        <span class="n">y_true</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">param_dict</span><span class="p">[</span><span class="s1">&#39;y_true&#39;</span><span class="p">])</span>
+        <span class="n">z_true</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">param_dict</span><span class="p">[</span><span class="s1">&#39;z_true&#39;</span><span class="p">])</span>
+        <span class="n">rho_true</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">param_dict</span><span class="p">[</span><span class="s1">&#39;rho_true&#39;</span><span class="p">])</span>
+        <span class="n">beta_true</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">param_dict</span><span class="p">[</span><span class="s1">&#39;beta_true&#39;</span><span class="p">])</span>
+        <span class="n">sigma_true</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">param_dict</span><span class="p">[</span><span class="s1">&#39;sigma_true&#39;</span><span class="p">])</span>
+
+        <span class="c1"># required attributes.</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">name</span> <span class="o">=</span> <span class="s1">&#39;Lorenz63&#39;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">nstate</span> <span class="o">=</span> <span class="mi">4</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">nstate_obs</span> <span class="o">=</span> <span class="mi">2</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">init_state</span> <span class="o">=</span> <span class="p">[</span><span class="n">x_init_mean</span><span class="p">,</span> <span class="n">y_init_mean</span><span class="p">,</span> <span class="n">z_init_mean</span><span class="p">,</span>
+                           <span class="n">rho_init_mean</span><span class="p">]</span>
+
+        <span class="c1"># save other inputs for future use</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">dt</span> <span class="o">=</span> <span class="n">dt_interval</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">beta</span> <span class="o">=</span> <span class="n">beta</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">sigma</span> <span class="o">=</span> <span class="n">sigma</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">init_std</span> <span class="o">=</span> <span class="p">[</span><span class="n">x_init_std</span><span class="p">,</span> <span class="n">y_init_std</span><span class="p">,</span> <span class="n">z_init_std</span><span class="p">,</span> <span class="n">rho_init_std</span><span class="p">]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">obs_rel_std</span> <span class="o">=</span> <span class="p">[</span><span class="n">x_obs_rel_std</span><span class="p">,</span> <span class="n">z_obs_rel_std</span><span class="p">]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">obs_abs_std</span> <span class="o">=</span> <span class="p">[</span><span class="n">x_obs_abs_std</span><span class="p">,</span> <span class="n">z_obs_abs_std</span><span class="p">]</span>
+
+        <span class="c1"># create save directory</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">dir</span> <span class="o">=</span> <span class="s1">&#39;results_lorenz&#39;</span>
+        <span class="n">utils</span><span class="o">.</span><span class="n">create_dir</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">dir</span><span class="p">)</span>
+
+        <span class="c1"># create synthetic observations</span>
+        <span class="n">true_init_pos</span> <span class="o">=</span> <span class="p">[</span><span class="n">x_true</span><span class="p">,</span> <span class="n">y_true</span><span class="p">,</span> <span class="n">z_true</span><span class="p">]</span>
+        <span class="n">true_params</span> <span class="o">=</span> <span class="p">[</span><span class="n">rho_true</span><span class="p">,</span> <span class="n">beta_true</span><span class="p">,</span> <span class="n">sigma_true</span><span class="p">]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">obs</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_create_synthetic_observations</span><span class="p">(</span>
+            <span class="n">true_init_pos</span><span class="p">,</span> <span class="n">true_params</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="fm">__str__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="n">str_info</span> <span class="o">=</span> <span class="s1">&#39;Lorenz 63 model.&#39;</span>
+        <span class="k">return</span> <span class="n">str_info</span>
+
+    <span class="c1"># required methods</span>
+    <span class="k">def</span> <span class="nf">generate_ensemble</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot; Return states at the first data assimilation time-step.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        state_vec : ndarray</span>
+<span class="sd">            Ensemble matrix of states (Xi).</span>
+<span class="sd">            ``dtype=float``, ``ndim=2``, ``shape=(nstate, nsamples)``</span>
+<span class="sd">        model_obs : ndarray</span>
+<span class="sd">            Ensemble matrix of states in observation space (HX).</span>
+<span class="sd">            ``dtype=float``, ``ndim=2``,</span>
+<span class="sd">            ``shape=(nstate_obs, nsamples)``</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">state_vec</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">empty</span><span class="p">([</span><span class="bp">self</span><span class="o">.</span><span class="n">nstate</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">nsamples</span><span class="p">])</span>
+        <span class="k">for</span> <span class="n">isamp</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">nsamples</span><span class="p">):</span>
+            <span class="n">state_vec</span><span class="p">[:,</span><span class="n">isamp</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">init_state</span> \
+                                 <span class="o">+</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">normal</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">init_std</span><span class="p">)</span>
+        <span class="n">model_obs</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">forward</span><span class="p">(</span><span class="n">state_vec</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">state_vec</span><span class="p">,</span> <span class="n">model_obs</span>
+
+    <span class="k">def</span> <span class="nf">forecast_to_time</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">state_vec_current</span><span class="p">,</span> <span class="n">end_time</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot; Return states at the next end time.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        state_vec : ndarray</span>
+<span class="sd">            Current ensemble matrix of states (Xa). [nstate x nsamples]</span>
+<span class="sd">        next_end_time : float</span>
+<span class="sd">            Next end time.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        state_vec : ndarray</span>
+<span class="sd">            Updated ensemble matrix of states (Xf).</span>
+<span class="sd">            ``dtype=float``, ``ndim=2``, ``shape=(nstate, nsamples)``</span>
+<span class="sd">        model_obs : ndarray</span>
+<span class="sd">            Updated ensemble matrix of states in observation space (HXf).</span>
+<span class="sd">            ``dtype=float``, ``ndim=2``,</span>
+<span class="sd">            ``shape=(nstate_obs, nsamples)``</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="c1"># create time series</span>
+        <span class="n">start_time</span> <span class="o">=</span> <span class="n">end_time</span> <span class="o">-</span> <span class="bp">self</span><span class="o">.</span><span class="n">da_interval</span>
+        <span class="n">time_series</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="n">start_time</span><span class="p">,</span> <span class="n">end_time</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">dt</span><span class="o">/</span><span class="mf">2.0</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">dt</span><span class="p">)</span>
+        <span class="c1"># initialize variables</span>
+        <span class="n">state_vec_forecast</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">empty</span><span class="p">([</span><span class="bp">self</span><span class="o">.</span><span class="n">nstate</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">nsamples</span><span class="p">])</span>
+        <span class="n">savedir</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">dir</span> <span class="o">+</span> <span class="n">os</span><span class="o">.</span><span class="n">sep</span> <span class="o">+</span> <span class="s1">&#39;states&#39;</span>
+        <span class="n">utils</span><span class="o">.</span><span class="n">create_dir</span><span class="p">(</span><span class="n">savedir</span><span class="p">)</span>
+        <span class="n">da_step</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">start_time</span><span class="o">/</span><span class="bp">self</span><span class="o">.</span><span class="n">da_interval</span><span class="p">)</span> <span class="o">+</span> <span class="mi">1</span>
+        <span class="k">for</span> <span class="n">isamp</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">nsamples</span><span class="p">):</span>
+            <span class="c1"># solve</span>
+            <span class="n">parameters</span> <span class="o">=</span> <span class="p">[</span><span class="n">state_vec_current</span><span class="p">[</span><span class="mi">3</span><span class="p">,</span> <span class="n">isamp</span><span class="p">],</span> <span class="bp">self</span><span class="o">.</span><span class="n">beta</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">sigma</span><span class="p">]</span>
+            <span class="n">init_position</span> <span class="o">=</span> <span class="n">state_vec_current</span><span class="p">[:</span><span class="mi">3</span><span class="p">,</span> <span class="n">isamp</span><span class="p">]</span>
+            <span class="n">position</span> <span class="o">=</span> <span class="n">solve_lorenz</span><span class="p">(</span><span class="n">time_series</span><span class="p">,</span> <span class="n">init_position</span><span class="p">,</span> <span class="n">parameters</span><span class="p">)</span>
+            <span class="c1"># create forecasted vector</span>
+            <span class="n">state_vec_forecast</span><span class="p">[:</span><span class="mi">3</span><span class="p">,</span> <span class="n">isamp</span><span class="p">]</span> <span class="o">=</span> <span class="n">position</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="p">:]</span>
+            <span class="n">state_vec_forecast</span><span class="p">[</span><span class="mi">3</span><span class="p">,</span> <span class="n">isamp</span><span class="p">]</span> <span class="o">=</span> <span class="n">state_vec_current</span><span class="p">[</span><span class="mi">3</span><span class="p">,</span> <span class="n">isamp</span><span class="p">]</span>
+            <span class="c1"># save</span>
+            <span class="n">fname</span> <span class="o">=</span> <span class="s1">&#39;dastep_{}_samp_{}&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">da_step</span><span class="p">,</span> <span class="n">isamp</span><span class="p">)</span>
+            <span class="n">np</span><span class="o">.</span><span class="n">savetxt</span><span class="p">(</span><span class="n">savedir</span> <span class="o">+</span> <span class="n">os</span><span class="o">.</span><span class="n">sep</span> <span class="o">+</span> <span class="n">fname</span><span class="p">,</span> <span class="n">position</span><span class="p">)</span>
+        <span class="n">np</span><span class="o">.</span><span class="n">savetxt</span><span class="p">(</span><span class="n">savedir</span> <span class="o">+</span> <span class="n">os</span><span class="o">.</span><span class="n">sep</span> <span class="o">+</span> <span class="s1">&#39;time_{}&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">da_step</span><span class="p">),</span> <span class="n">time_series</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">state_vec_forecast</span>
+
+    <span class="k">def</span> <span class="nf">forward</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">state_vec</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot; Forward the states to observation space (from X to HX).</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        state_vec: ndarray</span>
+<span class="sd">            Current state variables (X).</span>
+<span class="sd">            ``dtype=float``, ``ndim=2``, ``shape=(nstate, nsamples)``</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        model_obs: ndarray</span>
+<span class="sd">            Ensemble in observation space (HX).</span>
+<span class="sd">            ``dtype=float``, ``ndim=2``,</span>
+<span class="sd">            ``shape=(nstate_obs, nsamples)``</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="n">state_vec</span><span class="p">[[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">2</span><span class="p">]]</span>
+
+    <span class="k">def</span> <span class="nf">get_obs</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">time</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot; Return the observation and error matrix.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        time : float</span>
+<span class="sd">            Time at which observation is requested.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        obs : ndarray</span>
+<span class="sd">            Observations.</span>
+<span class="sd">            ``dtype=float``, ``ndim=2``,</span>
+<span class="sd">            ``shape=(nstate_obs, nsamples)``</span>
+<span class="sd">        obs_error : ndarray</span>
+<span class="sd">            Observation error covariance matrix (R).</span>
+<span class="sd">            ``dtype=float``, ``ndim=2``,</span>
+<span class="sd">            ``shape=(nstate_obs, nstate_obs)``</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">da_step</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">time</span> <span class="o">/</span> <span class="bp">self</span><span class="o">.</span><span class="n">da_interval</span><span class="p">)</span>
+        <span class="n">obs_vec</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">obs</span><span class="p">[</span><span class="n">da_step</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="p">:]</span>
+        <span class="n">obs_stddev</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">abs</span><span class="p">(</span><span class="n">obs_vec</span><span class="p">)</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">obs_rel_std</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">obs_abs_std</span>
+        <span class="n">obs_error</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">diag</span><span class="p">(</span><span class="n">obs_stddev</span><span class="o">**</span><span class="mi">2</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">obs_vec</span><span class="p">,</span> <span class="n">obs_error</span>
+
+    <span class="k">def</span> <span class="nf">clean</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot; Cleanup before exiting. &quot;&quot;&quot;</span>
+        <span class="k">pass</span>
+
+    <span class="c1"># internal methods</span>
+    <span class="k">def</span> <span class="nf">_create_synthetic_observations</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">position</span><span class="p">,</span> <span class="n">parameters</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot; Create synthetic truth and observations.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        position : list</span>
+<span class="sd">            True value of the initial position [x, y, z].</span>
+<span class="sd">        parameters : list</span>
+<span class="sd">            True value of the paramters [rho, beta, sigma].</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        obs : ndarray</span>
+<span class="sd">            Values of observations at different times.</span>
+<span class="sd">            ``dtype=float``, ``ndim=2``,</span>
+<span class="sd">            ``shape=(number of observation times, nstate_obs)``</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="c1"># create truth</span>
+        <span class="n">time_series</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="mf">0.0</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">t_end</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">dt</span><span class="o">/</span><span class="mf">2.0</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">dt</span><span class="p">)</span>
+        <span class="n">truth</span> <span class="o">=</span> <span class="n">solve_lorenz</span><span class="p">(</span><span class="n">time_series</span><span class="p">,</span> <span class="n">position</span><span class="p">,</span> <span class="n">parameters</span><span class="p">)</span>
+        <span class="c1"># create observations</span>
+        <span class="n">ndt</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">da_interval</span><span class="o">/</span><span class="bp">self</span><span class="o">.</span><span class="n">dt</span><span class="p">)</span>
+        <span class="n">observe_pos</span> <span class="o">=</span> <span class="p">[</span><span class="bp">True</span><span class="p">,</span> <span class="bp">False</span><span class="p">,</span> <span class="bp">True</span><span class="p">]</span>
+        <span class="n">obs_time</span> <span class="o">=</span> <span class="n">time_series</span><span class="p">[</span><span class="n">ndt</span><span class="p">::</span><span class="n">ndt</span><span class="p">]</span>
+        <span class="n">obs</span> <span class="o">=</span> <span class="n">truth</span><span class="p">[</span><span class="n">ndt</span><span class="p">::</span><span class="n">ndt</span><span class="p">,</span> <span class="n">observe_pos</span><span class="p">]</span>
+        <span class="n">obs_std</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">abs</span><span class="p">(</span><span class="n">obs</span><span class="p">)</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">tile</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">obs_rel_std</span><span class="p">,</span> <span class="p">(</span><span class="n">obs</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span><span class="mi">1</span><span class="p">))</span> \
+            <span class="o">+</span> <span class="n">np</span><span class="o">.</span><span class="n">tile</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">obs_abs_std</span><span class="p">,</span> <span class="p">(</span><span class="n">obs</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span><span class="mi">1</span><span class="p">))</span>
+        <span class="n">obs</span> <span class="o">=</span> <span class="n">obs</span> <span class="o">+</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">normal</span><span class="p">(</span><span class="mf">0.0</span><span class="p">,</span> <span class="n">obs_std</span><span class="p">)</span>
+        <span class="c1"># save</span>
+        <span class="n">time_series</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">expand_dims</span><span class="p">(</span><span class="n">time_series</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+        <span class="n">obs_time</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">expand_dims</span><span class="p">(</span><span class="n">obs_time</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+        <span class="n">np</span><span class="o">.</span><span class="n">savetxt</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">dir</span> <span class="o">+</span> <span class="n">os</span><span class="o">.</span><span class="n">sep</span> <span class="o">+</span> <span class="s1">&#39;truth.dat&#39;</span><span class="p">,</span>
+                   <span class="n">np</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">time_series</span><span class="p">,</span> <span class="n">truth</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">))</span>
+        <span class="n">np</span><span class="o">.</span><span class="n">savetxt</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">dir</span> <span class="o">+</span> <span class="n">os</span><span class="o">.</span><span class="n">sep</span> <span class="o">+</span> <span class="s1">&#39;obs.dat&#39;</span><span class="p">,</span>
+                   <span class="n">np</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">obs_time</span><span class="p">,</span> <span class="n">obs</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">))</span>
+        <span class="k">return</span> <span class="n">obs</span>
+</pre></div>
+</div>
+</div>
+<div class="section" id="lorenz-model-files">
+<h2>Lorenz Model Files<a class="headerlink" href="#lorenz-model-files" title="Permalink to this headline">¶</a></h2>
+<p>Below is an overview of the files required to run the data assimilation for Lorenz model in DA-Inv. The required files are listed below.</p>
+<table border="1" class="docutils">
+<colgroup>
+<col width="24%" />
+<col width="38%" />
+<col width="38%" />
+</colgroup>
+<tbody valign="top">
+<tr class="row-odd"><td><strong>File Type</strong></td>
+<td><strong>File Name</strong></td>
+<td><strong>Directory</strong></td>
+</tr>
+<tr class="row-even"><td>Input File</td>
+<td><code class="docutils literal notranslate"><span class="pre">dainv.in</span></code></td>
+<td><code class="docutils literal notranslate"><span class="pre">/tutorials/lorenz</span></code></td>
+</tr>
+<tr class="row-odd"><td>Input File</td>
+<td><code class="docutils literal notranslate"><span class="pre">lorenz.in</span></code></td>
+<td><code class="docutils literal notranslate"><span class="pre">/tutorials/lorenz</span></code></td>
+</tr>
+<tr class="row-even"><td>Dynamic Model</td>
+<td><code class="docutils literal notranslate"><span class="pre">lorenz.py</span></code></td>
+<td><code class="docutils literal notranslate"><span class="pre">/source/dyn_models/</span></code></td>
+</tr>
+</tbody>
+</table>
+</div>
+<div class="section" id="run-tutorial">
+<h2>Run Tutorial<a class="headerlink" href="#run-tutorial" title="Permalink to this headline">¶</a></h2>
+<div class="section" id="step-1-write-main-input-file">
+<h3>Step 1 : Write main input file<a class="headerlink" href="#step-1-write-main-input-file" title="Permalink to this headline">¶</a></h3>
+<p>Specify self-defined parameters in the ‘dainv.in’ file. The ‘dainv.in’ file is provided in the lorenz tutorial directory and shown below.</p>
+<div class="admonition note">
+<p class="first admonition-title">Note</p>
+<p class="last">Mainly need to specify the ensemble samples (nsamples) and the data assimilation interval (da_interval)</p>
+</div>
+</div>
+<div class="section" id="step-2-write-dynamic-model-input-file">
+<h3>Step 2 : Write dynamic model input file<a class="headerlink" href="#step-2-write-dynamic-model-input-file" title="Permalink to this headline">¶</a></h3>
+<p>Specify self-defined parameters in the ‘lorenz.in’ file. The ‘lorenz.in’ file is provided in the lorenz tutorial directory and shown below.</p>
+<div class="admonition note">
+<p class="first admonition-title">Note</p>
+<p class="last">Mainly need to specify which augmented parameter will be perturbed, the initial value for the state varibles, the relative standard deviation for state varibles and observation</p>
+</div>
+</div>
+<div class="section" id="step-3-execute">
+<h3>Step 3 : Execute<a class="headerlink" href="#step-3-execute" title="Permalink to this headline">¶</a></h3>
+<p>To execute the data assimilation for lorenz system, move to the directory of ‘$source’ and type ‘. init_da.sh’ to export the PATH. Then move to the lorenz directory($tutorials/lorenz), type ‘./run.sh’ to start the data assimilation process. The process information will be saved in ‘log.enkf’ file at lorenz tutorial directory.</p>
+</div>
+<div class="section" id="step-4-postprocessing">
+<h3>Step 4 : Postprocessing<a class="headerlink" href="#step-4-postprocessing" title="Permalink to this headline">¶</a></h3>
+<p>‘Lorenz_plot.py’ (located in ‘$tutorials/lorenz’) is the postprocessing file to plot the trajectory of state varible ‘x’ ‘y’ and ‘z’.</p>
+<p>To execute the postprocessing, type ‘./plot.sh’ to plot figures as shown below. Users can modify the ‘lorenz_plot.py’ for their own post-processing</p>
+<div class="figure">
+<a class="reference internal image-reference" href="_images/timeSeries_DA_x.png"><img alt="_images/timeSeries_DA_x.png" src="_images/timeSeries_DA_x.png" style="width: 400pt;" /></a>
+</div>
+<div class="figure">
+<a class="reference internal image-reference" href="_images/timeSeries_DA_y.png"><img alt="_images/timeSeries_DA_y.png" src="_images/timeSeries_DA_y.png" style="width: 400pt;" /></a>
+</div>
+<div class="figure">
+<a class="reference internal image-reference" href="_images/timeSeries_DA_z.png"><img alt="_images/timeSeries_DA_z.png" src="_images/timeSeries_DA_z.png" style="width: 400pt;" /></a>
+</div>
+</div>
+</div>
+<div class="section" id="references">
+<h2>References<a class="headerlink" href="#references" title="Permalink to this headline">¶</a></h2>
+<p id="bibtex-bibliography-tutorial_lorenz_org-0"><table class="docutils citation" frame="void" id="iglesias2013ensemble" rules="none">
+<colgroup><col class="label" /><col /></colgroup>
+<tbody valign="top">
+<tr><td class="label"><a class="fn-backref" href="#id1">[B1]</a></td><td>Marco&nbsp;A Iglesias, Kody&nbsp;JH Law, and Andrew&nbsp;M Stuart. Ensemble kalman methods for inverse problems. <em>Inverse Problems</em>, 29(4):045001, 2013.</td></tr>
+</tbody>
+</table>
+<table class="docutils citation" frame="void" id="gu2007iterative" rules="none">
+<colgroup><col class="label" /><col /></colgroup>
+<tbody valign="top">
+<tr><td class="label"><a class="fn-backref" href="#id2">[B2]</a></td><td>Yaqing Gu, Dean&nbsp;S Oliver, and others. An iterative ensemble kalman filter for multiphase fluid flow data assimilation. <em>Spe Journal</em>, 12(04):438–446, 2007.</td></tr>
+</tbody>
+</table>
+<table class="docutils citation" frame="void" id="evensen2018analysis" rules="none">
+<colgroup><col class="label" /><col /></colgroup>
+<tbody valign="top">
+<tr><td class="label"><a class="fn-backref" href="#id3">[B3]</a></td><td>Geir Evensen. Analysis of iterative ensemble smoothers for solving inverse problems. <em>Computational Geosciences</em>, 22(3):885–908, 2018.</td></tr>
+</tbody>
+</table>
+</p>
+</div>
+</div>
+
+
+           </div>
+           
+          </div>
+          <footer>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &copy; Copyright 2018, carlos
+
+    </p>
+  </div>
+  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/rtfd/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+
+  
+
+    
+    
+      <script type="text/javascript" id="documentation_options" data-url_root="./" src="_static/documentation_options.js"></script>
+        <script type="text/javascript" src="_static/jquery.js"></script>
+        <script type="text/javascript" src="_static/underscore.js"></script>
+        <script type="text/javascript" src="_static/doctools.js"></script>
+        <script async="async" type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    
+
+  
+
+  <script type="text/javascript" src="_static/js/theme.js"></script>
+
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

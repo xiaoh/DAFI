@@ -87,6 +87,7 @@
             
               <p class="caption"><span class="caption-text">Contents:</span></p>
 <ul>
+<li class="toctree-l1"><a class="reference internal" href="install.html">Installing VT-DAInv</a></li>
 <li class="toctree-l1"><a class="reference internal" href="theory.html">Theory</a></li>
 <li class="toctree-l1"><a class="reference internal" href="tutorial_lorenz.html">Tutorial: Lorenz63</a></li>
 <li class="toctree-l1"><a class="reference internal" href="source_code.html">Source Code</a></li>
@@ -161,6 +162,7 @@
  | <a href="#E"><strong>E</strong></a>
  | <a href="#F"><strong>F</strong></a>
  | <a href="#G"><strong>G</strong></a>
+ | <a href="#I"><strong>I</strong></a>
  | <a href="#N"><strong>N</strong></a>
  | <a href="#P"><strong>P</strong></a>
  | <a href="#R"><strong>R</strong></a>
@@ -176,6 +178,12 @@
         <li><a href="dainv_da_filtering.html#dainv.da_filtering.DAFilter2.__init__">(dainv.da_filtering.DAFilter2 method)</a>
 </li>
         <li><a href="dainv_da_filtering.html#dainv.da_filtering.EnKF.__init__">(dainv.da_filtering.EnKF method)</a>
+</li>
+        <li><a href="dainv_da_filtering.html#dainv.da_filtering.EnKF_Lasso.__init__">(dainv.da_filtering.EnKF_Lasso method)</a>
+</li>
+        <li><a href="dainv_da_filtering.html#dainv.da_filtering.EnKF_MDA.__init__">(dainv.da_filtering.EnKF_MDA method)</a>
+</li>
+        <li><a href="dainv_da_filtering.html#dainv.da_filtering.EnRML.__init__">(dainv.da_filtering.EnRML method)</a>
 </li>
         <li><a href="dainv_dyn_model.html#dainv.dyn_model.DynModel.__init__">(dainv.dyn_model.DynModel method)</a>
 </li>
@@ -196,7 +204,7 @@
       </ul></li>
   </ul></td>
   <td style="width: 33%; vertical-align: top;"><ul>
-      <li><a href="dainv_da_filtering.html#dainv.da_filtering.DAFilter2.correct_forecasts">correct_forecasts() (dainv.da_filtering.DAFilter2 method)</a>
+      <li><a href="dainv_utilities.html#dainv.utilities.create_dir">create_dir() (in module dainv.utilities)</a>
 </li>
   </ul></td>
 </tr></table>
@@ -226,8 +234,14 @@
   <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="dainv_da_filtering.html#dainv.da_filtering.EnKF">EnKF (class in dainv.da_filtering)</a>
 </li>
+      <li><a href="dainv_da_filtering.html#dainv.da_filtering.EnKF_Lasso">EnKF_Lasso (class in dainv.da_filtering)</a>
+</li>
   </ul></td>
   <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="dainv_da_filtering.html#dainv.da_filtering.EnKF_MDA">EnKF_MDA (class in dainv.da_filtering)</a>
+</li>
+      <li><a href="dainv_da_filtering.html#dainv.da_filtering.EnRML">EnRML (class in dainv.da_filtering)</a>
+</li>
       <li><a href="dainv_utilities.html#dainv.utilities.extract_list_from_string">extract_list_from_string() (in module dainv.utilities)</a>
 </li>
   </ul></td>
@@ -237,6 +251,10 @@
 <table style="width: 100%" class="indextable genindextable"><tr>
   <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="dainv_dyn_model.html#dainv.dyn_model.DynModel.forecast_to_time">forecast_to_time() (dainv.dyn_model.DynModel method)</a>
+</li>
+  </ul></td>
+  <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="dainv_dyn_model.html#dainv.dyn_model.DynModel.forward">forward() (dainv.dyn_model.DynModel method)</a>
 </li>
   </ul></td>
 </tr></table>
@@ -249,6 +267,14 @@
   </ul></td>
   <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="dainv_dyn_model.html#dainv.dyn_model.DynModel.get_obs">get_obs() (dainv.dyn_model.DynModel method)</a>
+</li>
+  </ul></td>
+</tr></table>
+
+<h2 id="I">I</h2>
+<table style="width: 100%" class="indextable genindextable"><tr>
+  <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="dainv_dyn_model.html#dainv.dyn_model.DynModel.init_state">init_state (dainv.dyn_model.DynModel attribute)</a>
 </li>
   </ul></td>
 </tr></table>
@@ -275,8 +301,6 @@
       <ul>
         <li><a href="dainv_da_filtering.html#dainv.da_filtering.DAFilter2.plot">(dainv.da_filtering.DAFilter2 method)</a>
 </li>
-        <li><a href="dainv_dyn_model.html#dainv.dyn_model.DynModel.plot">(dainv.dyn_model.DynModel method)</a>
-</li>
       </ul></li>
   </ul></td>
 </tr></table>
@@ -286,18 +310,10 @@
   <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="dainv_utilities.html#dainv.utilities.read_input_data">read_input_data() (in module dainv.utilities)</a>
 </li>
-      <li><a href="dainv_utilities.html#dainv.utilities.replace">replace() (in module dainv.utilities)</a>
-</li>
   </ul></td>
   <td style="width: 33%; vertical-align: top;"><ul>
-      <li><a href="dainv_da_filtering.html#dainv.da_filtering.DAFilter.report">report() (dainv.da_filtering.DAFilter method)</a>
-
-      <ul>
-        <li><a href="dainv_da_filtering.html#dainv.da_filtering.DAFilter2.report">(dainv.da_filtering.DAFilter2 method)</a>
+      <li><a href="dainv_utilities.html#dainv.utilities.replace">replace() (in module dainv.utilities)</a>
 </li>
-        <li><a href="dainv_dyn_model.html#dainv.dyn_model.DynModel.report">(dainv.dyn_model.DynModel method)</a>
-</li>
-      </ul></li>
   </ul></td>
 </tr></table>
 
@@ -318,6 +334,8 @@
         <li><a href="dainv_da_filtering.html#dainv.da_filtering.DAFilter2.solve">(dainv.da_filtering.DAFilter2 method)</a>
 </li>
       </ul></li>
+      <li><a href="dainv_utilities.html#dainv.utilities.str2bool">str2bool() (in module dainv.utilities)</a>
+</li>
   </ul></td>
 </tr></table>
 

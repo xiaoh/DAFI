@@ -16,3 +16,4 @@ END=$(date +%s.%N)
 DIFF=$(echo "$END - $START" | bc)
 echo $DIFF  > log.time
 
+./plot_results.py

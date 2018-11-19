@@ -13,9 +13,10 @@ class DynModel(object):
 
     Attributes
     ----------
-        name: Name of the forward model for reporting.
-        nstate: Number of states in the state vector.
-        nstate_obs: Number of states in the observation vector.
+        name: Name of the forward model for reporting. ``str``
+        nstate: Number of states in the state vector. ``int``
+        nstate_obs: Number of states in the observation vector. ``int``
+        init_state: Initial mean value of the state vector. ``ndarray``
     """
 
     def __init__(self, nsamples, da_interval, t_end, max_da_iteration,
@@ -36,8 +37,9 @@ class DynModel(object):
             Input file name.
         """
         self.name = 'DynModel'
-        self.nstate = 0
-        self.nstate_obs = 0
+        self.nstate = 1
+        self.nstate_obs = 1
+        init_state = np.zeros(self.nstate)
         self._nsamples = nsamples
         pass
 
@@ -51,7 +53,7 @@ class DynModel(object):
         Returns
         -------
         state_vec : ndarray
-            Ensemble matrix of states.
+            Ensemble matrix of states (Xi).
             ``dtype=float``, ``ndim=2``, ``shape=(nstate, nsamples)``
         model_obs : ndarray
             Ensemble matrix of states in observation space.
@@ -68,17 +70,17 @@ class DynModel(object):
         Parameters
         ----------
         state_vec : ndarray
-            Current ensemble matrix of states. [nstate x nsamples]
+            Current ensemble matrix of states (Xa). [nstate x nsamples]
         next_end_time : float
             Next end time.
 
         Returns
         -------
         state_vec : ndarray
-            Updated ensemble matrix of states.
+            Updated ensemble matrix of states (Xf).
             ``dtype=float``, ``ndim=2``, ``shape=(nstate, nsamples)``
         model_obs : ndarray
-            Updated ensemble matrix of states in observation space.
+            Updated ensemble matrix of states in observation space (HXf).
             ``dtype=float``, ``ndim=2``,
             ``shape=(nstate_obs, nsamples)``
         """
@@ -86,19 +88,21 @@ class DynModel(object):
         model_obs = np.zeros([self.nstate_obs, self._nsamples])
         return state_vec, model_obs
 
-    def forward(self, X):
-        """
-        Forward the states to observation space (from X to HX).
+    def forward(self, state_vec):
+        """ Forward the states to observation space (from X to HX).
 
         Parameters
         ----------
-        X: ndarray
+        state_vec: ndarray
             Current state variables.
+            ``dtype=float``, ``ndim=2``, ``shape=(nstate, nsamples)``
 
         Returns
         -------
-        HX: ndarray
+        model_obs: ndarray
             Ensemble in observation space.
+            ``dtype=float``, ``ndim=2``,
+            ``shape=(nstate_obs, nsamples)``
         """
         model_obs = np.zeros([self.nstate_obs, self._nsamples])
         return model_obs
@@ -125,14 +129,6 @@ class DynModel(object):
         obs = np.zeros([self.nstate_obs, self._nsamples])
         obs_error = np.zeros([nstate_obs, nstate_obs])
         return obs, obs_error
-
-    def report(self):
-        """ Report summary information. """
-        pass
-
-    def plot(self):
-        """ Plot relevant model results. """
-        pass
 
     def clean(self):
         """ Cleanup before exiting. """

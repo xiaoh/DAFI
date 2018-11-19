@@ -27,11 +27,9 @@ Note
 Optional inputs:
     * **max_da_iteration** (``int``, ``1``) -
       Maximum number of DA iterations at each timestep.
-    * **report_flag** (``bool``, ``False``) -
-      Call the filter's report method.
     * **plot_flag** (``bool``, ``False``) -
       Call the filter's plot method.
-    * **save_flag** (``bool``, ``False``) -
+    * **save_flag** (``bool``, ``True``) -
       Call the filter's save method.
     * **rand_seed_flag** (``bool``, ``False``) -
       Use fixed random seed, for debugging.
@@ -93,17 +91,13 @@ def main():
     except:
         max_da_iteration = 1
     try:
-        report_flag = ast.literal_eval(param_dict['report_flag'])
-    except:
-        report_flag = False
-    try:
         plot_flag = ast.literal_eval(param_dict['plot_flag'])
     except:
         plot_flag = False
     try:
         save_flag = ast.literal_eval(param_dict['save_flag'])
     except:
-        save_flag = False
+        save_flag = True
     try:
         rand_seed_flag = ast.literal_eval(param_dict['rand_seed_flag'])
     except:
@@ -117,8 +111,8 @@ def main():
     # what is left are inputs meant for the specific DA filter method used.
     main_inputs = [
         'dyn_model', 'dyn_model_input', 'da_filter', 't_end', 'da_interval',
-        'nsamples', 'max_da_iteration', 'report_flag', 'plot_flag',
-        'save_flag', 'rand_seed_fag', 'rand_seed']
+        'nsamples', 'max_da_iteration', 'plot_flag',
+        'save_flag', 'rand_seed_flag', 'rand_seed']
     for inp in main_inputs:
         try:
             _ = param_dict.pop(inp)
@@ -146,14 +140,14 @@ def main():
           "\n  Filter: {}".format(inverse_model.name))
     start_time = time.time()
     inverse_model.solve()
-    print("Time spent on solver: {}s".format(time.time() - start_time))
+    print("\nTime spent on solver: {}s".format(time.time() - start_time))
 
-    # report and plot
-    if report_flag:
-        inverse_model.report()
+    # plot and save
     if plot_flag:
+        print('\nPlotting ...')
         inverse_model.plot()
     if save_flag:
+        print('\nSaving ...')
         inverse_model.save()
     inverse_model.clean()
 

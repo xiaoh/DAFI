@@ -103,3 +103,14 @@ def extract_list_from_string(string, sep=',', type_func=str):
     value_list = string.split(sep)
     value_list = [type_func(pn.strip()) for pn in value_list]
     return value_list
+
+
+def str2bool(input_str):
+    """ Convert string to bool. """
+    return input_str in ("True", "1")
+
+
+def create_dir(directory):
+    """ Create a directory if does not exist. """
+    if not os.path.exists(directory):
+        os.makedirs(directory)

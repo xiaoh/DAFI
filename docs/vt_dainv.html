@@ -89,6 +89,7 @@
             
               <p class="caption"><span class="caption-text">Contents:</span></p>
 <ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="install.html">Installing VT-DAInv</a></li>
 <li class="toctree-l1"><a class="reference internal" href="theory.html">Theory</a></li>
 <li class="toctree-l1"><a class="reference internal" href="tutorial_lorenz.html">Tutorial: Lorenz63</a></li>
 <li class="toctree-l1 current"><a class="reference internal" href="source_code.html">Source Code</a><ul class="current">
@@ -194,11 +195,11 @@ Number of samples for ensemble.</li>
 <dl class="last docutils">
 <dt>Optional inputs:</dt>
 <dd><ul class="first last simple">
-<li><strong>report_flag</strong> (<code class="docutils literal"><span class="pre">bool</span></code>, <code class="docutils literal"><span class="pre">False</span></code>) -
-Call the filter&#8217;s report method.</li>
+<li><strong>max_da_iteration</strong> (<code class="docutils literal"><span class="pre">int</span></code>, <code class="docutils literal"><span class="pre">1</span></code>) -
+Maximum number of DA iterations at each timestep.</li>
 <li><strong>plot_flag</strong> (<code class="docutils literal"><span class="pre">bool</span></code>, <code class="docutils literal"><span class="pre">False</span></code>) -
 Call the filter&#8217;s plot method.</li>
-<li><strong>save_flag</strong> (<code class="docutils literal"><span class="pre">bool</span></code>, <code class="docutils literal"><span class="pre">False</span></code>) -
+<li><strong>save_flag</strong> (<code class="docutils literal"><span class="pre">bool</span></code>, <code class="docutils literal"><span class="pre">True</span></code>) -
 Call the filter&#8217;s save method.</li>
 <li><strong>rand_seed_flag</strong> (<code class="docutils literal"><span class="pre">bool</span></code>, <code class="docutils literal"><span class="pre">False</span></code>) -
 Use fixed random seed, for debugging.</li>

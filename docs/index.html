@@ -36,7 +36,7 @@
               href="genindex.html"/>
         <link rel="search" title="Search" href="search.html"/>
     <link rel="top" title="vt_dainv  documentation" href="#"/>
-        <link rel="next" title="Theory" href="theory.html"/> 
+        <link rel="next" title="Installing VT-DAInv" href="install.html"/> 
 
   
   <script src="_static/js/modernizr.min.js"></script>
@@ -87,6 +87,7 @@
             
               <p class="caption"><span class="caption-text">Contents:</span></p>
 <ul>
+<li class="toctree-l1"><a class="reference internal" href="install.html">Installing VT-DAInv</a></li>
 <li class="toctree-l1"><a class="reference internal" href="theory.html">Theory</a></li>
 <li class="toctree-l1"><a class="reference internal" href="tutorial_lorenz.html">Tutorial: Lorenz63</a></li>
 <li class="toctree-l1"><a class="reference internal" href="source_code.html">Source Code</a></li>
@@ -155,9 +156,16 @@
             
   <div class="section" id="vt-da-inv-documentation">
 <h1>VT-DA_Inv Documentation<a class="headerlink" href="#vt-da-inv-documentation" title="Permalink to this headline">¶</a></h1>
+<p>Ensemble based inverse modeling (data-assimilation).</p>
+<p>Developed by Dr. Heng Xiao&#8217;s group at Virginia Tech: <a class="reference external" href="https://www.aoe.vt.edu/people/faculty/xiaoheng/personal-page.html">Data-Enabled Computational Mechanics Laboratory at Virgnia Tech</a>.</p>
 <div class="toctree-wrapper compound">
 <p class="caption"><span class="caption-text">Contents:</span></p>
 <ul>
+<li class="toctree-l1"><a class="reference internal" href="install.html">Installing VT-DAInv</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="install.html#developers">Developers</a></li>
+<li class="toctree-l2"><a class="reference internal" href="install.html#foam-tau-solver-users">FOAM_Tau_Solver users</a></li>
+</ul>
+</li>
 <li class="toctree-l1"><a class="reference internal" href="theory.html">Theory</a><ul>
 <li class="toctree-l2"><a class="reference internal" href="theory.html#inverse-problem">Inverse Problem</a></li>
 <li class="toctree-l2"><a class="reference internal" href="theory.html#data-assimilation">Data Assimilation</a></li>
@@ -166,18 +174,19 @@
 </ul>
 </li>
 <li class="toctree-l1"><a class="reference internal" href="tutorial_lorenz.html">Tutorial: Lorenz63</a><ul>
-<li class="toctree-l2"><a class="reference internal" href="tutorial_lorenz.html#lorenz-system">Lorenz System</a></li>
-<li class="toctree-l2"><a class="reference internal" href="tutorial_lorenz.html#data-assimilation-method">Data Assimilation Method</a></li>
-<li class="toctree-l2"><a class="reference internal" href="tutorial_lorenz.html#dynamic-model">Dynamic Model</a></li>
-<li class="toctree-l2"><a class="reference internal" href="tutorial_lorenz.html#lorenz-model-files">Lorenz Model Files</a></li>
-<li class="toctree-l2"><a class="reference internal" href="tutorial_lorenz.html#run-tutorial">Run Tutorial</a><ul>
-<li class="toctree-l3"><a class="reference internal" href="tutorial_lorenz.html#step-1-write-main-input-file">Step 1 : Write main input file</a></li>
-<li class="toctree-l3"><a class="reference internal" href="tutorial_lorenz.html#step-2-write-forward-model-input-file">Step 2 : Write forward model input file</a></li>
-<li class="toctree-l3"><a class="reference internal" href="tutorial_lorenz.html#step-3-execute">Step 3 : Execute</a></li>
-<li class="toctree-l3"><a class="reference internal" href="tutorial_lorenz.html#step-4-postprocessing">Step 4 : Postprocessing</a></li>
+<li class="toctree-l2"><a class="reference internal" href="tutorial_lorenz.html#problem-description">Problem Description</a></li>
+<li class="toctree-l2"><a class="reference internal" href="tutorial_lorenz.html#overview-of-vt-dainv">Overview of vt_dainv</a></li>
+<li class="toctree-l2"><a class="reference internal" href="tutorial_lorenz.html#building-the-dynamic-model">Building the Dynamic Model</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="tutorial_lorenz.html#init-and-input-file">__init__ and input file</a></li>
+<li class="toctree-l3"><a class="reference internal" href="tutorial_lorenz.html#synthetic-observations">Synthetic observations</a></li>
+<li class="toctree-l3"><a class="reference internal" href="tutorial_lorenz.html#generate-ensemble">generate_ensemble</a></li>
+<li class="toctree-l3"><a class="reference internal" href="tutorial_lorenz.html#forecast-to-time">forecast_to_time</a></li>
+<li class="toctree-l3"><a class="reference internal" href="tutorial_lorenz.html#forward">forward</a></li>
+<li class="toctree-l3"><a class="reference internal" href="tutorial_lorenz.html#get-obs">get_obs</a></li>
+<li class="toctree-l3"><a class="reference internal" href="tutorial_lorenz.html#clean">clean</a></li>
 </ul>
 </li>
-<li class="toctree-l2"><a class="reference internal" href="tutorial_lorenz.html#references">References</a></li>
+<li class="toctree-l2"><a class="reference internal" href="tutorial_lorenz.html#running-the-code">Running the Code</a></li>
 </ul>
 </li>
 <li class="toctree-l1"><a class="reference internal" href="source_code.html">Source Code</a><ul>
@@ -212,7 +221,7 @@
   
     <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
       
-        <a href="theory.html" class="btn btn-neutral float-right" title="Theory" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right"></span></a>
+        <a href="install.html" class="btn btn-neutral float-right" title="Installing VT-DAInv" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right"></span></a>
       
       
     </div>

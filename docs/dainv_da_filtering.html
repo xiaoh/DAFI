@@ -89,6 +89,7 @@
             
               <p class="caption"><span class="caption-text">Contents:</span></p>
 <ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="install.html">Installing VT-DAInv</a></li>
 <li class="toctree-l1"><a class="reference internal" href="theory.html">Theory</a></li>
 <li class="toctree-l1"><a class="reference internal" href="tutorial_lorenz.html">Tutorial: Lorenz63</a></li>
 <li class="toctree-l1 current"><a class="reference internal" href="source_code.html">Source Code</a><ul class="current">
@@ -173,13 +174,13 @@
 <p>Collection of different filtering techniques.</p>
 <dl class="class">
 <dt id="dainv.da_filtering.DAFilter">
-<em class="property">class </em><code class="descclassname">dainv.da_filtering.</code><code class="descname">DAFilter</code><span class="sig-paren">(</span><em>nsamples</em>, <em>da_interval</em>, <em>t_end</em>, <em>forward_model</em>, <em>input_dict</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/dainv/da_filtering.html#DAFilter"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#dainv.da_filtering.DAFilter" title="Permalink to this definition">¶</a></dt>
+<em class="property">class </em><code class="descclassname">dainv.da_filtering.</code><code class="descname">DAFilter</code><span class="sig-paren">(</span><em>nsamples</em>, <em>da_interval</em>, <em>t_end</em>, <em>max_da_iteration</em>, <em>dyn_model</em>, <em>input_dict</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/dainv/da_filtering.html#DAFilter"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#dainv.da_filtering.DAFilter" title="Permalink to this definition">¶</a></dt>
 <dd><p>Parent class for data assimilation filtering techniques.</p>
 <p>Use this as a template to write new filtering classes.
 The required methods are summarized below.</p>
 <dl class="method">
 <dt id="dainv.da_filtering.DAFilter.__init__">
-<code class="descname">__init__</code><span class="sig-paren">(</span><em>nsamples</em>, <em>da_interval</em>, <em>t_end</em>, <em>forward_model</em>, <em>input_dict</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/dainv/da_filtering.html#DAFilter.__init__"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#dainv.da_filtering.DAFilter.__init__" title="Permalink to this definition">¶</a></dt>
+<code class="descname">__init__</code><span class="sig-paren">(</span><em>nsamples</em>, <em>da_interval</em>, <em>t_end</em>, <em>max_da_iteration</em>, <em>dyn_model</em>, <em>input_dict</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/dainv/da_filtering.html#DAFilter.__init__"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#dainv.da_filtering.DAFilter.__init__" title="Permalink to this definition">¶</a></dt>
 <dd><p>Parse input file and assign values to class attributes.</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
@@ -189,7 +190,7 @@ The required methods are summarized below.</p>
 <li><strong>nsamples</strong> (<em>int</em>) &#8211; Ensemble size.</li>
 <li><strong>da_interval</strong> (<em>float</em>) &#8211; Iteration interval between data assimilation steps.</li>
 <li><strong>t_end</strong> (<em>float</em>) &#8211; Final time.</li>
-<li><strong>forward_model</strong> (<a class="reference internal" href="dainv_dyn_model.html#dainv.dyn_model.DynModel" title="dainv.dyn_model.DynModel"><em>DynModel</em></a>) &#8211; Dynamic model.</li>
+<li><strong>dyn_model</strong> (<a class="reference internal" href="dainv_dyn_model.html#dainv.dyn_model.DynModel" title="dainv.dyn_model.DynModel"><em>DynModel</em></a>) &#8211; Dynamic model.</li>
 <li><strong>input_dict</strong> (<em>dict</em><em>[</em><em>str</em><em>]</em><em></em>) &#8211; All filter-specific inputs.</li>
 </ul>
 </td>
@@ -211,12 +212,6 @@ The required methods are summarized below.</p>
 </dd></dl>
 
 <dl class="method">
-<dt id="dainv.da_filtering.DAFilter.report">
-<code class="descname">report</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/dainv/da_filtering.html#DAFilter.report"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#dainv.da_filtering.DAFilter.report" title="Permalink to this definition">¶</a></dt>
-<dd><p>Report summary information.</p>
-</dd></dl>
-
-<dl class="method">
 <dt id="dainv.da_filtering.DAFilter.save">
 <code class="descname">save</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/dainv/da_filtering.html#DAFilter.save"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#dainv.da_filtering.DAFilter.save" title="Permalink to this definition">¶</a></dt>
 <dd><p>Save any important results to text files.</p>
@@ -232,7 +227,7 @@ The required methods are summarized below.</p>
 
 <dl class="class">
 <dt id="dainv.da_filtering.DAFilter2">
-<em class="property">class </em><code class="descclassname">dainv.da_filtering.</code><code class="descname">DAFilter2</code><span class="sig-paren">(</span><em>nsamples</em>, <em>da_interval</em>, <em>t_end</em>, <em>forward_model</em>, <em>input_dict</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/dainv/da_filtering.html#DAFilter2"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#dainv.da_filtering.DAFilter2" title="Permalink to this definition">¶</a></dt>
+<em class="property">class </em><code class="descclassname">dainv.da_filtering.</code><code class="descname">DAFilter2</code><span class="sig-paren">(</span><em>nsamples</em>, <em>da_interval</em>, <em>t_end</em>, <em>max_da_iteration</em>, <em>dyn_model</em>, <em>input_dict</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/dainv/da_filtering.html#DAFilter2"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#dainv.da_filtering.DAFilter2" title="Permalink to this definition">¶</a></dt>
 <dd><p>Parent class for DA filtering techniques.</p>
 <p>This class includes more methods than the DAFilter class.
 The DAFilter class is a barebones template. DAFilter2 contains
@@ -242,7 +237,7 @@ to quickly create new filter classes if some of the same methods
 are desired.</p>
 <dl class="method">
 <dt id="dainv.da_filtering.DAFilter2.__init__">
-<code class="descname">__init__</code><span class="sig-paren">(</span><em>nsamples</em>, <em>da_interval</em>, <em>t_end</em>, <em>forward_model</em>, <em>input_dict</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/dainv/da_filtering.html#DAFilter2.__init__"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#dainv.da_filtering.DAFilter2.__init__" title="Permalink to this definition">¶</a></dt>
+<code class="descname">__init__</code><span class="sig-paren">(</span><em>nsamples</em>, <em>da_interval</em>, <em>t_end</em>, <em>max_da_iteration</em>, <em>dyn_model</em>, <em>input_dict</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/dainv/da_filtering.html#DAFilter2.__init__"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#dainv.da_filtering.DAFilter2.__init__" title="Permalink to this definition">¶</a></dt>
 <dd><p>Parse input file and assign values to class attributes.</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
@@ -252,7 +247,8 @@ are desired.</p>
 <li><strong>nsamples</strong> (<em>int</em>) &#8211; Ensemble size.</li>
 <li><strong>da_interval</strong> (<em>float</em>) &#8211; Iteration interval between data assimilation steps.</li>
 <li><strong>t_end</strong> (<em>float</em>) &#8211; Final time.</li>
-<li><strong>forward_model</strong> (<a class="reference internal" href="dainv_dyn_model.html#dainv.dyn_model.DynModel" title="dainv.dyn_model.DynModel"><em>DynModel</em></a>) &#8211; Dynamic model.</li>
+<li><strong>max_da_iteration</strong> (<em>int</em>) &#8211; Maximum number of DA iterations at a given time-step.</li>
+<li><strong>dyn_model</strong> (<a class="reference internal" href="dainv_dyn_model.html#dainv.dyn_model.DynModel" title="dainv.dyn_model.DynModel"><em>DynModel</em></a>) &#8211; Dynamic model.</li>
 <li><strong>input_dict</strong> (<em>dict</em><em>[</em><em>str</em><em>]</em><em></em>) &#8211; All filter-specific inputs.</li>
 </ul>
 </td>
@@ -264,11 +260,11 @@ are desired.</p>
 <dl class="last docutils">
 <dt>Inputs in <code class="docutils literal"><span class="pre">input_dict</span></code>:</dt>
 <dd><ul class="first last simple">
-<li><strong>save_folder</strong> (<code class="docutils literal"><span class="pre">string</span></code>, <code class="docutils literal"><span class="pre">./results_da</span></code>) -
+<li><strong>save_dir</strong> (<code class="docutils literal"><span class="pre">string</span></code>, <code class="docutils literal"><span class="pre">./results_da</span></code>) -
 Folder where to save results.</li>
 <li><strong>debug_flag</strong> (<code class="docutils literal"><span class="pre">bool</span></code>, <code class="docutils literal"><span class="pre">False</span></code>) -
 Save extra information for debugging.</li>
-<li><strong>debug_folder</strong> (<code class="docutils literal"><span class="pre">string</span></code>, <code class="docutils literal"><span class="pre">./debug</span></code>) -
+<li><strong>debug_dir</strong> (<code class="docutils literal"><span class="pre">string</span></code>, <code class="docutils literal"><span class="pre">./debug</span></code>) -
 Folder where to save debugging information</li>
 <li><strong>verbosity</strong> (<code class="docutils literal"><span class="pre">int</span></code>, <code class="docutils literal"><span class="pre">1</span></code>) -
 Amount of information to print to screen.</li>
@@ -281,12 +277,14 @@ Convergence criteria to use if <code class="docutils literal"><span class="pre">
 <code class="docutils literal"><span class="pre">False</span></code>: <code class="docutils literal"><span class="pre">variance</span></code> to use the variance convergence
 criteria,  <code class="docutils literal"><span class="pre">residual</span></code>. See documentation for more
 information.</li>
-<li><strong>convergence_residual</strong> (<code class="docutils literal"><span class="pre">float</span></code>) -
+<li><strong>convergence_residual</strong> (<code class="docutils literal"><span class="pre">float</span></code>, None) -
 Residual value for convergence if <code class="docutils literal"><span class="pre">reach_max_flag</span></code> is
 <code class="docutils literal"><span class="pre">False</span></code> and <code class="docutils literal"><span class="pre">convergence_option</span></code> is <code class="docutils literal"><span class="pre">residual</span></code>.</li>
 <li><strong>convergence_norm</strong> (<code class="docutils literal"><span class="pre">int,</span> <span class="pre">inf</span></code>,``2``) -
 Order of norm to use for convergence criteria. can be an
 integer or <code class="docutils literal"><span class="pre">np.inf</span></code>. Default is L2 norm.</li>
+<li><strong>perturb_obs</strong> (<code class="docutils literal"><span class="pre">bool</span></code>, <code class="docutils literal"><span class="pre">True</span></code>) -
+Perturb the observations for each sample.</li>
 </ul>
 </dd>
 </dl>
@@ -300,28 +298,9 @@ integer or <code class="docutils literal"><span class="pre">np.inf</span></code>
 </dd></dl>
 
 <dl class="method">
-<dt id="dainv.da_filtering.DAFilter2.correct_forecasts">
-<code class="descname">correct_forecasts</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/dainv/da_filtering.html#DAFilter2.correct_forecasts"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#dainv.da_filtering.DAFilter2.correct_forecasts" title="Permalink to this definition">¶</a></dt>
-<dd><p>Correct the propagated ensemble (filtering step).</p>
-<dl class="docutils">
-<dt><strong>Updates:</strong></dt>
-<dd><ul class="first last simple">
-<li>self.state_vec</li>
-</ul>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="method">
 <dt id="dainv.da_filtering.DAFilter2.plot">
 <code class="descname">plot</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/dainv/da_filtering.html#DAFilter2.plot"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#dainv.da_filtering.DAFilter2.plot" title="Permalink to this definition">¶</a></dt>
 <dd><p>Plot iteration convergence.</p>
-</dd></dl>
-
-<dl class="method">
-<dt id="dainv.da_filtering.DAFilter2.report">
-<code class="descname">report</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/dainv/da_filtering.html#DAFilter2.report"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#dainv.da_filtering.DAFilter2.report" title="Permalink to this definition">¶</a></dt>
-<dd><p>Report summary information.</p>
 </dd></dl>
 
 <dl class="method">
@@ -345,12 +324,14 @@ convergence.</p>
 <li>self.time</li>
 <li>self.iter</li>
 <li>self.da_step</li>
-<li>self.state_vec</li>
+<li>self.state_vec_analysis</li>
+<li>self.state_vec_forecast</li>
 <li>self.model_obs</li>
 <li>self.obs</li>
 <li>self.obs_error</li>
-<li>self.state_vec_analysis_all</li>
-<li>self.state_vec_forecast_all</li>
+<li>self.init_state</li>
+<li>self.state_vec_prior</li>
+<li>more through methods called.</li>
 </ul>
 </dd>
 </dl>
@@ -360,7 +341,7 @@ convergence.</p>
 
 <dl class="class">
 <dt id="dainv.da_filtering.EnKF">
-<em class="property">class </em><code class="descclassname">dainv.da_filtering.</code><code class="descname">EnKF</code><span class="sig-paren">(</span><em>nsamples</em>, <em>da_interval</em>, <em>t_end</em>, <em>forward_model</em>, <em>input_dict</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/dainv/da_filtering.html#EnKF"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#dainv.da_filtering.EnKF" title="Permalink to this definition">¶</a></dt>
+<em class="property">class </em><code class="descclassname">dainv.da_filtering.</code><code class="descname">EnKF</code><span class="sig-paren">(</span><em>nsamples</em>, <em>da_interval</em>, <em>t_end</em>, <em>max_da_iteration</em>, <em>dyn_model</em>, <em>input_dict</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/dainv/da_filtering.html#EnKF"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#dainv.da_filtering.EnKF" title="Permalink to this definition">¶</a></dt>
 <dd><p>Implementation of the ensemble Kalman Filter (EnKF).</p>
 <p>It inherits most methods from parent class (<code class="docutils literal"><span class="pre">DAFIlter2</span></code>), but
 replaces the <code class="docutils literal"><span class="pre">correct_forecasts</span></code> method to use EnKF for the
@@ -373,7 +354,86 @@ state vector in observation space. See the documentation for more
 information.</p>
 <dl class="method">
 <dt id="dainv.da_filtering.EnKF.__init__">
-<code class="descname">__init__</code><span class="sig-paren">(</span><em>nsamples</em>, <em>da_interval</em>, <em>t_end</em>, <em>forward_model</em>, <em>input_dict</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/dainv/da_filtering.html#EnKF.__init__"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#dainv.da_filtering.EnKF.__init__" title="Permalink to this definition">¶</a></dt>
+<code class="descname">__init__</code><span class="sig-paren">(</span><em>nsamples</em>, <em>da_interval</em>, <em>t_end</em>, <em>max_da_iteration</em>, <em>dyn_model</em>, <em>input_dict</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/dainv/da_filtering.html#EnKF.__init__"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#dainv.da_filtering.EnKF.__init__" title="Permalink to this definition">¶</a></dt>
+<dd><p>Parse input file and assign values to class attributes.</p>
+<div class="admonition note">
+<p class="first admonition-title">Note</p>
+<p class="last">See DAFilter2.__init__ for details.</p>
+</div>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="dainv.da_filtering.EnKF_Lasso">
+<em class="property">class </em><code class="descclassname">dainv.da_filtering.</code><code class="descname">EnKF_Lasso</code><span class="sig-paren">(</span><em>nsamples</em>, <em>da_interval</em>, <em>t_end</em>, <em>max_da_iteration</em>, <em>dyn_model</em>, <em>input_dict</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/dainv/da_filtering.html#EnKF_Lasso"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#dainv.da_filtering.EnKF_Lasso" title="Permalink to this definition">¶</a></dt>
+<dd><p>Implementation of the ensemble Kalman Filter with Lasso
+(EnKF-Lasso).</p>
+<p>It inherits most methods from parent class (<code class="docutils literal"><span class="pre">DAFIlter2</span></code>), but
+replaces the <code class="docutils literal"><span class="pre">correct_forecasts</span></code> method to use EnKF-Lasso for the
+data-assimilation step.</p>
+<p>The EnKF_lasso is updated by: <code class="docutils literal"><span class="pre">Xa</span> <span class="pre">=</span> <span class="pre">Xf</span> <span class="pre">+</span> <span class="pre">K*(obs</span> <span class="pre">-</span> <span class="pre">HX)</span> <span class="pre">-</span> <span class="pre">penalty</span></code>
+where <em>Xf</em> is the forecasted state vector (by the forward model),
+<em>Xa</em> is the updated vector after data-assimilation, <em>K</em> is the
+Kalman gain matrix, <em>obs</em> is the observation vector, and <em>HX</em> is
+the forecasted state vector in observation space. See the
+documentation for more information.</p>
+<dl class="method">
+<dt id="dainv.da_filtering.EnKF_Lasso.__init__">
+<code class="descname">__init__</code><span class="sig-paren">(</span><em>nsamples</em>, <em>da_interval</em>, <em>t_end</em>, <em>max_da_iteration</em>, <em>dyn_model</em>, <em>input_dict</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/dainv/da_filtering.html#EnKF_Lasso.__init__"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#dainv.da_filtering.EnKF_Lasso.__init__" title="Permalink to this definition">¶</a></dt>
+<dd><p>Parse input file and assign values to class attributes.</p>
+<div class="admonition note">
+<p class="first admonition-title">Note</p>
+<p class="last">See DAFilter2.__init__ for details.</p>
+</div>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="dainv.da_filtering.EnKF_MDA">
+<em class="property">class </em><code class="descclassname">dainv.da_filtering.</code><code class="descname">EnKF_MDA</code><span class="sig-paren">(</span><em>nsamples</em>, <em>da_interval</em>, <em>t_end</em>, <em>max_da_iteration</em>, <em>dyn_model</em>, <em>input_dict</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/dainv/da_filtering.html#EnKF_MDA"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#dainv.da_filtering.EnKF_MDA" title="Permalink to this definition">¶</a></dt>
+<dd><p>Implementation of the ensemble Kalman Filter-Multi data
+assimilaton (EnKF-MDA).</p>
+<p>It inherits most methods from parent class (<code class="docutils literal"><span class="pre">DAFIlter2</span></code>), but
+replaces the <code class="docutils literal"><span class="pre">correct_forecasts</span></code> method to use EnKF-MDA for the
+data-assimilation step.</p>
+<p>The EnKF-MDA is updated by:
+<code class="docutils literal"><span class="pre">Xa</span> <span class="pre">=</span> <span class="pre">Xf</span> <span class="pre">+</span> <span class="pre">K_mda*(obs</span> <span class="pre">-</span> <span class="pre">HX</span> <span class="pre">-</span> <span class="pre">err_mda)</span></code> where <em>Xf</em> is the
+forecasted state vector (by the dynamic model),
+<em>Xa</em> is the updated vector after data-assimilation, <em>K_mda</em> is the
+modified Kalman gain matrix, <em>obs</em> is the observation vector, and
+<em>HX</em> is the forwarded state vector in observation space, &#8216;err_mda&#8217;
+is inflated error. See the documentation for more information.</p>
+<dl class="method">
+<dt id="dainv.da_filtering.EnKF_MDA.__init__">
+<code class="descname">__init__</code><span class="sig-paren">(</span><em>nsamples</em>, <em>da_interval</em>, <em>t_end</em>, <em>max_da_iteration</em>, <em>dyn_model</em>, <em>input_dict</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/dainv/da_filtering.html#EnKF_MDA.__init__"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#dainv.da_filtering.EnKF_MDA.__init__" title="Permalink to this definition">¶</a></dt>
+<dd><p>Parse input file and assign values to class attributes.</p>
+<div class="admonition note">
+<p class="first admonition-title">Note</p>
+<p class="last">See DAFilter2.__init__ for details.</p>
+</div>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="dainv.da_filtering.EnRML">
+<em class="property">class </em><code class="descclassname">dainv.da_filtering.</code><code class="descname">EnRML</code><span class="sig-paren">(</span><em>nsamples</em>, <em>da_interval</em>, <em>t_end</em>, <em>max_da_iteration</em>, <em>dyn_model</em>, <em>input_dict</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/dainv/da_filtering.html#EnRML"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#dainv.da_filtering.EnRML" title="Permalink to this definition">¶</a></dt>
+<dd><p>Implementation of the ensemble Randomized Maximal Likelihood
+(EnRML).</p>
+<p>It inherits most methods from parent class (<code class="docutils literal"><span class="pre">DAFIlter2</span></code>), but
+replaces the <code class="docutils literal"><span class="pre">correct_forecasts</span></code> method to use EnRML for the
+data-assimilation step.</p>
+<p>The EnRML is updated by: <code class="docutils literal"><span class="pre">Xa</span> <span class="pre">=</span> <span class="pre">Xf</span> <span class="pre">+</span> <span class="pre">GN*(obs</span> <span class="pre">-</span> <span class="pre">HX)+P</span></code>
+where <em>Xf</em> is the forecasted state vector (by the forward model),
+<em>Xa</em> is the updated vector after data-assimilation, <em>GN</em> is the
+Gauss-Newton matrix, <em>obs</em> is the observation vector, and <em>HX</em> is
+the forecasted state vector in observation space, <em>P</em> is Penalty
+matrix. See the documentation for more information.</p>
+<dl class="method">
+<dt id="dainv.da_filtering.EnRML.__init__">
+<code class="descname">__init__</code><span class="sig-paren">(</span><em>nsamples</em>, <em>da_interval</em>, <em>t_end</em>, <em>max_da_iteration</em>, <em>dyn_model</em>, <em>input_dict</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/dainv/da_filtering.html#EnRML.__init__"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#dainv.da_filtering.EnRML.__init__" title="Permalink to this definition">¶</a></dt>
 <dd><p>Parse input file and assign values to class attributes.</p>
 <div class="admonition note">
 <p class="first admonition-title">Note</p>

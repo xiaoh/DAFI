@@ -89,6 +89,7 @@
             
               <p class="caption"><span class="caption-text">Contents:</span></p>
 <ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="install.html">Installing VT-DAInv</a></li>
 <li class="toctree-l1"><a class="reference internal" href="theory.html">Theory</a></li>
 <li class="toctree-l1"><a class="reference internal" href="tutorial_lorenz.html">Tutorial: Lorenz63</a></li>
 <li class="toctree-l1 current"><a class="reference internal" href="source_code.html">Source Code</a><ul class="current">
@@ -173,31 +174,37 @@
 <p>Template for dynamic models.</p>
 <dl class="class">
 <dt id="dainv.dyn_model.DynModel">
-<em class="property">class </em><code class="descclassname">dainv.dyn_model.</code><code class="descname">DynModel</code><span class="sig-paren">(</span><em>nsamples</em>, <em>da_interval</em>, <em>t_end</em>, <em>input_file</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/dainv/dyn_model.html#DynModel"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#dainv.dyn_model.DynModel" title="Permalink to this definition">¶</a></dt>
+<em class="property">class </em><code class="descclassname">dainv.dyn_model.</code><code class="descname">DynModel</code><span class="sig-paren">(</span><em>nsamples</em>, <em>da_interval</em>, <em>t_end</em>, <em>max_da_iteration</em>, <em>input_file</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/dainv/dyn_model.html#DynModel"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#dainv.dyn_model.DynModel" title="Permalink to this definition">¶</a></dt>
 <dd><p>Parent class for dynamic models.</p>
 <p>Use this as a template to write new dynamic models.
 The required attributes and methods are summarized below.</p>
 <dl class="attribute">
 <dt id="dainv.dyn_model.DynModel.name">
 <code class="descname">name</code><a class="headerlink" href="#dainv.dyn_model.DynModel.name" title="Permalink to this definition">¶</a></dt>
-<dd><p><em>Name of the forward model for reporting.</em></p>
+<dd><p>Name of the forward model for reporting. <code class="docutils literal"><span class="pre">str</span></code></p>
 </dd></dl>
 
 <dl class="attribute">
 <dt id="dainv.dyn_model.DynModel.nstate">
 <code class="descname">nstate</code><a class="headerlink" href="#dainv.dyn_model.DynModel.nstate" title="Permalink to this definition">¶</a></dt>
-<dd><p><em>Number of states in the state vector.</em></p>
+<dd><p>Number of states in the state vector. <code class="docutils literal"><span class="pre">int</span></code></p>
 </dd></dl>
 
 <dl class="attribute">
 <dt id="dainv.dyn_model.DynModel.nstate_obs">
 <code class="descname">nstate_obs</code><a class="headerlink" href="#dainv.dyn_model.DynModel.nstate_obs" title="Permalink to this definition">¶</a></dt>
-<dd><p><em>Number of states in the observation vector.</em></p>
+<dd><p>Number of states in the observation vector. <code class="docutils literal"><span class="pre">int</span></code></p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="dainv.dyn_model.DynModel.init_state">
+<code class="descname">init_state</code><a class="headerlink" href="#dainv.dyn_model.DynModel.init_state" title="Permalink to this definition">¶</a></dt>
+<dd><p>Initial mean value of the state vector. <code class="docutils literal"><span class="pre">ndarray</span></code></p>
 </dd></dl>
 
 <dl class="method">
 <dt id="dainv.dyn_model.DynModel.__init__">
-<code class="descname">__init__</code><span class="sig-paren">(</span><em>nsamples</em>, <em>da_interval</em>, <em>t_end</em>, <em>input_file</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/dainv/dyn_model.html#DynModel.__init__"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#dainv.dyn_model.DynModel.__init__" title="Permalink to this definition">¶</a></dt>
+<code class="descname">__init__</code><span class="sig-paren">(</span><em>nsamples</em>, <em>da_interval</em>, <em>t_end</em>, <em>max_da_iteration</em>, <em>input_file</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/dainv/dyn_model.html#DynModel.__init__"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#dainv.dyn_model.DynModel.__init__" title="Permalink to this definition">¶</a></dt>
 <dd><p>Parse input file and assign values to class attributes.</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
@@ -207,6 +214,7 @@ The required attributes and methods are summarized below.</p>
 <li><strong>nsamples</strong> (<em>int</em>) &#8211; Ensemble size.</li>
 <li><strong>da_interval</strong> (<em>float</em>) &#8211; Time interval between data assimilation steps.</li>
 <li><strong>t_end</strong> (<em>float</em>) &#8211; Final time.</li>
+<li><strong>max_da_iteration</strong> (<em>int</em>) &#8211; Maximum number of DA iterations at a given time-step.</li>
 <li><strong>input_file</strong> (<em>str</em>) &#8211; Input file name.</li>
 </ul>
 </td>
@@ -230,20 +238,41 @@ The required attributes and methods are summarized below.</p>
 <col class="field-body" />
 <tbody valign="top">
 <tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
-<li><strong>state_vec</strong> (<em>ndarray</em>) &#8211; Current ensemble matrix of states. [nstate x nsamples]</li>
+<li><strong>state_vec</strong> (<em>ndarray</em>) &#8211; Current ensemble matrix of states (Xa). [nstate x nsamples]</li>
 <li><strong>next_end_time</strong> (<em>float</em>) &#8211; Next end time.</li>
 </ul>
 </td>
 </tr>
 <tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first last"><ul class="simple">
-<li><strong>state_vec</strong> (<em>ndarray</em>) &#8211; Updated ensemble matrix of states.
+<li><strong>state_vec</strong> (<em>ndarray</em>) &#8211; Updated ensemble matrix of states (Xf).
 <code class="docutils literal"><span class="pre">dtype=float</span></code>, <code class="docutils literal"><span class="pre">ndim=2</span></code>, <code class="docutils literal"><span class="pre">shape=(nstate,</span> <span class="pre">nsamples)</span></code></li>
-<li><strong>model_obs</strong> (<em>ndarray</em>) &#8211; Updated ensemble matrix of states in observation space.
+<li><strong>model_obs</strong> (<em>ndarray</em>) &#8211; Updated ensemble matrix of states in observation space (HXf).
 <code class="docutils literal"><span class="pre">dtype=float</span></code>, <code class="docutils literal"><span class="pre">ndim=2</span></code>,
 <code class="docutils literal"><span class="pre">shape=(nstate_obs,</span> <span class="pre">nsamples)</span></code></li>
 </ul>
 </p>
 </td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="dainv.dyn_model.DynModel.forward">
+<code class="descname">forward</code><span class="sig-paren">(</span><em>state_vec</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/dainv/dyn_model.html#DynModel.forward"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#dainv.dyn_model.DynModel.forward" title="Permalink to this definition">¶</a></dt>
+<dd><p>Forward the states to observation space (from X to HX).</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>state_vec</strong> (<em>ndarray</em>) &#8211; Current state variables.
+<code class="docutils literal"><span class="pre">dtype=float</span></code>, <code class="docutils literal"><span class="pre">ndim=2</span></code>, <code class="docutils literal"><span class="pre">shape=(nstate,</span> <span class="pre">nsamples)</span></code></td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><strong>model_obs</strong> &#8211; Ensemble in observation space.
+<code class="docutils literal"><span class="pre">dtype=float</span></code>, <code class="docutils literal"><span class="pre">ndim=2</span></code>,
+<code class="docutils literal"><span class="pre">shape=(nstate_obs,</span> <span class="pre">nsamples)</span></code></td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body">ndarray</td>
 </tr>
 </tbody>
 </table>
@@ -258,7 +287,7 @@ The required attributes and methods are summarized below.</p>
 <col class="field-body" />
 <tbody valign="top">
 <tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body"><ul class="simple">
-<li><strong>state_vec</strong> (<em>ndarray</em>) &#8211; Ensemble matrix of states.
+<li><strong>state_vec</strong> (<em>ndarray</em>) &#8211; Ensemble matrix of states (Xi).
 <code class="docutils literal"><span class="pre">dtype=float</span></code>, <code class="docutils literal"><span class="pre">ndim=2</span></code>, <code class="docutils literal"><span class="pre">shape=(nstate,</span> <span class="pre">nsamples)</span></code></li>
 <li><strong>model_obs</strong> (<em>ndarray</em>) &#8211; Ensemble matrix of states in observation space.
 <code class="docutils literal"><span class="pre">dtype=float</span></code>, <code class="docutils literal"><span class="pre">ndim=2</span></code>,
@@ -272,13 +301,13 @@ The required attributes and methods are summarized below.</p>
 
 <dl class="method">
 <dt id="dainv.dyn_model.DynModel.get_obs">
-<code class="descname">get_obs</code><span class="sig-paren">(</span><em>next_end_time</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/dainv/dyn_model.html#DynModel.get_obs"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#dainv.dyn_model.DynModel.get_obs" title="Permalink to this definition">¶</a></dt>
+<code class="descname">get_obs</code><span class="sig-paren">(</span><em>time</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/dainv/dyn_model.html#DynModel.get_obs"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#dainv.dyn_model.DynModel.get_obs" title="Permalink to this definition">¶</a></dt>
 <dd><p>Return the observation and error matrix.</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>next_end_time</strong> (<em>float</em>) &#8211; Next end time.</td>
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>time</strong> (<em>float</em>) &#8211; Time at which observation is requested.</td>
 </tr>
 <tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><ul class="simple">
 <li><strong>obs</strong> (<em>ndarray</em>) &#8211; Observations.
@@ -292,18 +321,6 @@ The required attributes and methods are summarized below.</p>
 </tr>
 </tbody>
 </table>
-</dd></dl>
-
-<dl class="method">
-<dt id="dainv.dyn_model.DynModel.plot">
-<code class="descname">plot</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/dainv/dyn_model.html#DynModel.plot"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#dainv.dyn_model.DynModel.plot" title="Permalink to this definition">¶</a></dt>
-<dd><p>Plot relevant model results.</p>
-</dd></dl>
-
-<dl class="method">
-<dt id="dainv.dyn_model.DynModel.report">
-<code class="descname">report</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/dainv/dyn_model.html#DynModel.report"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#dainv.dyn_model.DynModel.report" title="Permalink to this definition">¶</a></dt>
-<dd><p>Report summary information.</p>
 </dd></dl>
 
 </dd></dl>

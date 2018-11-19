@@ -15,6 +15,7 @@ import matplotlib.pyplot as plt
 # local import
 import dainv.utilities as utils
 
+
 # parent classes (templates)
 class DAFilter(object):
     """ Parent class for data assimilation filtering techniques.
@@ -23,8 +24,8 @@ class DAFilter(object):
     The required methods are summarized below.
     """
 
-    def __init__(self, nsamples, da_interval, t_end, dyn_model,
-                 input_dict):
+    def __init__(self, nsamples, da_interval, t_end, max_da_iteration,
+                 dyn_model, input_dict):
         """ Parse input file and assign values to class attributes.
 
         Parameters
@@ -50,33 +51,17 @@ class DAFilter(object):
         """ Implement the filtering technique. """
         pass
 
-    def report(self):
-        """ Report summary information. """
-        try:
-            self.dyn_model.report()
-        except:
-            pass
-
     def plot(self):
         """ Create any relevant plots. """
-        try:
-            self.dyn_model.plot()
-        except:
-            pass
+        pass
 
     def clean(self):
         """ Perform any necessary cleanup at completion. """
-        try:
-            self.dyn_model.clean()
-        except:
-            pass
+        self.dyn_model.clean()
 
     def save(self):
         """ Save any important results to text files. """
-        try:
-            self.dyn_model.save()
-        except:
-            pass
+        pass
 
 
 class DAFilter2(DAFilter):
@@ -112,11 +97,11 @@ class DAFilter2(DAFilter):
         Note
         ----
         Inputs in ``input_dict``:
-            * **save_folder** (``string``, ``./results_da``) -
+            * **save_dir** (``string``, ``./results_da``) -
               Folder where to save results.
             * **debug_flag** (``bool``, ``False``) -
               Save extra information for debugging.
-            * **debug_folder** (``string``, ``./debug``) -
+            * **debug_dir** (``string``, ``./debug``) -
               Folder where to save debugging information
             * **verbosity** (``int``, ``1``) -
               Amount of information to print to screen.
@@ -135,6 +120,8 @@ class DAFilter2(DAFilter):
             * **convergence_norm** (``int, inf``,``2``) -
               Order of norm to use for convergence criteria. can be an
               integer or ``np.inf``. Default is L2 norm.
+            * **perturb_obs** (``bool``, ``True``) -
+              Perturb the observations for each sample.
         """
         self.name = 'Generic DA filtering technique'
         self.short_name = None
@@ -186,19 +173,23 @@ class DAFilter2(DAFilter):
         except:
             self._debug_flag = False
         try:
-            self._debug_folder = input_dict['debug_folder']
+            self._debug_dir = input_dict['debug_dir']
         except:
-            self._debug_folder = os.curdir + os.sep + 'debug'
+            self._debug_dir = os.curdir + os.sep + 'debug'
         if self._debug_flag:
-            utils.create_folder(self._debug_folder)
+            utils.create_dir(self._debug_dir)
         try:
-            self._save_folder = input_dict['save_folder']
+            self._save_dir = input_dict['save_dir']
         except:
-            self._save_folder = os.curdir + os.sep + 'results_da'
+            self._save_dir = os.curdir + os.sep + 'results_da'
         try:
             self._verb = int(input_dict['verbosity'])
         except:
             self._verb = int(1)
+        try:
+            self._perturb_obs = utils.str2bool(input_dict['perturb_obs'])
+        except:
+            self._perturb_obs = True
 
         # initialize iteration array
         self.time_array = np.arange(0.0, self.t_end, self.da_interval)
@@ -262,23 +253,24 @@ class DAFilter2(DAFilter):
             * self.time
             * self.iter
             * self.da_step
-            * self.state_vec
+            * self.state_vec_analysis
+            * self.state_vec_forecast
             * self.model_obs
             * self.obs
             * self.obs_error
-            * self.state_vec_analysis_all
-            * self.state_vec_forecast_all
+            * self.init_state
+            * self.state_vec_prior
+            * more through methods called.
         """
-        # TODO: [added: carlos, assigned: xinlei] update the list of attributes that get updated.
         # Generate initial state Ensemble
         self.state_vec_analysis, self.model_obs = \
             self.dyn_model.generate_ensemble()
+        self.init_state = self.state_vec_analysis.copy()
 
         # sensitivity only
         if self._sensitivity_only:
-            self.model_obs = \
-                self.dyn_model.forward(
-                    self.state_vec_analysis, self.da_interval)
+            self.model_obs = self.dyn_model.forward(
+                self.state_vec_analysis, self.da_interval)
             if self.ver >= 1:
                 print("\nSensitivity study completed.")
             sys.exit(0)
@@ -304,14 +296,17 @@ class DAFilter2(DAFilter):
                 if self._verb >= 1:
                     print("\n  Forward step: {}".format(self.forward_step))
                 # forward the state vector to observation space
-                if self.forward_step is 1:
-                    self.state_vec_forecast = self.state_vec_forecast
-                else:
+                if self.forward_step != 1:
                     self.state_vec_forecast = self.state_vec_analysis.copy()
-                self.model_obs = self.dyn_model.forward(self.state_vec_forecast)
+                self.model_obs = self.dyn_model.forward(
+                    self.state_vec_forecast)
                 # get observation data at current step
                 obs_vec, self.obs_error = self.dyn_model.get_obs(self.time)
-                self.obs = self._vec_to_mat(obs_vec, self.nsamples)
+                if self._perturb_obs:
+                    self.obs = self._perturb_vec(
+                        obs_vec, self.obs_error, self.nsamples)
+                else:
+                    self.obs = self._vec_to_mat(obs_vec, self.nsamples)
                 # data assimilation
                 self._correct_forecasts()
                 self._calc_misfits()
@@ -341,18 +336,15 @@ class DAFilter2(DAFilter):
                     print("    DA Filtering completed: convergence early stop.")
                 else:
                     print("    DA Filtering completed: max iteration reached.")
-        # pass final results to dynamic model
-        self.dyn_model.final_analysis(self.state_vec_analysis)
 
     def plot(self):
         """ Plot iteration convergence. """
-        utils.create_folder(self._save_folder)
+        utils.create_dir(self._save_dir)
         if self._stationary_flag:
             iter = np.arange(self.forward_step) + 1
         else:
             iter = np.arange(self.da_step) + 1
         fig, ax = plt.subplots()
-        iter = np.arange(self.da_step) + 1
         ax.plot(iter, self._misfit_norm_store, '.-', label='norm(obs-HX)')
         ax.plot(iter, self._sigma_hx_norm_store, '.-', label='norm(std(HX))')
         ax.plot(iter, self._sigma_obs_norm_store, '.-', label='norm(std(obs))')
@@ -360,60 +352,42 @@ class DAFilter2(DAFilter):
         box = ax.get_position()
         ax.set_position([box.x0, box.y0, box.width * 0.8, box.height])
         ax.legend(loc='center left', bbox_to_anchor=(1, 0.5))
-        fig.savefig(self._save_folder + os.sep + 'iteration_errors_plot.pdf')
+        fig.savefig(self._save_dir + os.sep + 'iteration_errors_plot.pdf')
         plt.close(fig)
-        try:
-            self.dyn_model.plot()
-        except:
-           pass
-
-    def report(self):
-        """ Report summary information. """
-        str_report = '\n\nInverse Modeling Report\n' + '='*23
-        str_report += '\nDA_step: {}\nTime: {}'.format(self.da_step, self.time)
-        str_report += self._report()
-        print(str_report)
-        print('\n\nForward Modeling Report\n' + '='*23)
-        # try: # TODO: uncomment
-        self.dyn_model.report()
-        # except:
-            # pass
 
     def clean(self):
         """ Cleanup before exiting. """
-        try:
-            self.dyn_model.clean()
-        except:
-            pass
+        self.dyn_model.clean()
 
     def save(self):
         """ Saves results to text files. """
-        utils.create_folder(self._save_folder)
-        np.savetxt(self._save_folder + os.sep + 'misfit_norm', np.array(
-            self._misfit_norm_store))
-        np.savetxt(self._save_folder + os.sep + 'sigma_HX', np.array(
-            self._sigma_hx_norm_store))
-        np.savetxt(self._save_folder + os.sep + 'sigma_obs', np.array(
-            self._sigma_obs_norm_store))
+        utils.create_dir(self._save_dir)
+        sdir = self._save_dir + os.sep
+        xadir = sdir + 'Xa'
+        utils.create_dir(xadir)
+        xfdir = sdir + 'Xf'
+        utils.create_dir(xfdir)
+        hxfdir = sdir + 'HXf'
+        utils.create_dir(hxfdir)
+        odir = sdir + 'obs'
+        utils.create_dir(odir)
+        oedir = sdir + 'R'
+        utils.create_dir(oedir)
+        np.savetxt(sdir + 'X_0_mean', self.dyn_model.init_state)
+        np.savetxt(sdir + 'X_0', self.init_state)
+        np.savetxt(sdir + 'misfit_norm', np.array(self._misfit_norm_store))
+        np.savetxt(sdir + 'sigma_HX', np.array(self._sigma_hx_norm_store))
+        np.savetxt(sdir + 'sigma_obs', np.array(self._sigma_obs_norm_store))
         for da_step, value in enumerate(self.state_vec_analysis_all):
-            np.savetxt(self._save_folder + os.sep + 'Xa_{}'.format(da_step+1),
-                       value)
+            np.savetxt(xadir + os.sep + 'Xa_{}'.format(da_step+1), value)
         for da_step, value in enumerate(self.state_vec_forecast_all):
-            np.savetxt(self._save_folder + os.sep + 'Xf_{}'.format(da_step+1),
-                       value)
-        for da_step, value in enumerate(self.obs_all):
-            np.savetxt(self._save_folder + os.sep + 'obs_{}'.format(da_step+1),
-                       value)
+            np.savetxt(xfdir + os.sep + 'Xf_{}'.format(da_step+1), value)
         for da_step, value in enumerate(self.model_obs_all):
-            np.savetxt(self._save_folder + os.sep + 'HX_{}'.format(da_step+1),
-                       value)
+            np.savetxt(hxfdir + os.sep + 'HXf_{}'.format(da_step+1), value)
+        for da_step, value in enumerate(self.obs_all):
+            np.savetxt(odir + os.sep + 'obs_{}'.format(da_step+1), value)
         for da_step, value in enumerate(self.obs_error_all):
-            np.savetxt(self._save_folder + os.sep + 'R_{}'.format(da_step+1),
-                       value)
-        try:
-            self.dyn_model.save()
-        except:
-            pass
+            np.savetxt(oedir + os.sep + 'R_{}'.format(da_step+1), value)
 
     # private methods
     def _correct_forecasts(self):
@@ -426,7 +400,13 @@ class DAFilter2(DAFilter):
             "Needs to be implemented in the child class!")
 
     def _store_misfits(self):
-        """ Store the values of misfits at end of DA loop """
+        """ Store the values of misfits at end of DA loop.
+
+        **Updates:**
+            * self._misfit_norm_store
+            * self._sigma_hx_norm_store
+            * self._sigma_obs_norm_store
+        """
         self._misfit_norm_store.append(self._misfit_norm[-1])
         self._sigma_hx_norm_store.append(self._sigma_hx_norm[-1])
         self._sigma_obs_norm_store.append(self._sigma_obs_norm[-1])
@@ -435,8 +415,39 @@ class DAFilter2(DAFilter):
         "Tile a vector ncol times to form a matrix"
         return np.tile(vec, (ncol, 1)).T
 
+    def _perturb_vec(self, mean, cov, nsamps):
+        """ Create samples of random vector.
+
+        Parameters
+        ----------
+        mean : ndarray
+            Mean vector.
+            ``dtype=float``, ``ndim=1``, ``shape=(ndim,)``
+        cov : ndarray
+            Covariance matrix.
+            ``dtype=float``, ``ndim=2``, ``shape=(ndim, ndim)``
+        snamps : int
+            Number of samples to create.
+
+        Returns
+        -------
+        samp : ndarray
+            Array of sampled vectors.
+            ``dtype=float``, ``ndim=2``, ``shape=(ndim, nsamps)``
+        """
+        # check symmetric
+        if not np.allclose(cov, cov.T):
+            raise ValueError('Covariance matrix is not symmetric.')
+        # Cholesky decomposition
+        l_mat = np.linalg.cholesky(cov)
+        # create correlated perturbations
+        ndim = len(mean)
+        x_mat = np.random.normal(loc=0.0, scale=1.0, size=(ndim, nsamps))
+        perturb = np.matmul(l_mat, x_mat)
+        return np.tile(mean, (nsamps, 1)).T + perturb
+
     def _store_vars(self):
-        """ Store the important variables at each iterationself.
+        """ Store the important variables at each iteration.
 
         **Updates:**
             * self.obs_all
@@ -453,10 +464,10 @@ class DAFilter2(DAFilter):
         self.state_vec_forecast_all.append(self.state_vec_forecast.copy())
 
     def _save_debug(self, debug_dict):
-        """ Save specified ndarrays to the debug folder. """
+        """ Save specified ndarrays to the debug directory. """
         if self._debug_flag:
             for key, value in debug_dict.items():
-                fname = self._debug_folder + os.sep + key + \
+                fname = self._debug_dir + os.sep + key + \
                     '_{}'.format(self.da_step)
                 np.savetxt(fname, value)
 
@@ -561,7 +572,7 @@ class EnKF(DAFilter2):
             * self.state_vec_analysis
         """
 
-        # TODO: [added: carlos, assigned: xinlei] Consider moving these two functions to DAFilter2. Remove from all the child classes. Add one-line docstring.
+        # TODO: Consider moving these two functions to DAFilter2. Remove from all the child classes. Add one-line docstring.
         def _check_condition_number(hpht):
             con_inv = la.cond(hpht + self.obs_error)
             if self._verb >= 2:
@@ -622,7 +633,7 @@ class EnRML(DAFilter2):
         ----
         See DAFilter2.__init__ for details.
         """
-        # TODO: [added: carlos, assigned: xinlei] add the additional inputs to the docstring as in DAFilter2.__init__
+        # TODO: add the additional inputs to the docstring as in DAFilter2.__init__
         super(self.__class__, self).__init__(
             nsamples, da_interval, t_end, max_da_iteration, dyn_model,
             input_dict)
@@ -660,7 +671,7 @@ class EnRML(DAFilter2):
         xp0 = _mean_subtracted_matrix(self.state_vec_prior)
         p0 = (1.0 / (self.nsamples - 1.0)) * xp0.dot(xp0.T)
         x = self.state_vec_forecast.copy()
-        # TODO: [added: carlos, assigned: xinlei] I'm pretty sure this copy is unnecesary. Check.
+        # TODO: I'm pretty sure this copy is unnecesary. Check.
         xp = _mean_subtracted_matrix(x)
         hxp = _mean_subtracted_matrix(self.model_obs)
         gen = np.dot(hxp, la.pinv(xp))
@@ -682,7 +693,7 @@ class EnRML(DAFilter2):
             1.0-self.beta) * x + self.beta*dx
 
         self.state_vec_analysis = x.copy()
-        # TODO: [added: carlos, assigned: xinlei] I'm pretty sure this copy is unnecesary. Check.
+        # TODO: I'm pretty sure this copy is unnecesary. Check.
         # debug
         debug_dict = {
             'GN': gauss_newton_matrix, 'pen': penalty, 'inv': inv,

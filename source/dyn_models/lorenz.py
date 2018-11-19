@@ -1,33 +1,94 @@
 # Copyright 2018 Virginia Polytechnic Institute and State University.
-""" Dynamic model for solving the Lorenz system.
-"""
+""" Dynamic model for solving the Lorenz system. """
 
 # standard library imports
-import ast
-import sys
+import os
 
 # third party imports
 import numpy as np
-from numpy import linalg as la
-import scipy.sparse as sp
 from scipy.integrate import ode
 
 # local import
 from dainv.dyn_model import DynModel
-from dainv.utilities import read_input_data
+import dainv.utilities as utils
+
+
+def solve_lorenz(time_series, init_state, parameters):
+    """ Solve the Lorenz 63 equations for given initial condition.
+
+    Parameters
+    ----------
+    time_series : list
+        Time-series for the integration of the Lorenz system.
+        The first entry is the initial time.
+        ``len=3``, ``type=float``
+    init_state : list
+        The state [x, y, z] at the initial time.
+        ``len=3``, ``type=float``
+    parameters : list
+        The values of the three parameters [rho, beta, sigma].
+        ``len=3``, ``type=float``
+
+    Returns
+    -------
+    state : ndarray
+        The state [x, y, z] at all times specified in the time_series.
+        ``dtype=float``, ``ndim=2``, ``shape=(len(time_series), 3)``
+
+
+    """
+    # define Lorenz system
+    def lorenz63(time, state, parameters):
+        """ Calculate the velocity at a given state.
+
+        This function is integrated using scipy.integrate.ode.
+
+        Parameters
+        ---------
+        time : float
+            The time.
+            Not used. Required input for the integrator.
+        state : list
+            The state [x, y, z] state at the current time.
+            ``len=3``, ``type=float``
+        parameters : list
+            The values of the three parameters [rho, beta, sigma].
+            ``len=3``, ``type=float``
+
+        Returns
+        -------
+        velocities : list
+            The derivative with respect to time of the 3 state components.
+            ``len=3``, ``type=float``
+        """
+        xstate, ystate, zstate = state
+        rho, beta, sigma = parameters
+        ddt_x = sigma * (ystate - xstate)
+        ddt_y = rho*xstate - ystate - xstate*zstate
+        ddt_z = xstate*ystate - beta*zstate
+        return [ddt_x, ddt_y, ddt_z]
+
+    # solve lorenz system
+    solver = ode(lorenz63)
+    solver.set_integrator('dopri5')
+    solver.set_initial_value(init_state, time_series[0])
+    solver.set_f_params(parameters)
+    state = np.expand_dims(np.array(init_state), axis=0)
+    for time in time_series[1:]:
+        if not solver.successful():
+            raise RuntimeError('Solver failed at time: {} s'.format(time))
+        else:
+            solver.integrate(time)
+        state = np.vstack((state, solver.y))
+    return state
 
 
 class Solver(DynModel):
-    """ Dynamic model for solving the Lorenz system.
-
-    The state vector includes the time-dependent positions (x, y, z) and the
-    three constant coefficients (rho, beta, sigma). The observations consist
-    of the position at the given time (x, y, z).
-    """
+    """ Dynamic model for solving the Lorenz system. """
 
     def __init__(self, nsamples, da_interval, t_end, max_da_iteration,
                  model_input):
-        """ Initialize the dynamic model and parse input file.
+        """ Parse input file and assign values to class attributes.
 
         Parameters
         ----------
@@ -39,272 +100,151 @@ class Solver(DynModel):
             Final time.
         max_da_iteration : int
             Maximum number of DA iterations at a given time-step.
-        model_input : str
+        input_file : str
             Input file name.
-
-        Note
-        ----
-        Inputs in ``model_input``:
-            * **dt_interval** (``str``) -
-              Time step for the dynamic model.
-            * **x** (``float``) -
-              True initial x-position.
-            * **y** (``float``) -
-              True initial y-position.
-            * **z** (``float``) -
-              True initial z-position.
-            * **rho** (``float``) -
-              True value of parameter rho.
-            * **beta** (``float``) -
-              True value of parameter beta.
-            * **sigma** (``float``) -
-              True value of parameter sigma.
-            * **x_rel_std** (``float``) -
-              Relative standard deviation of x, y, z, rho, beta, sigma.
-              E.g. std(rho) = rho * x_rel_std
-            * **obs_rel_std** (``float``) -
-              Relative standard deviation of observation. See x_rel_std for
-              details.
-            * **perturb_rho** (``bool``) -
-              Whether to infer the value of rho.
-            * **perturb_beta** (``bool``) -
-              Whether to infer the value of beta.
-            * **perturb_sigma** (``bool``) -
-              Whether to infer the value of sigma.
         """
-        # TODO: Simplify
-        self.name = 'Lorenz63'
-        # number of samples in the ensemble
+        # save the main inputs
         self.nsamples = nsamples
-        # Data assimilation inverval
         self.da_interval = da_interval
-        # End time
         self.t_end = t_end
-        # Extract forward Model Input parameters
-        param_dict = read_input_data(model_input)
-        # forward time inverval
-        self.dt_interval = float(param_dict['dt_interval'])
-        # initial state varibles: x, y, z
-        self.x = float(param_dict['x'])
-        self.y = float(param_dict['y'])
-        self.z = float(param_dict['z'])
-        # initial parameters: rho, beta, sigma
-        self.rho = float(param_dict['rho'])
-        self.beta = float(param_dict['beta'])
-        self.sigma = float(param_dict['sigma'])
-        '''
-        # read the synthectic truth
-        try:
-            self.rho_truth = float(param_dict['rho_truth'])
-        except:
-            self.rho_truth = self.rho
-        
-        try:
-            self.beta_truth = float(param_dict['beta_truth'])
-        except:
-            self.beta_truth = self.beta
-        try:
-            self.sigma_truth = float(param_dict['sigma_truth'])
-        except:
-            self.sigma_truth = self.sigma.copy()
-        '''
-        # relative standard deviation of observation
-        self.obs_rel_std = float(param_dict['obs_rel_std'])
-        # relative standard deviation of x, y, z, rho, beta, sigma
-        self.x_rel_std = float(param_dict['x_rel_std'])
-        # switch control which parameters are perturbed
-        self.perturb_rho = ast.literal_eval(param_dict['perturb_rho'])
-        self.perturb_beta = ast.literal_eval(param_dict['perturb_beta'])
-        self.perturb_sigma = ast.literal_eval(param_dict['perturb_sigma'])
-        # initial  state condition
-        self.x_init = [self.x, self.y, self.z]
-        self.x_truth = [self.x, self.y, self.z]
-        # specify state augmented by which parameter and count
-        self.num_params = 0
-        if self.perturb_rho:
-            self.x_init.append(self.rho)
-            self.rho_truth = float(param_dict['rho_truth'])
-            self.x_truth.append(self.rho_truth)
-            self.num_params += 1
-        if self.perturb_beta:
-            self.x_init.append(self.beta)
-            self.beta_truth = float(param_dict['beta_truth'])
-            self.x_truth.append(self.beta_truth)
-            self.num_params += 1
-        if self.perturb_sigma:
-            self.x_init.append(self.sigma)
-            self.sigma_truth = float(param_dict['sigma_truth'])
-            self.x_truth.append(self.sigma_truth)
-            self.num_params += 1
-        self.x_truth = np.array(self.x_truth)
-        self.truth_all = np.empty([3 + self.num_params, 1]).T
-        # dimension of state space
-        self.nstate = len(self.x_init)
-        # dimension of observation space
-        self.nstate_obs = 3
+        self.max_da_iteration = max_da_iteration
+
+        # read input file
+        param_dict = utils.read_input_data(model_input)
+        dt_interval = float(param_dict['dt_interval'])
+        x_init_mean = float(param_dict['x_init_mean'])
+        y_init_mean = float(param_dict['y_init_mean'])
+        z_init_mean = float(param_dict['z_init_mean'])
+        rho_init_mean = float(param_dict['rho_init_mean'])
+        x_init_std = float(param_dict['x_init_std'])
+        y_init_std = float(param_dict['y_init_std'])
+        z_init_std = float(param_dict['z_init_std'])
+        rho_init_std = float(param_dict['rho_init_std'])
+        beta = float(param_dict['beta'])
+        sigma = float(param_dict['sigma'])
+        x_obs_rel_std = float(param_dict['x_obs_rel_std'])
+        z_obs_rel_std = float(param_dict['z_obs_rel_std'])
+        x_obs_abs_std = float(param_dict['x_obs_abs_std'])
+        z_obs_abs_std = float(param_dict['z_obs_abs_std'])
+        x_true = float(param_dict['x_true'])
+        y_true = float(param_dict['y_true'])
+        z_true = float(param_dict['z_true'])
+        rho_true = float(param_dict['rho_true'])
+        beta_true = float(param_dict['beta_true'])
+        sigma_true = float(param_dict['sigma_true'])
+
+        # required attributes.
+        self.name = 'Lorenz63'
+        self.nstate = 4
+        self.nstate_obs = 2
+        self.init_state = [x_init_mean, y_init_mean, z_init_mean,
+                           rho_init_mean]
+
+        # save other inputs for future use
+        self.dt = dt_interval
+        self.beta = beta
+        self.sigma = sigma
+        self.init_std = [x_init_std, y_init_std, z_init_std, rho_init_std]
+        self.obs_rel_std = [x_obs_rel_std, z_obs_rel_std]
+        self.obs_abs_std = [x_obs_abs_std, z_obs_abs_std]
+
+        # create save directory
+        self.dir = 'results_lorenz'
+        utils.create_dir(self.dir)
+
+        # create synthetic observations
+        true_init_orgstate = [x_true, y_true, z_true]
+        true_params = [rho_true, beta_true, sigma_true]
+        self.obs = self._create_synthetic_observations(
+            true_init_orgstate, true_params)
 
     def __str__(self):
         str_info = 'Lorenz 63 model.'
-        # TODO: expand with truth
         return str_info
 
+    # required methods
     def generate_ensemble(self):
-        """ Generate initial ensemble state X and observation HX
-
-        Args:
-        -----
-        DAInterval : DA step interval
+        """ Return states at the first data assimilation time-step.
 
         Returns
         -------
         state_vec : ndarray
-            State variables at current time.
+            Ensemble matrix of states (Xi).
             ``dtype=float``, ``ndim=2``, ``shape=(nstate, nsamples)``
         model_obs : ndarray
-            Forecast ensemble in observation space.
-            ``dtype=float``, ``ndim=2``, ``shape=(nstate, nsamples)``
+            Ensemble matrix of states in observation space (HX).
+            ``dtype=float``, ``ndim=2``,
+            ``shape=(nstate_obs, nsamples)``
         """
-
-        state_vec = np.zeros([self.nstate, self.nsamples])
-        model_obs = np.zeros([self.nstate_obs, self.nsamples])
-
-        # generate initial state_vec
-        for idim in np.arange(self.nstate):
-            dx_std = self.x_rel_std * self.x_init[idim]
-            state_vec[idim, :] = self.x_init[idim] + \
-                np.random.normal(0, dx_std, self.nsamples)
-        # operation operator
-        h_matrix = self._construct_h_matrix()
-        model_obs = h_matrix.dot(state_vec)
+        state_vec = np.empty([self.nstate, self.nsamples])
+        for isamp in range(self.nsamples):
+            state_vec[:, isamp] = self.init_state \
+                + np.random.normal(0, self.init_std)
+        model_obs = self.forward(state_vec)
         return state_vec, model_obs
 
-    def lorenz63(self, time, state_vec):
-        """ Define Lorenz 63 system.
+    def forecast_to_time(self, state_vec_current, end_time):
+        """ Return states at the next end time.
 
         Parameters
         ----------
-        time : float
-           Current time.
         state_vec : ndarray
-            State variables at current time.
-            ``dtype=float``, ``ndim=2``, ``shape=(nstate, nsamples)``
-
-        Returns
-        -------
-        delta_x : differential value for each state varible
-        """
-        # TODO: time not used?
-        # intial system parameters
-        rho = self.rho
-        beta = self.beta
-        sigma = self.sigma
-        # initial differential vector for each state variable
-        delta_x = np.zeros([self.nstate, 1])
-        # switch perturbation of each parameter
-        if self.nstate == 4:
-            delta_x[3] = 0
-            if self.perturb_rho:
-                rho = state_vec[3]
-            if self.perturb_beta:
-                beta = state_vec[3]
-            if self.perturb_sigma:
-                sigma = state_vec[3]
-        if self.nstate == 5:
-            delta_x[3] = 0
-            delta_x[4] = 0
-            if not self.perturb_rho:
-                beta = state_vec[3]
-                sigma = state_vec[4]
-            if not self.perturb_beta:
-                rho = state_vec[3]
-                sigma = state_vec[4]
-            if not self.perturb_sigma:
-                rho = state_vec[3]
-                beta = state_vec[4]
-        if self.nstate == 6:
-            delta_x[3] = 0
-            delta_x[4] = 0
-            delta_x[5] = 0
-            rho = state_vec[3]
-            beta = state_vec[4]
-            sigma = state_vec[5]
-        # ODEs
-        delta_x[0] = sigma * (-state_vec[0] + state_vec[1])
-        delta_x[1] = rho * state_vec[0] - state_vec[1] - \
-            state_vec[0] * state_vec[2]
-        delta_x[2] = state_vec[0] * state_vec[1] - beta * state_vec[2]
-        return delta_x
-
-    def forecast_to_time(self, state_vec_current, next_end_time):
-        """ Returns states at the next end time.
-
-        Parameters
-        ----------
-        state_vec_current : ndarray
-            State variables at current time.
-            ``dtype=float``, ``ndim=2``, ``shape=(nstate, nsamples)``
+            Current ensemble matrix of states (Xa). [nstate x nsamples]
         next_end_time : float
             Next end time.
 
         Returns
         -------
-        state_vec_forecast: ndarray
-            Forecast ensemble of state variables by forward model.
+        state_vec : ndarray
+            Updated ensemble matrix of states (Xf).
             ``dtype=float``, ``ndim=2``, ``shape=(nstate, nsamples)``
-        model_obs: ndarray
-            Forecast ensemble in observation space.
-            ``dtype=float``, ``ndim=2``, ``shape=(nstate, nsamples)``
+        model_obs : ndarray
+            Updated ensemble matrix of states in observation space (HXf).
+            ``dtype=float``, ``ndim=2``,
+            ``shape=(nstate_obs, nsamples)``
         """
-        # Set start time
-        new_start_time = next_end_time - self.da_interval
-        # Make time series from start time to end time
-        time_series = np.arange(new_start_time + self.dt_interval,
-                                next_end_time + self.dt_interval,
-                                self.dt_interval)  # TODO
-        # time_series = np.arange(  # TODO
-        #     new_start_time, next_end_time, self.dt_interval) # TODO
-        # Ode solver setup
-        self.solver = ode(self.lorenz63)
-        self.solver.set_integrator('dopri5')
-        state_vec_forecast = np.zeros(state_vec_current.shape)
-        # Solve ode for each sample
+        # create time series
+        start_time = end_time - self.da_interval
+        time_series = np.arange(start_time, end_time + self.dt/2.0, self.dt)
+        # initialize variables
+        state_vec_forecast = np.empty([self.nstate, self.nsamples])
+        savedir = self.dir + os.sep + 'states'
+        utils.create_dir(savedir)
+        da_step = int((start_time + self.dt/2.0) / self.da_interval) + 1
         for isamp in range(self.nsamples):
-            # Set initial value for ode solver
-            self.solver.set_initial_value(
-                state_vec_current[:, isamp], new_start_time)
-            forecast_state = np.empty([len(time_series), self.nstate])
-            for t in np.arange(len(time_series)):
-                if not self.solver.successful():
-                    print("solver failed")
-                    sys.exit(1)
-                self.solver.integrate(time_series[t])
-                forecast_state[t] = self.solver.y
-            # Save current state in state matrix state_vec_current
-            state_vec_forecast[:, isamp] = forecast_state[-1]
-        # Construct observation operator
+            # solve
+            parameters = [state_vec_current[3, isamp], self.beta, self.sigma]
+            init_orgstate = state_vec_current[:3, isamp]
+            orgstate = solve_lorenz(time_series, init_orgstate, parameters)
+            # create forecasted vector
+            state_vec_forecast[:3, isamp] = orgstate[-1, :]
+            state_vec_forecast[3, isamp] = state_vec_current[3, isamp]
+            # save
+            fname = 'dastep_{}_samp_{}'.format(da_step, isamp)
+            np.savetxt(savedir + os.sep + fname, orgstate)
+        np.savetxt(savedir + os.sep + 'time_{}'.format(da_step), time_series)
         return state_vec_forecast
 
-    def forward(self, X):
-        """
-        Forward the states from X to model_obs.
+    def forward(self, state_vec):
+        """ Forward the states to observation space (from X to HX).
 
         Parameters
         ----------
-        X: ndarray
-            Current state variables.
+        state_vec: ndarray
+            Current state variables (X).
+            ``dtype=float``, ``ndim=2``, ``shape=(nstate, nsamples)``
 
         Returns
         -------
         model_obs: ndarray
-            Ensemble in observation space.
+            Ensemble in observation space (HX).
+            ``dtype=float``, ``ndim=2``,
+            ``shape=(nstate_obs, nsamples)``
         """
-        # Construct observation operator
-        h_matrix = self._construct_h_matrix()
-        model_obs = h_matrix.dot(X)
-        return model_obs
+        return state_vec[[0, 2]]
 
     def get_obs(self, time):
-        """ Return the observation and observation covariance.
+        """ Return the observation and error matrix.
 
         Parameters
         ----------
@@ -313,48 +253,62 @@ class Solver(DynModel):
 
         Returns
         -------
-        obs_vec : ndarray
-            Vector of observation data. ``dtype=float``, ``ndim=1``,
-            ``shape=(nstate_obs)``
+        obs : ndarray
+            Observations.
+            ``dtype=float``, ``ndim=2``,
+            ``shape=(nstate_obs, nsamples)``
         obs_error : ndarray
-            Observation error covariance. ``dtype=float``, ``ndim=2``,
+            Observation error covariance matrix (R).
+            ``dtype=float``, ``ndim=2``,
             ``shape=(nstate_obs, nstate_obs)``
         """
-        current_truth = np.tile(self.x_truth.T, (self.nsamples, 1)).T
-        forecast_truth = self.forecast_to_time(current_truth, time)
-
-        self.x_truth = forecast_truth[:, 0]
-        truth = self.forward(forecast_truth)[:, 0]
-        truth_plot = np.hstack((time, truth))
-        self.truth_all = np.vstack((self.truth_all, truth_plot))
-        if time == self.t_end:
-            np.savetxt('truth_plot.dat', self.truth_all)
-        # create synthetic observation
-        obs_std_vec = self.obs_rel_std * np.abs(truth) + 0.1
-        obs_vec = truth + np.random.normal(0, obs_std_vec)
-        # calculate observation error matrix
-        # obs_std_vec = self.obs_rel_std * np.abs(obs_vec) + 0.1
-        # TODO: change truth to obs_vec, add 0.1 as some abs_err option, modify the test.
-        obs_error = sp.diags(obs_std_vec**2, 0)
-        obs_error = obs_error.todense()
+        da_step = int(time / self.da_interval)
+        obs_vec = self.obs[da_step-1, :]
+        obs_stddev = np.abs(obs_vec) * self.obs_rel_std + self.obs_abs_std
+        obs_error = np.diag(obs_stddev**2)
         return obs_vec, obs_error
 
-    def report(self):
-        """ Report summary information. """
-        pass
-
-    def plot(self):
-        """ Plot relevant model results. """
-        pass
-
     def clean(self):
-        """ Perform any necessary cleanup before exiting. """
+        """ Cleanup before exiting. """
         pass
 
-    def _construct_h_matrix(self):
-        """ Construct the observation operator. """
-        h_matrix = [[1, 0, 0], [0, 1, 0], [0, 0, 1]]
-        for i in range(self.num_params):
-            h_matrix.append([0, 0, 0])
-        h_matrix = np.array(h_matrix).T
-        return h_matrix
+    # internal methods
+    def _create_synthetic_observations(self, state, parameters):
+        """ Create synthetic truth and observations.
+
+        Parameters
+        ----------
+        state : list
+            True value of the initial state [x, y, z].
+        parameters : list
+            True value of the paramters [rho, beta, sigma].
+
+        Returns
+        -------
+        obs : ndarray
+            Values of observations at different times.
+            ``dtype=float``, ``ndim=2``,
+            ``shape=(number of observation times, nstate_obs)``
+        """
+        # create truth
+        time_series = np.arange(0.0, self.t_end + self.dt/2.0, self.dt)
+        truth = solve_lorenz(time_series, state, parameters)
+        # create observations
+        ndt = int(self.da_interval/self.dt)
+        observe_orgstate = [True, False, True]
+        obs_time = time_series[ndt::ndt]
+        obs = truth[ndt::ndt, observe_orgstate]
+        obs_std = np.abs(obs) * np.tile(self.obs_rel_std, (obs.shape[0], 1)) \
+            + np.tile(self.obs_abs_std, (obs.shape[0], 1))
+        obs = obs + np.random.normal(0.0, obs_std)
+        # save
+        time_series = np.expand_dims(time_series, axis=1)
+        obs_time = np.expand_dims(obs_time, axis=1)
+        np.savetxt(self.dir + os.sep + 'truth.dat',
+                   np.append(time_series, truth, axis=1))
+        np.savetxt(self.dir + os.sep + 'obs.dat',
+                   np.append(obs_time, obs, axis=1))
+        np.savetxt(self.dir + os.sep + 'rho.dat',
+                   np.expand_dims(np.array(parameters[0]), axis=1))
+        np.savetxt(self.dir + os.sep + 'params.dat', [self.beta, self.sigma])
+        return obs

@@ -1,0 +1,312 @@
+
+
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>Installing VT-DAInv &mdash; vt_dainv  documentation</title>
+  
+
+  
+  
+  
+  
+
+  
+
+  
+  
+    
+
+  
+
+  
+  
+    <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
+  
+
+  
+
+  
+        <link rel="index" title="Index"
+              href="genindex.html"/>
+        <link rel="search" title="Search" href="search.html"/>
+    <link rel="top" title="vt_dainv  documentation" href="index.html"/>
+        <link rel="next" title="Theory" href="theory.html"/>
+        <link rel="prev" title="VT-DA_Inv Documentation" href="index.html"/> 
+
+  
+  <script src="_static/js/modernizr.min.js"></script>
+
+</head>
+
+<body class="wy-body-for-nav" role="document">
+
+   
+  <div class="wy-grid-for-nav">
+
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search">
+          
+
+          
+            <a href="index.html" class="icon icon-home"> vt_dainv
+          
+
+          
+          </a>
+
+          
+            
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <p class="caption"><span class="caption-text">Contents:</span></p>
+<ul class="current">
+<li class="toctree-l1 current"><a class="current reference internal" href="#">Installing VT-DAInv</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#developers">Developers</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#foam-tau-solver-users">FOAM_Tau_Solver users</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="theory.html">Theory</a></li>
+<li class="toctree-l1"><a class="reference internal" href="tutorial_lorenz.html">Tutorial: Lorenz63</a></li>
+<li class="toctree-l1"><a class="reference internal" href="source_code.html">Source Code</a></li>
+</ul>
+
+            
+          
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" role="navigation" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="index.html">vt_dainv</a>
+        
+      </nav>
+
+
+      
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="index.html">Docs</a> &raquo;</li>
+        
+      <li>Installing VT-DAInv</li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+            
+            <a href="_sources/install.rst.txt" rel="nofollow"> View page source</a>
+          
+        
+      </li>
+    
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <div class="section" id="installing-vt-dainv">
+<h1>Installing VT-DAInv<a class="headerlink" href="#installing-vt-dainv" title="Permalink to this headline">¶</a></h1>
+<p>To install simply clone from the GitHub repository:</p>
+<div class="highlight-default"><div class="highlight"><pre><span></span>cd $INSTALL_LOCATION
+git clone https://github.com/xiaoh/vt_dainv.git
+</pre></div>
+</div>
+<p>Replace <code class="docutils literal"><span class="pre">$INSTALL_LOCATION</span></code> with the path to where you want to install the code.</p>
+<p>When using the code you will need to source the following file in your terminal:</p>
+<div class="highlight-default"><div class="highlight"><pre><span></span>source $INSTALL_LOCATION/vt_dainv/source/init_da
+</pre></div>
+</div>
+<p>Prerequisites:</p>
+<ul>
+<li><p class="first">Python 2.7 or 3.x *</p>
+</li>
+<li><p class="first">Python packages</p>
+<blockquote>
+<div><ul class="simple">
+<li>NumPy</li>
+<li>SciPy</li>
+<li>Matplotlib</li>
+</ul>
+</div></blockquote>
+</li>
+</ul>
+<p>* <em>2.7 required if using FOAM_Tau_Solver</em></p>
+<div class="section" id="developers">
+<h2>Developers<a class="headerlink" href="#developers" title="Permalink to this headline">¶</a></h2>
+<p>Prerequisites:</p>
+<ul>
+<li><p class="first">Sphinx</p>
+</li>
+<li><p class="first">Sphinx packages</p>
+<blockquote>
+<div><ul class="simple">
+<li>RTD theme (read the docs)</li>
+<li>bibtex extension</li>
+</ul>
+</div></blockquote>
+</li>
+</ul>
+<p>In order to use some of our scripts (like a pre-commit hook), we also recommend you install the following:</p>
+<ul class="simple">
+<li>autopep8</li>
+<li>colordiff</li>
+</ul>
+<p>See several useful scripts in the <code class="docutils literal"><span class="pre">devtools</span></code> directory.</p>
+<p>Some notes for developers:</p>
+<ul class="simple">
+<li>Follow pep8 and make sure that at a minimum your code passes <code class="docutils literal"><span class="pre">autopep8</span></code>.</li>
+<li>All top level functions and public methods need a docstring. Follow the NumPy syntax.</li>
+<li>Recompile the documentation before committing if any docstrings have changed.</li>
+<li>If committing something that is incomplete or needs work always mark it with a <code class="docutils literal"><span class="pre">#TODO:</span> <span class="pre">message</span></code> comment.</li>
+<li>Try to keep variable names and style consistent with the rest of the code.</li>
+<li>Always update the documentation immediately if your changes warrant it.</li>
+</ul>
+<p>Updating the documentation:
+The source code is in <code class="docutils literal"><span class="pre">docs/sphinx/</span></code>.
+To compile run <code class="docutils literal"><span class="pre">devtools/build_documentation</span></code>.
+Sometimes it might be required to <code class="docutils literal"><span class="pre">make</span> <span class="pre">clean</span></code> from within <code class="docutils literal"><span class="pre">docs/sphinx/</span></code>.</p>
+</div>
+<div class="section" id="foam-tau-solver-users">
+<h2>FOAM_Tau_Solver users<a class="headerlink" href="#foam-tau-solver-users" title="Permalink to this headline">¶</a></h2>
+<p>If running FOAM_TAU_Solver you will need the following additional prerequisites:</p>
+<ul class="simple">
+<li>OpenFOAM 2.x</li>
+</ul>
+<p>Recommended:</p>
+<ul class="simple">
+<li>ParaView</li>
+<li>ImageMagick</li>
+</ul>
+<p>Also note that you will need to run the code with Python 2.7.</p>
+</div>
+</div>
+
+
+           </div>
+           <div class="articleComments">
+            
+           </div>
+          </div>
+          <footer>
+  
+    <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
+      
+        <a href="theory.html" class="btn btn-neutral float-right" title="Theory" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right"></span></a>
+      
+      
+        <a href="index.html" class="btn btn-neutral" title="VT-DA_Inv Documentation" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left"></span> Previous</a>
+      
+    </div>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &copy; Copyright 2018, carlos.
+
+    </p>
+  </div>
+  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/snide/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+
+  
+
+    <script type="text/javascript">
+        var DOCUMENTATION_OPTIONS = {
+            URL_ROOT:'./',
+            VERSION:'',
+            COLLAPSE_INDEX:false,
+            FILE_SUFFIX:'.html',
+            HAS_SOURCE:  true,
+            SOURCELINK_SUFFIX: '.txt'
+        };
+    </script>
+      <script type="text/javascript" src="_static/jquery.js"></script>
+      <script type="text/javascript" src="_static/underscore.js"></script>
+      <script type="text/javascript" src="_static/doctools.js"></script>
+      <script type="text/javascript" src="https://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+
+  
+
+  
+  
+    <script type="text/javascript" src="_static/js/theme.js"></script>
+  
+
+  
+  
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.StickyNav.enable();
+      });
+  </script>
+   
+
+</body>
+</html>

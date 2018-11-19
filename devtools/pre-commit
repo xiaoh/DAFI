@@ -27,7 +27,7 @@ rm -f errors.log
 
 
 # pep8
-files=`git diff --name-only --cached -- *.py`
+files=`git diff --name-only --cached --diff-filter=AMRd -- *.py`
 for file in $files
 do
     autopep=$(autopep8 -d $file)
