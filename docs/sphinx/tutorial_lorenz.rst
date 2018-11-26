@@ -50,7 +50,7 @@ After less than a minute these two particles are in completely different locatio
 On the other hand we could do experimental measurements.
 However there are several potential downfalls.
 The measurements could be far between (low sampling frequency), have large uncertainty, or be incomplete (measure only a few states).
-Lets assume we do setup an experiment and we are able to measure the the :math:`x' and :math:`x' states but not the :math:`y` state.
+Lets assume we do setup an experiment and we are able to measure the :math:`x` and :math:`z` states but not the :math:`y` state.
 These measurements are taken at some specific sampling frequency and have a known level of inaccuracy.
 Additionally we have some estimate for the initial conditions and parameters.
 

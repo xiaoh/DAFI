@@ -1,5 +1,8 @@
-Installing VT-DAInv
-===================
+Getting Started
+===============
+
+Install
+-------
 
 To install simply clone from the GitHub repository::
 
