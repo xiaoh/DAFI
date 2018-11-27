@@ -12,6 +12,7 @@ Developed by Dr. Heng Xiao's group at Virginia Tech: `Data-Enabled Computational
    install.rst
    theory.rst
    tutorial_lorenz.rst
+   tutorial_diffusion.rst
    source_code.rst
 
 Indices and tables
