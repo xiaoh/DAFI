@@ -67,9 +67,9 @@ class DAFilter(object):
 class DAFilter2(DAFilter):
     """ Parent class for DA filtering techniques.
 
-    This class includes more methods than the DAFilter class.
-    The DAFilter class is a barebones template. DAFilter2 contains
-    several methods (e.g error checking, plotting, reporting) as well
+    This class includes more implemented methods than the DAFilter
+    class. The DAFilter class is a barebones template. DAFilter2
+    contains several methods (e.g error checking, plotting) as well
     as a framework for the main self.solve() method. This can be used
     to quickly create new filter classes if some of the same methods
     are desired.
@@ -269,8 +269,7 @@ class DAFilter2(DAFilter):
 
         # sensitivity only
         if self._sensitivity_only:
-            self.model_obs = self.dyn_model.forward(
-                self.state_vec_analysis, self.da_interval)
+            self.model_obs = self.dyn_model.forward(self.state_vec_analysis)
             if self.ver >= 1:
                 print("\nSensitivity study completed.")
             sys.exit(0)

@@ -1,26 +1,9 @@
-#!/usr/bin/env python
+# Copyright 2018 Virginia Polytechnic Institute and State University.
+""" Perform KL expansion and related field reconstruction. """
 
-# description        :Perform KL expansion and related field reconstruction.
-
-# author             :Jian-Xun Wang (vtwjx@vt.edu)
-# copyright          :Heng Xiao's Group
-# date               :Oct.27, 2015
-# revision           :Nov.01, 2015
-
-##########################################################################
-
-# Import system modules
-# sci computing
+# third party imports
 import numpy as np
 import scipy.sparse as sp
-# system, file operation
-import time
-import pdb
-# plotting
-# import seaborn as sns  # for statistical plotting
-import matplotlib.pyplot as plt  # for plotting
-
-# Import local modules
 
 
 class GaussianProcess:
@@ -93,8 +76,8 @@ class GaussianProcess:
         # "nonstationaryLenFlag should be True or False only!"
         if 'kernelType' not in Arg_covGen:
             kernelType = 'SqExp'
-
-        kernelType = Arg_covGen['kernelType']
+        else:
+            kernelType = Arg_covGen['kernelType']
         # parse the arguments
         if kernelType == 'SqExp':
             # x- length scale array
@@ -249,27 +232,3 @@ class GaussianProcess:
         cov_sparse = sp.coo_matrix(cov)
         covWeighted_sparse = sp.coo_matrix(covWeighted)
         return cov_sparse, covWeighted_sparse
-
-
-if __name__ == '__main__':
-    # Read test data
-    # directory where the test data stored
-    testDir = './verificationData/klExpansion/cavity16/'
-
-    xState = np.loadtxt(testDir + 'cellCenter3D.dat')
-    sigmaField = np.loadtxt(testDir + 'cellSigma3D.dat')
-    lenXField = np.ones(sigmaField.shape)
-    lenYField = np.ones(sigmaField.shape)
-    lenZField = np.ones(sigmaField.shape)
-    weightField = np.loadtxt(testDir + 'cellArea3D.dat')
-    Arg_covGen = {
-        'sigmaField': sigmaField,
-        'lenXField': lenXField,
-        'lenYField': lenYField,
-        'lenZField': lenZField,
-        'weightField': weightField
-    }
-
-    gp = GaussianProcess(xState)  # initial a instance of GaussianProcess class
-    [cov_sparse, covWeighted_sparse] = gp.covGen(Arg_covGen)
-    pdb.set_trace()

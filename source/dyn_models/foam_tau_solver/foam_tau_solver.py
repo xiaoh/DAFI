@@ -36,7 +36,6 @@ except ImportError as e:
 from dainv.dyn_model import DynModel
 from dainv.utilities import read_input_data, replace, extract_list_from_string
 from random_field import deltaTauRandomField as ranF
-from random_field import KLReducedModel as kl
 from dyn_models.foam_tau_solver import foamFileOperation as foamOp
 from dyn_models.foam_tau_solver import ReynoldsStressRF as ReRF
 from dyn_models.foam_tau_solver.sigmaFieldOperations import computeSigmaField
@@ -54,8 +53,6 @@ class FoamTauSolver(DynModel):
     NTensor = 6                         # dimension of physical tensor
     NVec = 3                            # dimension of physical vector
     NScalar = 1                         # dimension of physical scalar
-
-    # overide parent methods
 
     def __init__(self, Ns, DAInterval, Tend, max_pseudo_time, ModelInput):
         """
@@ -785,11 +782,11 @@ class FoamTauSolver(DynModel):
         self.nstate_obs = self.Nvariable * self.NcellObs
 
         # output perturbation of physical compoents
-        self.outputDeltaComponents()
+        self._outputDeltaComponents()
 
         # output physical components
         tic = time.time()
-        self.getPhyComponents()
+        self._getPhyComponents()
         toc = time.time()
         print "\ncollapse time for getPhyComponents ", toc - tic, "s"
 
@@ -876,17 +873,17 @@ class FoamTauSolver(DynModel):
         self.XPlot = np.zeros([self.TotalDASteps, self.nstate, Ns])
         self.XCMeanPlot = np.zeros([self.TotalDASteps, self.Npara])
 
-    def __str__(self):
-        s = 'FoamTauSolver dynamic model with:' + \
-            '\n ...'
-        return s
+        self.nextEndTime = self.forward_interval
+        self.init_state = np.zeros(self.nstate)
 
-    def __repr__(self):
+    def __str__(self):
         s = 'FoamTauSolver instance'
         return s
 
+    # required methods
+
     def generate_ensemble(self):
-        """ Generate OF case folders and X, HX
+        """ Generate OF case folders and X, HX.
 
         Args:
         DAInterval: DA step interval
@@ -1018,10 +1015,10 @@ class FoamTauSolver(DynModel):
         return (X, HX)
 
     def forecast_to_time(self, X, nextEndTime):
-
+        """ Do nothing (static model). """
         return X
 
-    def forward(self, X, nextEndTime):
+    def forward(self, X):
         """ Call the dynamic core to evolve the ensemble states to time $tDest$
 
         Args:
@@ -1047,12 +1044,12 @@ class FoamTauSolver(DynModel):
         # modify OpenFoam files
         # To rewrite all files that changed for OpenFOAM
 
-        nextEndTime += self.forward_interval
-        newStartTime = nextEndTime - self.forward_interval
+        self.nextEndTime += self.forward_interval
+        newStartTime = self.nextEndTime - self.forward_interval
 
         self._modifyOpenFOAM(X, newStartTime)
         self.deltaTau = self.Tau - self.TauOld
-        newStopTime = "%.6f" % nextEndTime
+        newStopTime = "%.6f" % self.nextEndTime
 
         # propagate to newStopTime
         caseCount = np.linspace(1, self.Ns, self.Ns)
@@ -1123,12 +1120,13 @@ class FoamTauSolver(DynModel):
         # make state ensemble matrix: X = [u,v,w,omegaXi,omegaEta]
         X = np.vstack((self.XU, self.XC))
 
-        DAstep = (nextEndTime - self.forward_interval) / self.forward_interval
+        DAstep = (self.nextEndTime - self.forward_interval) / \
+            self.forward_interval
 
         if (self.txtfileOutput):
             np.savetxt(self._debugFolderName + 'XC_' + str(DAstep), self.XC)
         self.XPlot[self.iDAStep] = X
-        self.tPlot[self.iDAStep] = nextEndTime
+        self.tPlot[self.iDAStep] = self.nextEndTime
         self.iDAStep += self.iDAStep
 
         if self.pseudoObs == 0:
@@ -1144,17 +1142,12 @@ class FoamTauSolver(DynModel):
             self.caseSolver,
             self.pseudoObs)
 
-        return HX # (X, HX) TODO
+        return HX
 
     def get_obs(self, next_end_time):
-        obs = self.Observe(next_end_time) #obs_perturb = self.Observe(next_end_time)
-        R_obs = self.get_Robs()
-        return obs, R_obs #obs_perturb, R_obs
-
-    def get_Robs(self):
-        ''' Return the observation covariance.
-        '''
-        return self.Robs.todense()
+        obs = self._observe(next_end_time)
+        R_obs = self.Robs.todense().A
+        return obs, R_obs
 
     def clean(self):
         ''' Perform any necessary cleanup before exiting.
@@ -1169,15 +1162,9 @@ class FoamTauSolver(DynModel):
         os.remove('UM.txt')
         os.remove('tau.txt')
 
-    def plot(self):
-        pass
+    # internal methods
 
-    def report(self):
-        pass
-
-    # public methods
-
-    def getPhyComponents(self):
+    def _getPhyComponents(self):
         """
         Output physical components (c1, c2, c3, xi, eta, k, XC1, XC2, VA, VB, VC)
         """
@@ -1273,7 +1260,7 @@ class FoamTauSolver(DynModel):
         np.savetxt(self._debugFolderName + 'init/VB_base', self.VBField_base)
         np.savetxt(self._debugFolderName + 'init/VC_base', self.VCField_base)
 
-    def outputDeltaComponents(self):
+    def _outputDeltaComponents(self):
         """
         Output perturbation in 6 components
         """
@@ -1289,52 +1276,6 @@ class FoamTauSolver(DynModel):
                    'init/deltaVB_s', self.deltaVBM[:, :, 0])
         np.savetxt(self._debugFolderName +
                    'init/deltaVC_s', self.deltaVCM[:, :, 0])
-
-    def plotTensorEnsemble(self, TensorEnsemble, TensorName, TensorBaseline,
-                           DAStep, numComponent, figPath='./'):
-        """
-
-        Arg:
-        TensorEnsemble: Tensor Matrix Ensemble, e.g., Tau[Ns, Ncell, 6]
-        TensorName: Tensor name, e.g., Tau
-        TensorBaseline: the truth (or observation) of this tensor
-        DAStep: in which DA step
-        figPath: path where to store the fig
-
-        Regurn:
-        None
-        """
-        flag = 1
-        fig = plt.figure()
-        plt.hold(True)
-        TensorBaselineComponent = TensorBaseline[:, numComponent - 1]
-        plt.plot(TensorBaselineComponent, 'ro', lw=2,
-                 label='observation', markevery=1, mfc='none')
-        for i in range(self.Ns):
-            TensorComponent = TensorEnsemble[i, :, numComponent - 1]
-            if (flag == 1):
-                plt.plot(TensorComponent, '-g', lw=0.5,
-                         label='state sample', markevery=1, mfc='none')
-            else:
-                plt.plot(TensorComponent, '-g', lw=0.5,
-                         markevery=1, mfc='none')
-            flag = 0
-        plt.hold(False)
-        plt.xlabel('cell number', fontsize=16)
-        plt.ylabel(TensorName + '-' + str(numComponent), fontsize=16)
-        plt.xticks(fontsize=16)
-        plt.yticks(fontsize=16)
-        lg = plt.legend(loc=2)
-        lg.draw_frame(False)
-        plt.savefig(
-            figPath +
-            TensorName +
-            str(numComponent) +
-            '-DA_' +
-            str(DAStep) +
-            '.eps')
-
-    # private methods
 
     def _SplitEnsemble(self, X):
         """ Function is to Split X to XU, XC
@@ -1761,7 +1702,7 @@ class FoamTauSolver(DynModel):
 
         return UObs, TauObs
 
-    def Observe(self, nextEndTime):
+    def _observe(self, nextEndTime):
         """ Function is to get observation Data from experiment
 
         Arg:
@@ -1869,7 +1810,7 @@ class FoamTauSolver(DynModel):
             if irow == self.Ns:
                 break
             Obs = self.ObsX
-        return ObsVec #, obs_perturb TODO
+        return ObsVec
 
     def _constructHMatrix(self):
 
@@ -1971,126 +1912,3 @@ class FoamTauSolver(DynModel):
             H = sp.coo_matrix((weight3.flatten(1), (idx3[:, 0], idx3[:, 1])), shape=(
                 self.nstate_obs, self.nstate))
         return H
-
-    def _cap(self, upBound, lowBound, Vec):
-
-        for i in range(len(Vec)):
-            if Vec[i] > upBound:
-                Vec[i] = upBound
-            elif Vec[i] < lowBound:
-                Vec[i] = lowBound
-        return Vec
-
-    def ObservePertObs(self, nextEndTime):
-        """ Function is to get observation Data from experiment
-
-        Arg:
-
-        Returns:
-        Obs: nonperturbed observation matrix
-        pertObs: perturbation of Observation
-        """
-        if self.TauOnFlag:
-            ObsFile = 'obsX'
-            absErr = np.zeros(9)
-            absErrSigma = np.zeros(9)
-            relErr = np.zeros(9)
-            relErrSigma = np.zeros(9)
-        else:
-            ObsFile = 'obsVelocity'
-            absErr = np.zeros(3)
-            absErrSigma = np.zeros(3)
-            relErr = np.zeros(3)
-            relErrSigma = np.zeros(3)
-
-        ObsVec = np.loadtxt(
-            ospt.join(
-                self.caseNameObservation,
-                'observationData/' +
-                ObsFile))
-        pertObsVec = np.zeros(ObsVec.shape)
-        pertObs = np.zeros([self.Nvariable * self.NcellObs, self.Ns])
-        iobs = 0
-        smallVal = 1e-10
-        rSigmaVec = np.zeros(self.nstate_obs)
-        if self.TauOnFlag:
-            for i in range(self.nstate_obs / 9):
-                for j in range(9):
-                    # absolute error
-                    absErrSigma[j] = self.ObsSigmaFixedVec[j]
-                    absErr[j] = (
-                        np.random.normal(
-                            self.rmu,
-                            absErrSigma[j],
-                            1))[0]
-
-                    # relative error
-                    relErrSigma[j] = abs(
-                        self.ObsRelCoeffVec[j] * ObsVec[iobs]) + smallVal
-                    relErr[j] = (
-                        np.random.normal(
-                            self.rmu,
-                            relErrSigma[j],
-                            1))[0]
-
-                    ObsVec[iobs + j] = ObsVec[iobs + j]
-                    pertObsVec[iobs + j] = (absErr[j] +
-                                            relErr[j]) * self.ObsErrCoeff
-                    rSigmaVec[iobs + j] = (relErrSigma[j] + absErrSigma[j])**2
-                iobs = iobs + 9
-        else:
-            for i in range(self.nstate_obs / 3):
-                for j in range(3):
-                    # absolute error
-                    absErrSigma[j] = self.ObsSigmaFixedVec[j]
-                    absErr[j] = (
-                        np.random.normal(
-                            self.rmu,
-                            absErrSigma[j],
-                            1))[0]
-
-                    # relative error
-                    relErrSigma[j] = abs(
-                        self.ObsRelCoeffVec[j] * ObsVec[iobs]) + smallVal
-                    relErr[j] = (
-                        np.random.normal(
-                            self.rmu,
-                            relErrSigma[j],
-                            1))[0]
-
-                    ObsVec[iobs + j] = ObsVec[iobs + j]
-                    pertObsVec[iobs + j] = (absErr[j] +
-                                            relErr[j]) * self.ObsErrCoeff
-                    rSigmaVec[iobs + j] = (relErrSigma[j] + absErrSigma[j])**2
-                iobs = iobs + 3
-
-        rSigmaVec = self.ObsRmaCoeff * rSigmaVec
-        if self.TauOnFlag:
-            UObs, TauObs = self._splitUTauObs(ObsVec)
-            USigma, TauSigma = self._splitUTauObs(rSigmaVec)
-            if self.normalizeFlag:
-                UObs = UObs / self.U0
-                TauObs = TauObs / self.K0
-                USigma = USigma / self.U0 / self.U0
-                TauSigma = TauSigma / self.K0 / self.K0
-                ObsVec = np.hstack((UObs, TauObs))
-                pertObsVec = pertObsVec / self.U0
-                rSigmaVec = np.hstack((USigma, TauSigma))
-        else:
-            if self.normalizeFlag:
-                ObsVec = ObsVec / self.U0
-                pertObsVec = pertObsVec / self.U0
-                rSigmaVec = rSigmaVec / self.U0 / self.U0
-
-        self.Robs = sp.diags(rSigmaVec, 0)
-
-        # Assemble vector to matrix ObsU
-        irow = 0
-        while True:
-            self.ObsX[:, irow] = ObsVec
-            pertObs[:, irow] = pertObsVec
-            irow = irow + 1
-            if irow == self.Ns:
-                break
-            Obs = self.ObsX
-        return Obs, pertObs
