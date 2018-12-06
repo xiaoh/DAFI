@@ -22,17 +22,16 @@ License
     along with OpenFOAM.  If not, see <http://www.gnu.org/licenses/>.
 
 Application
-    steadyTauFoam
+    nutFoam
 
 Description
-    Steady-state solver for incompressible flow with specified Reynold
-    stress. Created from simpleFoam.
+    Steady-state solver for incompressible flow with specified eddy viscocity.
+    Adapted from simpleFoam.
 
 \*---------------------------------------------------------------------------*/
 
 #include "fvCFD.H"
 #include "singlePhaseTransportModel.H"
-#include "RASModel.H"
 #include "simpleControl.H"
 #include "fvIOoptionList.H"
 
@@ -63,7 +62,7 @@ int main(int argc, char *argv[])
             #include "pEqn.H"
         }
 
-        turbulence->correct();
+        // turbulence->correct();
 
         runTime.write();
 
