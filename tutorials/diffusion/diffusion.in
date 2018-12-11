@@ -8,10 +8,11 @@ mu_init 0.8
 # constant sigma
 sigma 5
 
-# relative standard deviation for coefficient of KL expansion
+# relative and absolute standard deviation for coefficient of KL expansion
 x_rel_std  0.1
 x_abs_std 0.8
 std_coef 2
 
-# relative standard deviation for observation
+# relative and absolute standard deviation for observation
 obs_rel_std      0.1
+obs_abs_std	 0.0001

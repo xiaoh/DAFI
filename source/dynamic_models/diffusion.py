@@ -1,5 +1,5 @@
 # Copyright 2018 Virginia Polytechnic Institute and State University.
-""" Dynamic model for solving the Lorenz system.
+""" Dynamic model for solving one dimension heat diffusion system.
 """
 
 # standard library imports
@@ -19,16 +19,11 @@ from data_assimilation.utilities import read_input_data
 
 
 class Solver(DynModel):
-    """ Dynamic model for solving the one dimension heat diffusion equation.
-
-    The state vector includes the temperature (u) and the K-L expansion
-    coefficient (omega). The observations consist of temperature (u) at observed
-    position.
-    """
+    """ Dynamic model for solving one dimension heat diffusion equation. """
 
     def __init__(self, nsamples, da_interval, t_end, max_pseudo_time,
                  model_input):
-        """ Initialize the dynamic model and parse input file.
+        """ Parse input file and assign values to class attributes.
 
         Parameters
         ----------
@@ -38,10 +33,8 @@ class Solver(DynModel):
             Time interval between data assimilation steps.
         t_end : float
             Final time.
-        forward_interval : float
-            forward interval at current time.
-        max_pseudo_time : float
-            Max forward step.
+        max_da_iteration : int
+            Maximum number of DA iterations at a given time-step.
         input_file : str
             Input file name.
 
@@ -49,75 +42,78 @@ class Solver(DynModel):
         ----
         Inputs in ``model_input``:
             * **n_mode** (``int``) -
-              number of modes for K-L expansion.
+              Number of modes for K-L expansion.
+            * **mu_init** (``float``) -
+              Prior diffusivity.
+            * **sigma** (``float``) -
+              Constant variance for kernel function.
             * **x_rel_std** (``float``) -
               Relative standard deviation of prior state vector.
+            * **x_abs_std** (``float``) -
+              Absolute standard deviation of prior state vector.
+            * **std_coef** (``float``) -
+              coefficient of standard deviation of prior state vector.
             * **obs_rel_std** (``float``) -
               Relative standard deviation of observation.
         """
 
-        self.name = '1D heat diffusion Equation'
-        # number of samples in the ensemble
+        # save the main input
         self.nsamples = nsamples
-        # Data assimilation inverval
         self.da_interval = da_interval
-        # End time
         self.t_end = t_end
-        # Extract forward Model Input parameters
+        self.max_da_iteration = max_da_iteration
+
+        # read input file
         param_dict = read_input_data(model_input)
-        # forward time inverval
-        self.forward_interval = 1
-        # forward maximum pseudo step
-        self.max_pseudo_time = max_pseudo_time
-        # diffential space step Todo move to input file
-        self.space_interval = 0.1
-        # maximum max_length Todo move to input file
-        self.max_length = 5
-        # relative standard deviation of KL coefficient
         self.x_rel_std = float(param_dict['x_rel_std'])
-        # absolute standard deviation of KL coefficient
         self.x_abs_std = float(param_dict['x_abs_std'])
-        # standard deviation coefficient
         self.std_coef = float(param_dict['std_coef'])
-        # relative standard deviation of observation
         self.obs_rel_std = float(param_dict['obs_rel_std'])
-        # number of modes
+        self.obs_abs_std = float(param_dict['obs_abs_std'])
         self.nmodes = int(param_dict['nmodes'])
-        # constant sigma
         self.sigma = float(param_dict['sigma'])
-        # spatial coordinate
+        mu_init = float(param_dict['mu_init'])
+
+        # required attributes
+        self.name = '1D heat diffusion Equation'
+        self.space_interval = 0.1
+        self.max_length = 5
+        self.nstate_obs = 10
+
+        # create spatial coordinate and save
         self.x_coor = np.arange(
             0, self.max_length+self.space_interval, self.space_interval)
-        # initial state vector
-        self.state_vec_init = np.zeros(self.x_coor.shape)
-        # state augmentation
+        np.savetxt('x_coor.dat', self.x_coor)
+
+        # initialize state vector
+        self.omega_init = np.zeros((self.nmodes))
+        self.init_state = np.zeros(self.x_coor.shape)
         self.augstate_init = np.concatenate((
-            self.state_vec_init, np.zeros(self.nmodes)))
+            self.init_state, np.zeros(self.nmodes)))
         # dimension of state space
-        self.nstate = len(self.state_vec_init)
+        self.nstate = len(self.init_state)
         # dimension of augmented state space
         self.nstate_aug = len(self.augstate_init)
-        # dimension of observation space
-        self.nstate_obs = 10
-        # source term fx
+
+        # create source term fx
         S = np.zeros(self.nstate)
         for i in range(self.nstate - 1):
             S[i] = math.sin(2*np.pi*self.x_coor[i]/5)
         S = np.mat(S).T
         self.fx = S.A
-        # calculate the modes
+
+        # create modes for K-L expansion
         cov = np.zeros((self.nstate, self.nstate))
         for i in range(self.nstate):
             for j in range(self.nstate):
                 cov[i][j] = self.sigma * self.sigma * math.exp(
                     -abs(self.x_coor[i]-self.x_coor[j])**2/self.max_length**2)
-        # eigenvalue decomposition
         eigVals, eigVecs = sp.linalg.eigsh(cov, k=self.nmodes)
-        # sort the eig-value and eig-vectors in a descending order
         ascendingOrder = eigVals.argsort()
         descendingOrder = ascendingOrder[::-1]
         eigVals = eigVals[descendingOrder]
         eigVecs = eigVecs[:, descendingOrder]
+
         # calculate KL modes: eigVec * sqrt(eigVal)
         KL_mode_raw = np.zeros([self.nstate, self.nmodes])
         for i in np.arange(self.nmodes):
@@ -127,14 +123,10 @@ class Solver(DynModel):
         for i in range(self.nmodes):
             self.KL_mode[:, i] = KL_mode_raw[:, i] / \
                 np.linalg.norm(KL_mode_raw[:, i])
-
-        np.savetxt('x_coor.dat', self.x_coor)
         np.savetxt('KLmodes.dat', self.KL_mode)
 
         # project the baseline to KL basis
-        mu_init = float(param_dict['mu_init'])
-        log_mu_init = [np.log(mu_init)]*self.nstate
-        self.omega_init = np.zeros((self.nmodes))
+        log_mu_init = [np.log(mu_init)] * self.nstate
         for i in range(self.nmodes):
             self.omega_init[i] = np.trapz(
                 log_mu_init * self.KL_mode[:, i], x=self.x_coor)
@@ -143,11 +135,12 @@ class Solver(DynModel):
         np.savetxt('omega_init.dat', self.omega_init)
 
     def __str__(self):
-        s = '1-D heat diffusion model.'
-        return s
+        str_info = '1-D heat diffusion model.'
+        return str_info
 
+    # required methods
     def generate_ensemble(self):
-        """ Generate initial ensemble state X and observation HX
+        """ Return states at the first data assimilation time-step.
 
         Args:
         -----
@@ -190,16 +183,13 @@ class Solver(DynModel):
 
         return state_vec_current
 
-    def forward(self, X):
-        """
-        Returns states at the next pseudo time.
+    def forward(self, state_vec):
+        """ Forward the states to observation space (from X to HX).
 
         Parameters
         ----------
-        X: ndarray
+        state_vec: ndarray
             current state variables
-        next_pseudo_time: float
-            next pseudo time
 
         Args:
         -----
@@ -213,15 +203,14 @@ class Solver(DynModel):
 
         Returns
         -------
-        X: ndarray
-            forwarded ensemble state variables by forward model
         model_obs: ndarray
-            ensemble realization in observation space
+            ensemble realization in observation space (HX).
+            ``dtype=float``, ``ndim=2``,
+            ``shape=(nstate_obs, nsamples)``
         """
-
         u_mat = np.zeros((self.nstate, self.nsamples))
         model_obs = np.zeros((self.nstate_obs, self.nsamples))
-        omega = X[self.nstate:, :]
+        omega = state_vec[self.nstate:, :]
         # solve model in observation space for each sample
         for i_nsample in range(self.nsamples):
             mu_dot = np.zeros(self.nstate-1)
@@ -265,94 +254,44 @@ class Solver(DynModel):
         Parameters
         ----------
         next_end_time : float
-            Next end time.
+            Next end time at which observation is requested.
 
         Returns
         -------
         obs : ndarray
-            Ensemble observations. ``dtype=float``, ``ndim=2``,
-            ``shape=(nstate_obs, nsamples)``
-        obs_perturb : ndarray
-            Observation perturbation. ``dtype=float``, ``ndim=2``,
+            Ensemble observations.
+            ``dtype=float``, ``ndim=2``,
             ``shape=(nstate_obs, nsamples)``
         obs_error : ndarray
-            Observation error covariance. ``dtype=float``, ``ndim=2``,
+            Observation error covariance (R).
+            ``dtype=float``, ``ndim=2``,
             ``shape=(nstate_obs, nstate_obs)``
         """
-
-        obs = self.observe(next_end_time)
-        obs_error = self.get_obs_error()
+        truth_mat = np.zeros((self.nstate_obs))
+        # obtain the truth via forward model
+        truth_mat = self._obs_forward()
+        obs = truth_mat.reshape(-1)
+        std_obs = self.obs_rel_std * obs + self.obs_abs_std
+        # import pdb; pdb.set_trace()
+        self.obs_error = np.diag(std_obs**2)
+        obs_error = self.obs_error
         return obs, obs_error
-
-    def get_obs_error(self):
-        """ Return the observation error covariance. """
-        return self.obs_error.todense()
-
-    def report(self):
-        """ Report summary information. """
-        pass
-
-    def plot(self):
-        """ Plot relevant model results. """
-        pass
 
     def clean(self):
         """ Perform any necessary cleanup before exiting. """
         pass
 
-    def observe(self, next_end_time):
-        """ Return the observation data at a given time.
-
-        Parameters
-        ----------
-        next_end_time: float
-            Next end time.
-
-        Returns
-        -------
-        obs_mat: ndarray
-            Ensemble observations. ``dtype=float``, ``ndim=2``,
-            ``shape=(nstate_obs, nsamples)``
-        obs_perturb: ndarray
-            Ensemble observation perturbation. ``dtype=float``, ``ndim=2``,
-            ``shape=(nstate_obs, nsamples)``
-        """
-
-        truth_mat = np.zeros((self.nstate_obs))
-        # obtain the truth via forward model
-        truth_mat = self._obs_forward()
-        observe_vec = truth_mat.reshape(-1)
-        observe_vec[9] = 0.0001
-
-        self.obs_error = sp.diags((self.obs_rel_std*observe_vec)**2, 0)
-        R = self.obs_error.todense()
-        obs_error_mean = np.zeros(self.nstate_obs)
-        return observe_vec
-
     # private method
     def _obs_forward(self):
-        """
-        Returns synthetic truth.
-
-        Args:
-        -----
-        x_coor : x coordinate
-        nstate : size of state space
-        nsamples : number of samples
-        nstate_obs : size of observation space
-        nmodes : number of modes
-        KL_mode : basis set of KL expansion
-        space_interval : space interval
-        fx : force term
+        """Return synthetic truth.
 
         Returns
         -------
-        X: ndarray
-            forwarded ensemble state variables by forward model
         model_obs: ndarray
-            ensemble realizations in observation space
+            ensemble realizations in observation space.
+            ``dtype=float``, ``ndim=2``,
+            ``shape=(nstate_obs, nsamples)``
         """
-
         u_mat = np.zeros((self.nstate))
         model_obs = np.zeros((self.nstate_obs))
 

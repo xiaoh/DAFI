@@ -10,6 +10,9 @@ import numpy as np
 import matplotlib.pyplot as plt
 from matplotlib.lines import Line2D
 
+#local imports
+from dainv.utilities import read_input_data
+
 if not os.path.exists('figures/'):
     os.mkdir('figures/')
 
@@ -152,15 +155,19 @@ def plot_mu_truth(nmodes):
 
 
 def main():
-    # plot observation space
+    # read required parameters
+    da_dict = read_input_data('dainv.in')
+    final_step = int(da_dict['max_da_iteration'])
+    param_dict = read_input_data('diffusion.in')
+    nmodes = int(param_dict['nmodes'])
+    # make prior and posterior plot in observation space
     for i in range(2):
         if i == 0:
             case = 'prior'
             step = 1
         if i == 1:
             case = 'posterior'
-            step = 100
-        nmodes = 3
+            step = final_step
         fig1, ax1 = plt.subplots()
         ax1 = plt.subplot(111)
         p1, p2 = plot_samples(step)
@@ -191,7 +198,7 @@ def main():
             step = 1
         if i == 1:
             case = 'posterior'
-            step = 100
+            step = final_step
         fig2, ax2 = plt.subplots()
         ax2 = plt.subplot(111)
         v1 = plot_inferred_mu(step, nmodes)
@@ -225,6 +232,8 @@ def main():
         ax3 = plt.subplot(111)
         o, om = plot_omega_samples(ind, step, nmodes)
         o_truth = plot_omega_truth(ind, step)
+        plt.xlabel('iterations')
+        plt.ylabel('omega')
         line = Line2D([0], [0], linestyle='-', color='g', alpha=0.5)
         label_1 = 'samples'
         label_2 = om[0].get_label()
