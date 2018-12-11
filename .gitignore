@@ -1,6 +1,8 @@
 
 *.pyc
+__pycache__
 .DS_Store
 docs/sphinx/_build/
-log.*
-__pycache__
+
+linux64GccDPOpt/
+*.dep

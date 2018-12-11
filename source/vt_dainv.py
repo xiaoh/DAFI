@@ -15,18 +15,18 @@ Required inputs:
       Path to input file for the dynamic model.
     * **da_filter** (``str``) -
       Name of filter from dainv.da_filtering module.
-    * **t_end** (``float``) -
-      Final time step.
-    * **da_interval** (``float``) -
-      Time interval to perform data assimilation.
+    * **max_da_iteration** (``int``, ``1``) -
+      Maximum number of DA iterations at each timestep.
     * **nsamples** (``int``) -
       Number of samples for ensemble.
 
 Note
 ----
 Optional inputs:
-    * **max_da_iteration** (``int``, ``1``) -
-      Maximum number of DA iterations at each timestep.
+    * **t_end** (``float``) -
+      Final time step.
+    * **da_t_interval** (``float``) -
+      Time interval to perform data assimilation.
     * **plot_flag** (``bool``, ``False``) -
       Call the filter's plot method.
     * **save_flag** (``bool``, ``True``) -
@@ -81,15 +81,19 @@ def main():
     dyn_model = param_dict['dyn_model']
     input_file_dm = param_dict['dyn_model_input']
     da_filter = param_dict['da_filter']
-    t_end = float(param_dict['t_end'])
-    da_interval = float(param_dict['da_interval'])
     nsamples = int(param_dict['nsamples'])
+    max_da_iteration = int(param_dict['max_da_iteration'])
     # optional inputs - set default if not specified.
+    # dynamic (time progressing) problems
     try:
-        max_da_iteration = int(
-            param_dict['max_da_iteration'])
+        t_end = float(param_dict['t_end'])
     except:
-        max_da_iteration = 1
+        t_end = 1.0
+    try:
+        da_t_interval = float(param_dict['da_t_interval'])
+    except:
+        da_t_interval = 1.0
+    # output flags
     try:
         plot_flag = ast.literal_eval(param_dict['plot_flag'])
     except:
@@ -98,6 +102,7 @@ def main():
         save_flag = ast.literal_eval(param_dict['save_flag'])
     except:
         save_flag = True
+    # debug flags
     try:
         rand_seed_flag = ast.literal_eval(param_dict['rand_seed_flag'])
     except:
@@ -110,7 +115,7 @@ def main():
     # remove all the inputs meant for this file, mfu_main.py.
     # what is left are inputs meant for the specific DA filter method used.
     main_inputs = [
-        'dyn_model', 'dyn_model_input', 'da_filter', 't_end', 'da_interval',
+        'dyn_model', 'dyn_model_input', 'da_filter', 't_end', 'da_t_interval',
         'nsamples', 'max_da_iteration', 'plot_flag',
         'save_flag', 'rand_seed_flag', 'rand_seed']
     for inp in main_inputs:
@@ -126,12 +131,12 @@ def main():
     # dynamic model
     DynModel = getattr(
         importlib.import_module('dyn_models.' + dyn_model), 'Solver')
-    dynamic_model = DynModel(nsamples, da_interval, t_end, max_da_iteration,
+    dynamic_model = DynModel(nsamples, da_t_interval, t_end, max_da_iteration,
                              input_file_dm)
     # inverse model
     InvFilter = getattr(importlib.import_module('dainv.da_filtering'),
                         da_filter)
-    inverse_model = InvFilter(nsamples, da_interval, t_end, max_da_iteration,
+    inverse_model = InvFilter(nsamples, da_t_interval, t_end, max_da_iteration,
                               dynamic_model, param_dict)
 
     # solve the inverse problem
