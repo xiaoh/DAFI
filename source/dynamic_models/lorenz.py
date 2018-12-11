@@ -9,8 +9,8 @@ import numpy as np
 from scipy.integrate import ode
 
 # local import
-from dainv.dyn_model import DynModel
-import dainv.utilities as utils
+from data_assimilation.dyn_model import DynModel
+import data_assimilation.utilities as utils
 
 
 def solve_lorenz(time_series, init_state, parameters):

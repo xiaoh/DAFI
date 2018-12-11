@@ -10,7 +10,7 @@ import subprocess
 import numpy as np
 
 # local imports
-from dainv import utilities as utils
+from data_assimilation import utilities as utils
 
 
 class TestUtilities(unittest.TestCase):
@@ -66,7 +66,7 @@ class TestEnKF(unittest.TestCase):
         except:
             self.tearDown()
             os.makedirs(self.dir)
-        self.main_input_file = 'dainv.in'
+        self.main_input_file = 'dafi.in'
         self.model_input_file = 'lorenz.in'
         self.obs_file = self.dir + os.sep + 'truth.dat'
 
@@ -120,7 +120,7 @@ class TestEnKF(unittest.TestCase):
         _create_model_input(self.dir + os.sep + self.model_input_file)
 
         bash_command = "cd {};".format(self.dir) + \
-            "vt_dainv.py {} > log.enkf".format(self.main_input_file)
+            "dafi.py {} > log.dafi".format(self.main_input_file)
         subprocess.call(bash_command, shell=True)
 
     def tearDown(self):

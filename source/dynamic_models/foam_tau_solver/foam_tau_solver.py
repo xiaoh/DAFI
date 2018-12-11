@@ -33,12 +33,12 @@ except ImportError as e:
     pass
 
 # local imports
-from dainv.dyn_model import DynModel
-from dainv.utilities import read_input_data, replace, extract_list_from_string
+from data_assimilation.dyn_model import DynModel
+from data_assimilation.utilities import read_input_data, replace, extract_list_from_string
 from random_field import deltaTauRandomField as ranF
-from dyn_models.foam_tau_solver import foamFileOperation as foamOp
-from dyn_models.foam_tau_solver import ReynoldsStressRF as ReRF
-from dyn_models.foam_tau_solver.sigmaFieldOperations import computeSigmaField
+import foam_utilities as foamOp
+from dynamic_models.foam_tau_solver import ReynoldsStressRF as ReRF
+from dynamic_models.foam_tau_solver.sigmaFieldOperations import computeSigmaField
 
 
 class FoamTauSolver(DynModel):

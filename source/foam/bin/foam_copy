@@ -1,0 +1,21 @@
+#!/usr/bin/env bash
+
+src=$1
+dest=$2
+
+if [ ! -d $src ]; then
+    echo Source dir: $src : does not exist.
+    exit 1
+fi
+
+if [ -d $dest ]; then
+    echo Desination dir: $dest : already exist.
+    echo Exiting now ...
+    exit 1
+else
+    mkdir $dest
+    if [ -d $src/0 ]; then cp -r $src/0  $dest; fi
+    if [ -d $src/0.org ]; then cp -r $src/0.org  $dest; fi
+    cp -r $src/system  $dest
+    cp -r $src/constant $dest   
+fi 

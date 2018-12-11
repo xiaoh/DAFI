@@ -1,0 +1,36 @@
+#!/usr/bin/env bash
+
+actionFile="/bin/rm -f"
+actionDir="/bin/rm -fr"
+
+if [ "x$1" = "x-h" ]; then
+  echo "Usage: $0 dir1 ..." >&2
+  exit 0
+fi
+
+if [ $# -eq 0 ] || [ "x$1" = "x-f" ]; then
+  DIRS=.
+else
+  DIRS=$@
+fi
+
+for d in $DIRS; do
+  echo "Cleaning directory '$d'"
+  if [ ! -d $d/system ]; then
+    echo "ERROR: '$d' is not an OpenFOAM case" >&2
+    exit 1
+  fi
+
+  if [ ! -f $d/LOCK ]; then
+      $actionDir  $d/0.[0-9]* $d/[1-9]* $d/postProcessing  > /dev/null 2>&1
+      $actionFile $d/log.* $d/*.log $d/*~ > /dev/null 2>&1
+
+      if [ -d $d/processor0 ]; then
+          $actionDir $d/processor*/0.[0-9]* $d/processor*/[1-9]* > /dev/null 2>&1
+      fi
+  else
+      echo "Skipping '$d' (locked)"
+  fi
+
+done
+

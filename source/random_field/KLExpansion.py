@@ -1,10 +1,31 @@
-# Copyright 2018 Virginia Polytechnic Institute and State University.
-""" Perform KL expansion and related field reconstruction. """
+#!/usr/bin/env python
 
-# third party imports
+# description        :Perform KL expansion and related field reconstruction.
+
+# author             :Jian-Xun Wang (vtwjx@vt.edu)
+# copyright          :Heng Xiao's Group
+# date               :Oct.27, 2015
+# revision           :Nov.01, 2015
+
+##########################################################################
+
+# Import system modules
+# sci computing
 import numpy as np
 import scipy.sparse as sp
-import numpy.linalg as la
+import scipy.stats as ss
+import numpy.linalg as LA
+# system, file operation
+import pdb
+import time
+# plotting
+# import seaborn as sns  # for statistical plotting
+import matplotlib.pyplot as plt  # for plotting
+import os
+
+# Import local modules
+from random_field import StochasticProcess as mSP
+from dynamic_models.foam_tau_solver import foamFileOperation as foamOp
 
 
 class klExpansion:
@@ -12,7 +33,7 @@ class klExpansion:
 
     Description:
         Perform Karhunen-Loeve expansion to represent of a stochastic process (random field).
-        KLModes: \sqrt{\lambda_i} * f(x)_i; (\lambda_i, f(x)_i) is an eigenpair.
+        KLModes: \sqrt{\lambda_i} * f(x)_i; (\lambda_i, f(x)_i) is an eigenpair
         field: \sum_{i=1}^{nKL}{omega[i] * KLModes[i]}
 
     Arg:
@@ -20,10 +41,8 @@ class klExpansion:
         covWeihted   :weighted covariance matrix of stochastic process (W*cov*W). (N by N)
         meanField    :array of mean value of stochastic process (default is zero mean) (N by 1)
     Notes: N is number of cells
+
     """
-    # TODO: convert docstring to Numpy format. Follow same format as rest of source code. Check info correct. Improve.
-    # TODO: Same for all the methods below.
-    # TODO: Variable names + other pep8. General Cleanup.
 
     def __init__(self, cov=None, covWeighted=None, meanField=None):
 
@@ -86,7 +105,7 @@ class klExpansion:
         eigVecs = eigVecs[:, descendingOrder]
         # weighted eigVec
         W = np.diag(np.sqrt(weightField))
-        eigVecsWeighted = np.dot(la.inv(W), eigVecs)
+        eigVecsWeighted = np.dot(LA.inv(W), eigVecs)
         # KLModes is eigVecWeighted * sqrt(eigVal)
         KLModes = np.zeros([len(weightField), nKL])
         for i in np.arange(nKL):
@@ -102,6 +121,23 @@ class klExpansion:
         print nKL, 'KL modes can cover', kLRatio, 'of Random field'
 
         return eigVals, KLModes
+
+    def writeKLModesToOF(self, dirName):
+        for iterN in range(self.nKL):
+            filename = dirName + '/0/mode'
+            cmd = 'cp ' + filename + ' ' + filename + str(iterN)
+            os.system(cmd)
+            os.system(
+                'sed -i \'s/mode/mode' +
+                str(iterN) +
+                '/\' ' +
+                filename +
+                str(iterN))
+            foamOp.writeScalarToFile(
+                self.KLModes[:, iterN], filename + str(iterN))
+
+        # pdb.set_trace()
+        #stop_flag = 1
 
     def KLProjection(self, Field, KLModes, eigVals, weightField):
         """project the random field onto KL modes,
@@ -139,5 +175,76 @@ class klExpansion:
 
         if self.meanField is None:
             self.meanField = np.zeros([N, 1])
+        # pdb.set_trace()
         recField = self.meanField + np.dot(KLModes, omegaVec)
         return recField
+
+    def reconstructField_full(self):
+        """reconstruct a random field with full covariance matrix
+
+        Args:
+            TBD
+
+        Return:
+            TBD
+
+        """
+        # TODO: To be implemented
+        pass
+
+
+if __name__ == '__main__':
+
+    # Generate a sparse covariance using module
+    # StochasticProcess.GaussianProcess
+    # directory where the test data stored
+    testDir = './verificationData/klExpansion/mesh10/'
+    #testDir = './verificationData/klExpansion/cavity16/'
+    xState = np.loadtxt(testDir + 'cellCenter3D.dat')
+    sigmaField = np.loadtxt(testDir + 'cellSigma3D.dat')
+    lenXField = 0.1 * np.ones(sigmaField.shape)
+    lenYField = 0.1 * np.ones(sigmaField.shape)
+    lenZField = 0.1 * np.ones(sigmaField.shape)
+    weightField = np.loadtxt(testDir + 'cellArea3D.dat')
+    truncateTol = -np.log(1e-10)
+
+    Arg_covGen = {
+        'sigmaField': sigmaField,
+        'lenXField': lenXField,
+        'lenYField': lenYField,
+        'lenZField': lenZField,
+        'weightField': weightField,
+        'truncateTol': truncateTol
+    }
+    tic = time.time()
+    # initial a instance of GaussianProcess class
+    gp = mSP.GaussianProcess(xState)
+    cov_sparse, covWeighted_sparse = gp.covGen(Arg_covGen)
+    toc = time.time()
+    elapseT = toc - tic
+    print "elapse Time for generate cov_sparse", elapseT
+    pdb.set_trace()
+    tic = time.time()
+    # initialize the KLExpansion class
+    kl = klExpansion(cov_sparse, covWeighted_sparse)
+    #kl = klExpansion(cov_sparse)
+    nKL = 2
+    Arg_calKLModes = {
+        'nKL': nKL,
+        'weightField': weightField
+    }
+    [eigVal, KLModes] = kl.calKLModes(Arg_calKLModes)
+    toc = time.time()
+    elapseT = toc - tic
+    print "elapse Time for KL-Expansion", elapseT
+    pdb.set_trace()
+    KLModes_true = np.loadtxt(testDir + 'KLmodes_UQTK.dat')
+    KLModes_true = KLModes_true[:, 2:]
+
+    err = np.max(np.abs(KLModes / KLModes_true) - 1.0)
+    print "the max of the misfit of KLModes with UQTK result is ", err
+
+    np.random.seed(10)
+    omegaVec = ss.norm.rvs(size=nKL)
+    omegaVec = np.array([omegaVec]).T
+    recField = kl.reconstructField_Reduced(omegaVec, KLModes)

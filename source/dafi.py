@@ -4,7 +4,7 @@
 
 Example
 -------
-    >>> vt_dainv.py <input_file>
+    >>> dafi.py <input_file>
 
 Note
 ----
@@ -53,7 +53,7 @@ import importlib
 import numpy as np
 
 # local imports
-from dainv.utilities import read_input_data
+from data_assimilation.utilities import read_input_data
 # user-specified inverse model filter imported later with importlib
 # user-specified dynamic model imported later with importlib
 
@@ -74,9 +74,15 @@ def _get_input():
     return input_file
 
 
+def print_code_version():
+    bash_command = "git rev-parse HEAD > .dafi_rev"
+    os.system(bash_command)
+
+
 def main():
     # required inputs
     input_file_da = _get_input()
+    print_code_version()
     param_dict = read_input_data(input_file_da)
     dyn_model = param_dict['dyn_model']
     input_file_dm = param_dict['dyn_model_input']
@@ -130,12 +136,12 @@ def main():
         np.random.seed(rand_seed)
     # dynamic model
     DynModel = getattr(
-        importlib.import_module('dyn_models.' + dyn_model), 'Solver')
+        importlib.import_module('dynamic_models.' + dyn_model), 'Solver')
     dynamic_model = DynModel(nsamples, da_t_interval, t_end, max_da_iteration,
                              input_file_dm)
     # inverse model
-    InvFilter = getattr(importlib.import_module('dainv.da_filtering'),
-                        da_filter)
+    InvFilter = getattr(
+        importlib.import_module('data_assimilation.da_filtering'), da_filter)
     inverse_model = InvFilter(nsamples, da_t_interval, t_end, max_da_iteration,
                               dynamic_model, param_dict)
 
@@ -155,6 +161,7 @@ def main():
         print('\nSaving ...')
         inverse_model.save()
     inverse_model.clean()
+    print('\nDone.')
 
 
 if __name__ == "__main__":

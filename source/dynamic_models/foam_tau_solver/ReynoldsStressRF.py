@@ -4,7 +4,7 @@ import matplotlib.pylab as plt
 import os.path as osp
 import pdb
 from mpl_toolkits.mplot3d import Axes3D
-from dyn_models.foam_tau_solver.foamFileOperation import *
+from foam_utilities import *
 
 
 class ReynoldsStressRF:

@@ -1,0 +1,24 @@
+#!/usr/bin/env bash
+
+if [ "x$1" = "x-h" ]; then
+  echo "Usage: $0 dir" >&2
+  exit 0
+fi
+
+if [ $# -eq 0 ]; then
+    DIRS=.
+else    
+    DIR=$1
+fi
+
+if [ ! -d $DIR/system ]; then
+    echo "ERROR: '$DIR' is not an OpenFOAM case" >&2
+    exit 1
+fi
+
+cd $DIR
+. $WM_PROJECT_DIR/bin/tools/RunFunctions
+application=`getApplication`
+echo "Running $application in $DIR
+runApplication $application
+

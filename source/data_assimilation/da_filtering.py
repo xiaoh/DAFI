@@ -13,7 +13,7 @@ from numpy import linalg as la
 import matplotlib.pyplot as plt
 
 # local import
-import dainv.utilities as utils
+import data_assimilation.utilities as utils
 
 
 # parent classes (templates)
@@ -36,6 +36,8 @@ class DAFilter(object):
             Iteration interval between data assimilation steps.
         t_end : float
             Final time.
+        max_da_iteration : int
+            Maximum number of DA iterations at a given time-step.
         dyn_model : DynModel
             Dynamic model.
         input_dict : dict[str]
@@ -181,7 +183,7 @@ class DAFilter2(DAFilter):
         try:
             self._save_dir = input_dict['save_dir']
         except:
-            self._save_dir = os.curdir + os.sep + 'results_da'
+            self._save_dir = os.curdir + os.sep + 'results_dafi'
         try:
             self._verb = int(input_dict['verbosity'])
         except:

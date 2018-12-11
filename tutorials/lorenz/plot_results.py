@@ -11,8 +11,8 @@ import numpy as np
 import matplotlib.pyplot as plt
 
 # local import
-import dainv.utilities as utils
-from dyn_models.lorenz import solve_lorenz
+import data_assimilation.utilities as utils
+from dynamic_models.lorenz import solve_lorenz
 
 # what to plot
 plot_truth = True
@@ -28,11 +28,11 @@ nparams = 1
 observe_state = [True, False, True]
 
 # create directory
-savedir = 'figures'
+savedir = 'results_postprocess'
 utils.create_dir(savedir)
 
 # directories where results are saved
-da_dir = "results_da"
+da_dir = "results_dafi"
 lorenz_dir = "results_lorenz"
 
 # enable LaTex

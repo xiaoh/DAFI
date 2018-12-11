@@ -1,6 +1,6 @@
     // Momentum predictor
 
-    nut = Foam::max(nut, nutMin); // JL
+    nut = Foam::max(nut, nutMin);
     tmp<fvVectorMatrix> UEqn
     (
         fvm::div(phi, U)

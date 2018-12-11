@@ -7,7 +7,7 @@ import os
 import os.path as ospt
 
 # OpenFOAM file operator
-from dyn_models.foam_tau_solver import foamFileOperation as foamOp
+import foam_utilities as foamOp
 
 
 def computeSigmaField(scatteredSigmaFile, cellCenters, kernel, lengthScale):

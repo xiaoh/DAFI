@@ -23,10 +23,10 @@ License
     Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA
 
 Application
-    getObsMatrix
+    getHostCellIdx
 
 Description
-    Compute observation matrix H from a mesh and a list of given points.
+    Compute host cell index from a mesh and a list of given points.
 
 
 \*---------------------------------------------------------------------------*/
@@ -45,8 +45,8 @@ int main(int argc, char *argv[])
 #   include "createTime.H"
 #   include "createMesh.H"
 #   include "createFiles.H"
-  
-  // vectorIOList pts(0.5, 0.5, 1);  // observation points    
+
+  // vectorIOList pts(0.5, 0.5, 1);  // observation points
 
   vectorIOList obsPts(
 		   IOobject
@@ -64,14 +64,14 @@ int main(int argc, char *argv[])
 
   Info << "# of obs pts: " << obsPts.size() << endl;
 
-  
+
   forAll(obsPts, pointI)
     {
       vector pt = obsPts[pointI];
       Info << "finding host for point: " << pt << endl;
 
       label hostCellI = mesh.findCell(pt);
-      
+
       // bound box of host mesh
       const boundBox & meshBB = mesh.bounds();
 
@@ -105,7 +105,7 @@ int main(int argc, char *argv[])
               << "Point outside host mesh domain!" << endl
                   << abort(FatalError);
       }
-      
+
 
 
 

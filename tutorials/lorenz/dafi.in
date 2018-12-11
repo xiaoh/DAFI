@@ -1,23 +1,23 @@
 
-## Required vt_dainv.py inputs
+## Required dafi.py inputs
 dyn_model lorenz
 dyn_model_input ./lorenz.in
 da_filter EnKF
-t_end 60.0
-da_interval 0.5
 nsamples 100
+max_da_iteration 1
 
-## Optional vt_dainv.py inputs
-#max_da_iteration 1
-#save_flag True
+## Optional dafi.py inputs
+t_end 60.0
+da_t_interval 0.5
 #plot_flag True
+#save_flag True
 #rand_seed_flag False
 #rand_seed 1 
 
 ## Optional inputs for DAFilter2 class filters
 #perturb_obs True
-#save_dir ./results_da
-#verbosity 1 # change to 2 to print more information, 0 for less.
+#save_dir ./results_dafi
+#verbosity 1 
 #debug_flag False
 #debug_dir debug
 #sensitivity_only False

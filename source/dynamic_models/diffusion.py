@@ -14,15 +14,15 @@ import scipy.sparse as sp
 from scipy.integrate import ode
 
 # local import
-from dainv.dyn_model import DynModel
-from dainv.utilities import read_input_data
+from data_assimilation.dyn_model import DynModel
+from data_assimilation.utilities import read_input_data
 
 
 class Solver(DynModel):
     """ Dynamic model for solving the one dimension heat diffusion equation.
 
-    The state vector includes the temperature (u) and the K-L expansion 
-    coefficient (omega). The observations consist of temperature (u) at observed 
+    The state vector includes the temperature (u) and the K-L expansion
+    coefficient (omega). The observations consist of temperature (u) at observed
     position.
     """
 
@@ -155,7 +155,7 @@ class Solver(DynModel):
         nsamples : number of samples
         nstate_obs : size of observation space
         nmodes : number of modes
-        x_rel_std : relative standard deviation of state vector 
+        x_rel_std : relative standard deviation of state vector
         x_abs_std : absolute standard deviation of state vector
         std_coef : standard deviation coefficient
         omega_init : initial KL-expansion coefficient
@@ -315,7 +315,7 @@ class Solver(DynModel):
             ``shape=(nstate_obs, nsamples)``
         obs_perturb: ndarray
             Ensemble observation perturbation. ``dtype=float``, ``ndim=2``,
-            ``shape=(nstate_obs, nsamples)``  
+            ``shape=(nstate_obs, nsamples)``
         """
 
         truth_mat = np.zeros((self.nstate_obs))
