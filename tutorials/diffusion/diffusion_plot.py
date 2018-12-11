@@ -10,7 +10,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 from matplotlib.lines import Line2D
 
-#local imports
+# local imports
 from dainv.utilities import read_input_data
 
 if not os.path.exists('figures/'):

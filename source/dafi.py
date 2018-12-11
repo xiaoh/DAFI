@@ -75,7 +75,7 @@ def _get_input():
 
 
 def print_code_version():
-    bash_command = "git rev-parse HEAD > .dafi_rev"
+    bash_command = "git rev-parse HEAD > .dafi_rev 2> /dev/null"
     os.system(bash_command)
 
 
