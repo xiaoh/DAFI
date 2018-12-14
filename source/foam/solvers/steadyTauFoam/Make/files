@@ -1,3 +1,0 @@
-steadyTauFoam.C
-
-EXE = $(FOAM_USER_APPBIN)/steadyTauFoam

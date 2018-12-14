@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 # Copyright 2018 Virginia Polytechnic Institute and State University.
 """ Collection of different filtering techniques. """
 

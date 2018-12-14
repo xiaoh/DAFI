@@ -35,7 +35,7 @@ except ImportError as e:
 # local imports
 from data_assimilation.dyn_model import DynModel
 from data_assimilation.utilities import read_input_data, replace, extract_list_from_string
-from random_field import deltaTauRandomField as ranF
+from random_field_org import deltaTauRandomField as ranF
 import foam_utilities as foamOp
 from dynamic_models.foam_tau_solver import ReynoldsStressRF as ReRF
 from dynamic_models.foam_tau_solver.sigmaFieldOperations import computeSigmaField

@@ -44,6 +44,7 @@
         mesh
     );
 
+    Info<< "Reading field Tau\n" << endl;
     volSymmTensorField Tau 
     (
         IOobject
