@@ -8,7 +8,7 @@ import os
 import numpy as np
 from scipy.integrate import ode
 
-# local import
+# local imports
 from data_assimilation.dyn_model import DynModel
 import data_assimilation.utilities as utils
 
@@ -99,7 +99,8 @@ class Solver(DynModel):
         t_end : float
             Final time.
         max_da_iteration : int
-            Maximum number of DA iterations at a given time-step.
+            Not used. Maximum number of DA iterations at a given
+            time-step.
         input_file : str
             Input file name.
         """
@@ -198,10 +199,6 @@ class Solver(DynModel):
         state_vec : ndarray
             Updated ensemble matrix of states (Xf).
             ``dtype=float``, ``ndim=2``, ``shape=(nstate, nsamples)``
-        model_obs : ndarray
-            Updated ensemble matrix of states in observation space (HXf).
-            ``dtype=float``, ``ndim=2``,
-            ``shape=(nstate_obs, nsamples)``
         """
         # create time series
         start_time = end_time - self.da_interval

@@ -79,14 +79,9 @@ class DynModel(object):
         state_vec : ndarray
             Updated ensemble matrix of states (Xf).
             ``dtype=float``, ``ndim=2``, ``shape=(nstate, nsamples)``
-        model_obs : ndarray
-            Updated ensemble matrix of states in observation space (HXf).
-            ``dtype=float``, ``ndim=2``,
-            ``shape=(nstate_obs, nsamples)``
         """
         state_vec = np.zeros([self.nstate, self._nsamples])
-        model_obs = np.zeros([self.nstate_obs, self._nsamples])
-        return state_vec, model_obs
+        return state_vec
 
     def forward(self, state_vec):
         """ Forward the states to observation space (from X to HX).
@@ -100,8 +95,7 @@ class DynModel(object):
         Returns
         -------
         model_obs: ndarray
-            Ensemble in observation space.
-            ``dtype=float``, ``ndim=2``,
+            Ensemble in observation space. ``dtype=float``, ``ndim=2``,
             ``shape=(nstate_obs, nsamples)``
         """
         model_obs = np.zeros([self.nstate_obs, self._nsamples])

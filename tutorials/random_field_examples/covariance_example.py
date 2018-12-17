@@ -46,7 +46,7 @@ kernel_args = {'coords': coords, 'length_scales': length_scales,
 # generate covariance
 cov = rf.covariance.generate_cov(
     kernel_func, perform_checks=perform_checks, corr_flag=corr_flag,
-    stddev_field=stddev_field, verbose=verbose, **kernel_args)
+    stddev=stddev_field, verbose=verbose, **kernel_args)
 
 # plot covariance matrix
 cov_plot = rf.covariance.sparse_to_nan(cov)

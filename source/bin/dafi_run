@@ -12,7 +12,7 @@ START=$(date +%s.%N)
 
 dafi.py dafi.in &> log.dafi
 
-END=$(date +%s.%N)
-DIFF=$(echo "$END - $START" | bc)
-echo $DIFF  > log.time
+END=$(date +%s.%#N)
+let "DIFF = $END - $START"
+printf "%.2f" "$DIFF"  &> log.time
 

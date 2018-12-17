@@ -23,9 +23,9 @@ Required inputs:
 Note
 ----
 Optional inputs:
-    * **t_end** (``float``) -
+    * **t_end** (``float``, ``1``) -
       Final time step.
-    * **da_t_interval** (``float``) -
+    * **da_t_interval** (``float``, ``1``) -
       Time interval to perform data assimilation.
     * **plot_flag** (``bool``, ``False``) -
       Call the filter's plot method.

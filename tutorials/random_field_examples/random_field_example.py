@@ -42,8 +42,8 @@ cov = rf.covariance.generate_cov(
 nspatial_dims = 2
 mean = np.zeros(ncells)
 weight_field = np.ones(ncells)
-rfield = rf.GaussianProcess(mean, nspatial_dims, cov=cov,
-                            weight_field=weight_field)
+rfield = rf.GaussianProcess(mean=mean, cov=cov, weight_field=weight_field,
+                            nspatial_dims=nspatial_dims)
 
 # calculate KL modes
 rfield.calc_kl_modes(nmodes)

@@ -1,0 +1,14 @@
+Nxc 16;
+Nxh 17;
+Nyt 15;
+Nyb 15;
+middle 1.518;
+split 2.018;
+Rt 0.0307846485637;
+Rb 32.4837231106;
+
+//Stretch ratio: 1.2822601
+//Resolution Information:
+//Dx+ * Dy+ * Dz+ = 34.155597723 x [1.99996553877, 64.9663267921] x 853.889943074
+//Note: dy+ is half of Dy+, that is 1.0 
+//Based on smallest wall unit. The number are divided by 2 if based on upper wall unit.

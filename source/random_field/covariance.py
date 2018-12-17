@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 # Copyright 2018 Virginia Polytechnic Institute and State University.
 """ Generate covariance matrices. """
 
@@ -12,9 +11,10 @@ import scipy.sparse.linalg as spla
 
 
 # generate covariance matrix
-def generate_cov(kernel, corr_flag=False, stddev_field=None, sp_tol=0.001,
-                 tol=1e-05, perform_checks=False, verbose=0, **kwargs):
-    """ Create a sparse covariance matrix from specified kernel and tolrances.
+def generate_cov(kernel, corr_flag=False, stddev=None, stddev_constant=True,
+                 sp_tol=0.001, perform_checks=False, tol=1e-05, verbose=0,
+                 **kwargs):
+    """ Create a sparse covariance matrix from specified kernel and tolerances.
 
     This is a wrapper for th specified kernel.
     Either the covariance or correlation kernel can be specified. Indicate
@@ -28,7 +28,7 @@ def generate_cov(kernel, corr_flag=False, stddev_field=None, sp_tol=0.001,
         print("Calculating covariance matrix.")
     if corr_flag:
         # check inputs
-        if stddev_field is None:
+        if stddev is None:
             error_message = 'The standard deviation field needs to be ' + \
                 'specified when using a correlation kernel.'
             raise ValueError(error_message)
@@ -46,7 +46,7 @@ def generate_cov(kernel, corr_flag=False, stddev_field=None, sp_tol=0.001,
                     'between -1.0 and 1.0.'
                 raise ValueError(error_message)
         # calculate covariance
-        cov = corr_to_cov(corr, stddev_field)
+        cov = corr_to_cov(corr, stddev, stddev_constant)
     else:
         cov = kernel(**kwargs)
     # convert covariance to sparse matrix
@@ -77,11 +77,14 @@ def generate_cov(kernel, corr_flag=False, stddev_field=None, sp_tol=0.001,
     return cov
 
 
-def corr_to_cov(corr_mat, stddev_field):
+def corr_to_cov(corr, stddev, stddev_constant=True):
     """ Convert a correlation matrix to a covariance matrix. """
-    stddev_field = np.atleast_2d(stddev_field)
-    stddev2_mat = np.dot(stddev_field.T, stddev_field)
-    return corr_mat*stddev2_mat
+    if stddev_constant:
+        cov = stddev**2 * corr
+    else:
+        stddev = np.atleast_2d(stddev)
+        cov = corr*np.dot(stddev.T, stddev)
+    return cov
 
 
 def dense_to_sparse(mat, tol):

@@ -1,0 +1,12 @@
+forward_interval     300
+nkl_modes            10
+
+verbose              1
+
+generate_pseudo_obs  False
+generate_kl          False
+generate_hmat        False
+
+enable_parallel      True
+ncpu                 2
+

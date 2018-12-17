@@ -8,13 +8,222 @@ import os.path as ospt
 import shutil
 import re
 import tempfile
-import pdb
+import subprocess
 
 # local import
-from data_assimilation import utilities as Tool
+from data_assimilation import utilities as util
 
-global unitTest
-unitTest = False
+
+def get_number_cells(foam_case='.'):
+    bash_command = "checkMesh -case " + foam_case + \
+        " -time '0' | grep '    cells:' > tmp.ncells"
+    subprocess.call(bash_command, shell=True)
+    file = open('tmp.ncells', 'r')
+    line = fin.read()
+    file.close()
+    os.remove('tmp.ncells')
+    return int(line.split()[-1])
+
+
+def get_cell_coordinates(foam_case='.'):
+    bash_command = "writeCellCentres -case " + foam_case + " -time '0' " + \
+        "&> /dev/null"
+    subprocess.call(bash_command, shell=True)
+    coords = read_cell_coordinates(ospt.join(foam_case, '0'))
+    os.remove(ospt.join(foam_case, '0', 'ccx'))
+    os.remove(ospt.join(foam_case, '0', 'ccy'))
+    os.remove(ospt.join(foam_case, '0', 'ccz'))
+    return coords
+
+
+def get_cell_volumes(foam_case='.'):
+    bash_command = "writeCellCentres -case " + foam_case + " -time '0' " + \
+        "&> /dev/null"
+    subprocess.call(bash_command, shell=True)
+    os.rename(ospt.join(foam_case, '0', 'V'), ospt.join(foam_case, '0', 'cv'))
+    vol = read_cell_volumes(ospt.join(foam_case, '0'))
+    os.remove(ospt.join(foam_case, '0', 'cv'))
+    os.remove(ospt.join(foam_case, '0', 'ccx'))
+    os.remove(ospt.join(foam_case, '0', 'ccy'))
+    os.remove(ospt.join(foam_case, '0', 'ccz'))
+    return vol
+
+
+def read_cell_coordinates(file_dir):
+    """
+
+    Arg:
+    file_dir: The directory path of file of ccx, ccy, and ccz
+
+    Regurn:
+    coordinate: matrix of (x, y, z)
+    """
+    coorX = ospt.join(file_dir, "ccx")
+    coorY = ospt.join(file_dir, "ccy")
+    coorZ = ospt.join(file_dir, "ccz")
+
+    resMidx = extract_scalar(coorX)
+    resMidy = extract_scalar(coorY)
+    resMidz = extract_scalar(coorZ)
+
+    # write it in Tautemp
+    fout = open('xcoor.txt', 'w')
+    glob_patternx = resMidx.group()
+    glob_patternx = re.sub(r'\(', '', glob_patternx)
+    glob_patternx = re.sub(r'\)', '', glob_patternx)
+    fout.write(glob_patternx)
+    fout.close()
+    xVec = np.loadtxt('xcoor.txt')
+    os.remove('xcoor.txt')
+
+    fout = open('ycoor.txt', 'w')
+    glob_patterny = resMidy.group()
+    glob_patterny = re.sub(r'\(', '', glob_patterny)
+    glob_patterny = re.sub(r'\)', '', glob_patterny)
+    fout.write(glob_patterny)
+    fout.close()
+    yVec = np.loadtxt('ycoor.txt')
+    os.remove('ycoor.txt')
+
+    fout = open('zcoor.txt', 'w')
+    glob_patternz = resMidz.group()
+    glob_patternz = re.sub(r'\(', '', glob_patternz)
+    glob_patternz = re.sub(r'\)', '', glob_patternz)
+    fout.write(glob_patternz)
+    fout.close()
+    zVec = np.loadtxt('zcoor.txt')
+    os.remove('zcoor.txt')
+
+    coordinate = np.vstack((xVec, yVec, zVec))
+    coordinate = coordinate.T
+    return coordinate
+
+
+def read_cell_volumes(file_dir):
+    """
+
+    Arg:
+    file_dir: The directory path of file of cv
+
+    Regurn:
+    coordinate: vector of cell area
+    """
+    cellVolume = ospt.join(file_dir, "cv")
+    resMid = extract_scalar(cellVolume)
+
+    # write it in Tautemp
+    fout = open('cellVolume.txt', 'w')
+    glob_patternx = resMid.group()
+    glob_patternx = re.sub(r'\(', '', glob_patternx)
+    glob_patternx = re.sub(r'\)', '', glob_patternx)
+    fout.write(glob_patternx)
+    fout.close()
+    cvVec = np.loadtxt('cellVolume.txt')
+    os.remove('cellVolume.txt')
+    cvVec = np.array([cvVec])
+    cellVolume = cvVec.T
+    return cellVolume
+
+
+def extract_scalar(scalar_file):
+    """ subFunction of readTurbStressFromFile
+        Using regular expression to select scalar value out
+
+    Args:
+    scalar_file: The directory path of file of scalar
+
+    Returns:
+    resMid: scalar selected;
+            you need use resMid.group() to see the content.
+    """
+    fin = open(scalar_file, 'r')  # need consider directory
+    line = fin.read()  # line is k file to read
+    fin.close()
+    # select k as ()pattern (Using regular expression)
+    patternMid = re.compile(r"""
+        \(                                                   # match"("
+        \n                                                   # match next line
+        (
+        [\+\-]?[\d]+([\.][\d]*)?([Ee][+-]?[\d]+)?            # match figures
+        \n                                                   # match next line
+        )+                                                   # search greedly
+        \)                                                   # match")"
+    """, re.DOTALL | re.VERBOSE)
+    resMid = patternMid.search(line)
+
+    return resMid
+
+
+def read_scalar_from_file(file_name):
+    """
+
+    Arg:
+    file_name: The file name of scalar file in OpenFOAM form
+
+    Regurn:
+    scalar file in vector form
+    """
+    resMid = extract_scalar(file_name)
+
+    # write it in Tautemp
+    fout = open('temp.txt', 'w')
+    glob_patternx = resMid.group()
+    glob_patternx = re.sub(r'\(', '', glob_patternx)
+    glob_patternx = re.sub(r'\)', '', glob_patternx)
+    fout.write(glob_patternx)
+    fout.close()
+    scalarVec = np.loadtxt('temp.txt')
+    os.remove('temp.txt')
+    return scalarVec
+
+
+def write_scalar_to_file(Scalar, ScalarFile):
+    """Write the modified scalar to the scalar the OpenFOAM file
+
+    Args:
+    Scalar: E.g. DeltaXi or DeltaEta
+    ScalarFile: path of the Scalar file in OpenFOAM
+
+    Returns:
+    None
+
+    """
+
+    # Find openFoam scalar file's pattern'
+    (resStartk, resEndk) = extractTensorPattern(ScalarFile)
+
+    tempFile = 'scalarTemp'
+    np.savetxt('scalarTemp', Scalar)
+
+    # read scalar field
+    fin = open(tempFile, 'r')
+    field = fin.read()
+    fin.close()
+    # revise k
+
+    fout = open(ScalarFile, 'w')
+    fout.write(resStartk.group())
+    fout.write("\n")
+    fout.write(field)
+    fout.write(resEndk.group())
+    fout.close()
+
+    os.remove('scalarTemp')
+
+
+def read_vector_from_file(UFile):
+    """
+    """
+    resMid = extractVector(UFile)
+    fout = open('Utemp', 'w')
+    glob_pattern = resMid.group()
+    glob_pattern = re.sub(r'\(', '', glob_pattern)
+    glob_pattern = re.sub(r'\)', '', glob_pattern)
+    fout.write(glob_pattern)
+    fout.close()
+    vector = np.loadtxt('Utemp')
+    os.remove('Utemp')
+    return vector
 
 
 def readTurbStressFromFile(tauFile):
@@ -35,12 +244,10 @@ def readTurbStressFromFile(tauFile):
     glob_pattern = re.sub(r'\)', '', glob_pattern)
 
     tau = glob_pattern
-    # pdb.set_trace()
     fout.write(tau)
     fout.close()
 
     tau = np.loadtxt('tau.txt')
-    # pdb.set_trace();
     return tau
 
 
@@ -62,29 +269,11 @@ def readTensorFromFile(tauFile):
     glob_pattern = re.sub(r'\)', '', glob_pattern)
 
     tau = glob_pattern
-    # pdb.set_trace()
     fout.write(tau)
     fout.close()
 
     tau = np.loadtxt('tau.txt')
-    # pdb.set_trace();
     return tau
-
-
-def readVectorFromFile(UFile):
-    """
-    """
-    resMid = extractVector(UFile)
-    fout = open('Utemp', 'w')
-    glob_pattern = resMid.group()
-    glob_pattern = re.sub(r'\(', '', glob_pattern)
-    glob_pattern = re.sub(r'\)', '', glob_pattern)
-    fout.write(glob_pattern)
-    fout.close()
-    vector = np.loadtxt('Utemp')
-    return vector
-
-    pdb.set_trace()
 
 
 def readVelocityFromFile(UFile):
@@ -177,48 +366,23 @@ def readTurbCellAreaFromFile(fileDir):
     Regurn:
     coordinate: vector of cell area
     """
-    cellVolumn = fileDir + "cv"
+    cellVolume = fileDir + "cv"
     dvfile = fileDir + "dz.dat"
-    resMid = extractScalar(cellVolumn)
+    resMid = extractScalar(cellVolume)
 
     # write it in Tautemp
-    fout = open('cellVolumn.txt', 'w')
+    fout = open('cellVolume.txt', 'w')
     glob_patternx = resMid.group()
     glob_patternx = re.sub(r'\(', '', glob_patternx)
     glob_patternx = re.sub(r'\)', '', glob_patternx)
     fout.write(glob_patternx)
     fout.close()
-    cvVec = np.loadtxt('cellVolumn.txt')
+    cvVec = np.loadtxt('cellVolume.txt')
     cvVec = np.array([cvVec])
     dz = np.loadtxt(dvfile)
     cellArea = cvVec / dz
     cellArea = cellArea.T
     return cellArea
-
-
-def readTurbCellVolumeFromFile(fileDir):
-    """
-
-    Arg:
-    fileDir: The directory path of file of cv
-
-    Regurn:
-    coordinate: vector of cell area
-    """
-    cellVolumn = fileDir + "cv"
-    resMid = extractScalar(cellVolumn)
-
-    # write it in Tautemp
-    fout = open('cellVolumn.txt', 'w')
-    glob_patternx = resMid.group()
-    glob_patternx = re.sub(r'\(', '', glob_patternx)
-    glob_patternx = re.sub(r'\)', '', glob_patternx)
-    fout.write(glob_patternx)
-    fout.close()
-    cvVec = np.loadtxt('cellVolumn.txt')
-    cvVec = np.array([cvVec])
-    cellVolume = cvVec.T
-    return cellVolume
 
 
 def readScalarFromFile(fileName):
@@ -459,7 +623,6 @@ def _extractLocPattern(locFile):
         ((\ )|;|(\n))+          # match space or nextline or ;
     """, re.DOTALL | re.VERBOSE)
     resEnd = patternEnd.search(line)
-    # pdb.set_trace()
     return resStart, resEnd
 
 
@@ -484,7 +647,6 @@ def writeLocToFile(coords, locFile):
     fin.close()
     # read patterns
     (resStart, resEnd) = _extractLocPattern(locFile)
-    # pdb.set_trace()
     fout = open(locFile, 'w')
     fout.write(resStart.group())
     fout.write("\n")
@@ -516,8 +678,6 @@ def writeTurbStressToFile(tau, tauFile):
     # read patterns
     (resStartTau, resEndTau) = extractTensorPattern(tauFile)
 
-    if(unitTest):
-        tauFile = "./Tau"
     fout = open(tauFile, 'w')
     fout.write(resStartTau.group())
     fout.write("\n")
@@ -557,39 +717,7 @@ def writeVelocityToFile(U, UFile):
     fout.close()
 
 
-def writeScalarToFile(Scalar, ScalarFile):
-    """Write the modified scalar to the scalar the OpenFOAM file
-
-    Args:
-    Scalar: E.g. DeltaXi or DeltaEta
-    ScalarFile: path of the Scalar file in OpenFOAM
-
-    Returns:
-    None
-
-    """
-
-    # Find openFoam scalar file's pattern'
-    (resStartk, resEndk) = extractTensorPattern(ScalarFile)
-
-    tempFile = 'scalarTemp'
-    np.savetxt('scalarTemp', Scalar)
-
-    # read scalar field
-    fin = open(tempFile, 'r')
-    field = fin.read()
-    fin.close()
-    # revise k
-
-    fout = open(ScalarFile, 'w')
-    fout.write(resStartk.group())
-    fout.write("\n")
-    fout.write(field)
-    fout.write(resEndk.group())
-    fout.close()
-
-
-def genFolders(Npara, Ns, caseName, caseNameObservation, DAInterval, Tau):
+def org_genFolders(Npara, Ns, caseName, caseNameObservation, DAInterval, Tau):
     """ Function:to generate case folders
 
     Args:
@@ -605,7 +733,6 @@ def genFolders(Npara, Ns, caseName, caseNameObservation, DAInterval, Tau):
     # remove previous ensemble case files
     os.system('rm -fr ' + caseName + '-tmp_*')
     os.system('rm -fr ' + caseName + '_benchMark')
-    # pdb.set_trace()
     writeInterval = "%.6f" % DAInterval
     ii = 0
     caseCount = np.linspace(1, Ns, Ns)
@@ -626,14 +753,13 @@ def genFolders(Npara, Ns, caseName, caseNameObservation, DAInterval, Tau):
 
         # Replace case writeInterval
         rasFile = ospt.join(os.getcwd(), tmpCaseName, "system", "controlDict")
-        Tool.replace(rasFile, "<writeInterval>", writeInterval)
+        util.replace(rasFile, "<writeInterval>", writeInterval)
 
         ii += 1
 
     # generate observation folder
     if(ospt.isdir(caseNameObservation)):
         shutil.rmtree(caseNameObservation)
-    # pdb.set_trace()
     shutil.copytree(caseName, caseNameObservation)  # copy
     # prepare case directory
     rasFile = ospt.join(
@@ -641,7 +767,7 @@ def genFolders(Npara, Ns, caseName, caseNameObservation, DAInterval, Tau):
         caseNameObservation,
         "system",
         "controlDict")
-    Tool.replace(rasFile, "<writeInterval>", writeInterval)
+    util.replace(rasFile, "<writeInterval>", writeInterval)
 
 
 def callFoam(ensembleCaseName, caseSolver, pseudoObs, parallel=False):

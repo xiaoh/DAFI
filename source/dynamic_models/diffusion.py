@@ -13,7 +13,7 @@ from numpy import linalg as la
 import scipy.sparse as sp
 from scipy.integrate import ode
 
-# local import
+# local imports
 from data_assimilation.dyn_model import DynModel
 from data_assimilation.utilities import read_input_data
 

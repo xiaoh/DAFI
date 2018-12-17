@@ -13,7 +13,7 @@ import numpy as np
 from numpy import linalg as la
 import matplotlib.pyplot as plt
 
-# local import
+# local imports
 import data_assimilation.utilities as utils
 
 

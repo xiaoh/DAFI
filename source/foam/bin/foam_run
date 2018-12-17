@@ -19,6 +19,6 @@ fi
 cd $DIR
 . $WM_PROJECT_DIR/bin/tools/RunFunctions
 application=`getApplication`
-echo "Running $application in $DIR
+echo "Running $application in $DIR"
 runApplication $application
 
