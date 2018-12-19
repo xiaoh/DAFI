@@ -1,0 +1,31 @@
+
+field = nut
+field_name = \nu_t
+index = 1
+norm = 1.0
+norm_name = 1
+scale = 20.0
+
+da_step = 1
+x_pos_list = 0, 1, 2, 3, 4, 5, 6, 7, 8
+nsamps = 2
+casedir = .
+
+plot_truth = True
+plot_baseline = True
+plot_samples = True
+plot_sample_mean = True
+sample_median = True
+
+truth_name = Truth
+baseline_name = Baseline
+samples_name = Sample
+sample_mean_name = Sample Median
+
+show_plot = True
+file_name = nut_pehills.pdf
+
+show_legend = True
+legend_top = True
+
+fix_aspect = True

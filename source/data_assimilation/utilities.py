@@ -38,7 +38,7 @@ def replace(filename, pattern, subst):
 
 
 def read_input_data(input_file):
-    """Parse an input file into a dictionary.
+    """ Parse an input file into a dictionary.
 
     The input file should contain two entries per line separated by any
     number of white space characters or ':' or '='. Comments are

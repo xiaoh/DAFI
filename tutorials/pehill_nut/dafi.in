@@ -2,6 +2,5 @@
 dyn_model foam_nut_solver
 dyn_model_input ./nutfoam.in
 da_filter EnKF
-max_da_iteration 2
+max_da_iteration 4
 nsamples 2
-

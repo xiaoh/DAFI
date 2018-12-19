@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 # Copyright 2018 Virginia Polytechnic Institute and State University.
 """ Collection of different filtering techniques. """
 
@@ -335,9 +334,9 @@ class DAFilter2(DAFilter):
                     print(self._report())
             if self._verb >= 1:
                 if early_stop:
-                    print("    DA Filtering completed: convergence early stop.")
+                    print("\n  DA Filtering completed: convergence early stop.")
                 else:
-                    print("    DA Filtering completed: max iteration reached.")
+                    print("\n  DA Filtering completed: max iteration reached.")
 
     def plot(self):
         """ Plot iteration convergence. """

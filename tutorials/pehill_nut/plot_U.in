@@ -1,0 +1,32 @@
+
+field = U
+field_name = U_x
+index = 1
+norm = 0.028
+norm_name = U_b
+scale = 2.0
+
+da_step = 1
+x_pos_list = 0, 1, 2, 3, 4, 5, 6, 7, 8
+nsamps = 2
+casedir = .
+
+plot_truth = True
+plot_baseline = True
+plot_samples = True
+plot_sample_mean = True
+sample_median = False
+
+truth_name = Truth
+baseline_name = Baseline
+samples_name = Sample
+sample_mean_name = Sample Mean
+
+show_plot = True
+fix_aspect = True
+
+show_legend = True
+legend_top = True
+
+file_name = Ux_pehills.pdf
+

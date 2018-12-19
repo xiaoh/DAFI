@@ -12,16 +12,16 @@ import random_field as rf
 
 
 # inputs - coordinates
-nxpoints = 20
-nypoints = 20
+nxpoints = 40
+nypoints = 40
 ncells = nxpoints*nypoints
 
 # inputs - length scales
 constant_length_scales = True
-length_scales = (1.0, 1.0)
+length_scales = (0.5, 1.1)
 
 # inputs - plot locations
-point_list = [120, 180, 50]
+point_list = [120, 210, 50]
 
 # inputs - standard deviation (sigma) field
 stddev_field = np.ones(ncells)*1

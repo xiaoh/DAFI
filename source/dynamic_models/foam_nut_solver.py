@@ -24,7 +24,7 @@ import random_field as rf
 
 
 # global variables
-nvector = 3
+NVECTOR = 3
 
 
 class Solver(DynModel):
@@ -185,15 +185,16 @@ class Solver(DynModel):
         # read FOAM
         foam_coords = foam.get_cell_coordinates(self.dir_foam_base)
         foam_volume = foam.get_cell_volumes(self.dir_foam_base)
-        mean_file = ospt.join(self.dir_foam_base, '0', 'nut')
-        nut_mean = foam.read_scalar_from_file(mean_file)
+        baseline_file = ospt.join(self.dir_foam_base, '0', 'nut')
+        nut_baseline = foam.read_scalar_from_file(baseline_file)
         # os.remove(src)
         shutil.move(dst, src)
-        # create field
-        self.nut_rf = rf.GaussianProcess(
-            name='nut', mean=nut_mean, coords=foam_coords,
+        # create field for ln(nut / nut_baseline). baseline=median
+        self.delta_nut_rf = rf.GaussianProcess(
+            name='nut', zero_mean=True, coords=foam_coords,
             kl_modes=kl_modes, weight_field=foam_volume)
-        self.log_mean = np.log(self.nut_rf.mean)
+        self.log_median = np.log(nut_baseline)
+        self.log_median_mat = np.tile(self.log_median, [self.nsamples, 1]).T
 
         # required attributes for DAFI
         self.name = 'FoamNutSolver'
@@ -204,7 +205,7 @@ class Solver(DynModel):
         # other initialization
         self.da_step = 0
         self.foam_solver = 'nutFoam'
-        self.ncells = len(self.nut_rf.mean)
+        self.ncells = len(nut_baseline)
 
         # create H matrix
         idx = np.loadtxt(file_observation_index)
@@ -249,8 +250,9 @@ class Solver(DynModel):
             util.replace(control_dict, "<writeInterval>",
                          str(self.forward_interval))
         # update X (nut)
-        nut, coeffs = self.nut_rf.sample_kl_reduced(
+        delta_nut, coeffs = self.delta_nut_rf.sample_kl_reduced(
             self.nsamples, self.nstate, return_coeffs=True)
+        nut = np.exp(self.log_median_mat + delta_nut)
         self._modify_openfoam('nut', nut, '0')
         # forward to HX (U)
         model_obs = self.forward(None, False)
@@ -283,33 +285,18 @@ class Solver(DynModel):
         # modify nut
         if update:
             self.da_step += 1
-            nut = self.nut_rf.reconstruct_kl_reduced(state_vec)
+            delta_nut = self.delta_nut_rf.reconstruct_kl_reduced(state_vec)
+            nut = np.exp(self.log_median_mat + delta_nut)
             time_dir = '{:.6f}'.format(self.da_step * self.forward_interval)
             self._modify_openfoam('nut', nut, time_dir)
-
         # run openFOAM
         self._call_foam(sample=True)
         # get HX
-        velocities = np.zeros([self.ncells*nvector, self.nsamples])
+        velocities = np.zeros([self.ncells*NVECTOR, self.nsamples])
+        time_dir = '{:d}'.format(self.da_step)
         for isample in range(self.nsamples):
             sample_dir = ospt.join(self.dir, 'sample_{:d}'.format(isample + 1))
-            # copy forwarded fields
-            self._copy_to_previous(sample_dir, 'U')
-            self._copy_to_previous(sample_dir, 'p')
-            # save the results
-            if self.da_step > 0:
-                src_time_dir = '{:.6f}'.format(
-                    self.da_step * self.forward_interval)
-                dst_time_dir = '{:d}'.format(self.da_step)
-                src = ospt.join(sample_dir, src_time_dir)
-                dst = ospt.join(sample_dir, dst_time_dir)
-                shutil.copytree(src, dst)
             # get velocities
-            if self.da_step == 0:
-                time_dir = '0'
-            else:
-                time_dir = '{:.6f}'.format(
-                    self.da_step * self.forward_interval)
             file_to_read = ospt.join(sample_dir, time_dir, 'U')
             ivel = foam.read_vector_from_file(file_to_read).flatten('C')
             velocities[:, isample] = ivel.flatten('C')
@@ -332,9 +319,9 @@ class Solver(DynModel):
         # delete last time folder and move results to results folder
         for isample in range(self.nsamples):
             sample_dir = ospt.join(self.dir, 'sample_{:d}'.format(isample + 1))
-            # shutil.rmtree(ospt.join(
-            #     sample_dir,
-            #     '{:.6f}'.format((self.da_step + 1) * self.forward_interval)))
+            shutil.rmtree(ospt.join(
+                sample_dir,
+                '{:.6f}'.format((self.da_step + 1) * self.forward_interval)))
             shutil.move(sample_dir, self.dir_results)
 
     # internal methods
@@ -351,17 +338,57 @@ class Solver(DynModel):
         """ Run the OpenFOAM cases for all samples, possibly in
         parallel.
         """
-        def _run_foam(solver, case_dir='.', sample=False):
+        def _run_foam(solver, da_step, forward_interval, case_dir='.',
+                      sample=False):
             """ Run a single instance of OpenFOAM in the specified
             directory.
             """
+            # run foam
             bash_command = solver + ' -case ' + case_dir + \
                 ' &>> ' + os.path.join(case_dir, solver + '.log')
             subprocess.call(bash_command, shell=True)
-            if sample:
-                bash_command = 'sample -case ' + case_dir + \
-                    ' -latestTime >> ' + os.path.join(case_dir, 'sample.log')
-                subprocess.call(bash_command, shell=True)
+            # save directories
+            if da_step > 0:
+                dst_time_dir = '{:d}'.format(da_step)
+                dst = os.path.join(case_dir, dst_time_dir)
+                os.makedirs(dst)
+                # copy nut from previous time directory
+                src_time_dir = '{:.6f}'.format(
+                    da_step * forward_interval)
+                src = os.path.join(case_dir, src_time_dir)
+                shutil.copyfile(os.path.join(src, 'nut'),
+                                os.path.join(dst, 'nut'))
+                # copy U and p from current time directory
+                src_time_dir = '{:.6f}'.format(
+                    (da_step+1) * forward_interval)
+                src = os.path.join(case_dir, src_time_dir)
+                shutil.copyfile(os.path.join(src, 'U'), os.path.join(dst, 'U'))
+                shutil.copyfile(os.path.join(src, 'p'), os.path.join(dst, 'p'))
+                # copy other results
+                files = ['phi']
+                directories = ['uniform']
+                for directory in directories:
+                    try:
+                        shutil.copytree(os.path.join(src, directory),
+                                        os.path.join(dst, directory))
+                    except:
+                        pass
+                for file in files:
+                    try:
+                        shutil.copyfile(os.path.join(src, file),
+                                        os.path.join(dst, file))
+                    except:
+                        pass
+                # delete directory
+                shutil.rmtree(os.path.join(
+                    case_dir,
+                    '{:.6f}'.format((da_step) * forward_interval)))
+                # run sample
+                if sample:
+                    bash_command = 'sample -case ' + case_dir + \
+                        " -time '" + dst_time_dir + "' >> " + \
+                        os.path.join(case_dir, 'sample.log')
+                    subprocess.call(bash_command, shell=True)
 
         for isample in range(self.nsamples):
             sample_dir = ospt.join(self.dir,
@@ -369,30 +396,17 @@ class Solver(DynModel):
             if self.ncpu > 1:
                 self.jobs.append(self.job_server.submit(
                     func=_run_foam,
-                    args=(self.foam_solver, sample_dir, sample),
+                    args=(self.foam_solver, self.da_step, self.forward_interval,
+                          sample_dir, sample),
                     depfuncs=(),
-                    modules=('os', 'subprocess')))
+                    modules=('os', 'subprocess', 'shutil')))
             else:
-                _run_foam(self.foam_solver, sample_dir, sample)
+                _run_foam(self.foam_solver, self.da_step,
+                          self.forward_interval, sample_dir, sample)
         if self.ncpu > 1:
             barrier = [job() for job in self.jobs]
             self.jobs = []
         barrier = 0
-
-    def _copy_to_previous(self, case_dir, field_name):
-        """ Copy the specified field to the previous DA-step directory.
-        """
-        src_time_dir = '{:.6f}'.format(
-            (self.da_step + 1) * self.forward_interval)
-        if self.da_step == 0:
-            dst_time_dir = '0'
-        else:
-            dst_time_dir = '{:.6f}'.format(
-                self.da_step * self.forward_interval)
-        src = ospt.join(case_dir, src_time_dir, field_name)
-        dst = ospt.join(case_dir, dst_time_dir, field_name)
-        shutil.copyfile(src, dst)
-        util.replace(dst, '"' + src_time_dir + '"', '"' + dst_time_dir + '"')
 
     def _construct_hmat(self, idx, weight):
         """ Construct the matrix to go from all velocities to
@@ -400,8 +414,8 @@ class Solver(DynModel):
         """
         weight = np.expand_dims(weight, 1)
         nidx0, nidx1 = idx.shape
-        idx3 = np.zeros((nidx0 * nvector, nidx1))
-        weight3 = np.zeros((nidx0 * nvector, 1))
+        idx3 = np.zeros((nidx0 * NVECTOR, nidx1))
+        weight3 = np.zeros((nidx0 * NVECTOR, 1))
         # loop
         current_idx = 0
         for iblock in range(int(idx[:, 0].max()) + 1):
@@ -409,7 +423,7 @@ class Solver(DynModel):
             start, duration = rg[0], len(rg)
             # x velocities
             idx_block = np.copy(idx[start:start + duration, :])
-            idx_block[:, 1] *= nvector
+            idx_block[:, 1] *= NVECTOR
             wgtBlock = np.copy(weight[start:start + duration, :])
             idx_block[:, 0] = current_idx
             # y velocities
@@ -421,13 +435,13 @@ class Solver(DynModel):
             idx_block2[:, 0] += 2
             idx_block2[:, 1] += 2
             # all
-            idx3[nvector * start:nvector * (start + duration),
+            idx3[NVECTOR * start:NVECTOR * (start + duration),
                  :] = np.vstack((idx_block, idx_block1, idx_block2))
-            weight3[nvector * start:nvector * (start + duration), :] = \
+            weight3[NVECTOR * start:NVECTOR * (start + duration), :] = \
                 np.vstack((wgtBlock, wgtBlock, wgtBlock))
-            current_idx += nvector
+            current_idx += NVECTOR
         hmat = sp.coo_matrix((weight3.flatten('C'), (idx3[:, 0], idx3[:, 1])),
-                             shape=(self.nstate_obs, self.ncells*nvector))
+                             shape=(self.nstate_obs, self.ncells*NVECTOR))
         return hmat.tocsr()
 
 
