@@ -16,6 +16,7 @@ def calc_kl_modes(nmodes, cov, weight_field, normalize=False):
     """ Calculate the first N Karhunen-Loève modes for a covariance
     field.
     """
+    weight_field = np.squeeze(weight_field)
     weight_vec = np.atleast_2d(weight_field)
     weight_mat = np.sqrt(np.dot(weight_vec.T, weight_vec))
     cov_weighted = cov.multiply(weight_mat)
@@ -74,6 +75,7 @@ def unit(field, weight_field):
 
 
 def projection_magnitude(field_1, field_2, weight_field):
+    """ Get magnitude of projection of field1 onto field2. """
     magnitude = inner_product(field_1, field_2, weight_field) \
         / norm(field_2, weight_field)
     return magnitude

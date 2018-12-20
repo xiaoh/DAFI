@@ -156,7 +156,8 @@ def kernel_sqrexp(coords, length_scales, constant_length_scales=True):
         if not constant_length_scales:
             lensc = vec_to_mat(lensc)
         exp += ((pos_1 - pos_2) / (lensc))**alpha
-    return np.exp(-0.5*exp)
+    return np.exp(-exp)
+    # return np.exp(-0.5*exp)
 
 
 def kernel_input_file(filename):

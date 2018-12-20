@@ -44,8 +44,8 @@ int main(int argc, char *argv[])
 #   include "createTime.H"
 #   include "createMesh.H"
 #   include "createFiles.H"
-  
-  // vectorIOList pts(0.5, 0.5, 1);  // observation points    
+
+  // vectorIOList pts(0.5, 0.5, 1);  // observation points
 
   const scalar directHitTol = 1e-6;
 
@@ -60,7 +60,7 @@ int main(int argc, char *argv[])
 		    )
 		   );
 
-  
+
   scalarListList* inverseDistanceWeightsPtr = new scalarListList(obsPts.size());
   scalarListList& invDistCoeffs = *inverseDistanceWeightsPtr;
 
@@ -70,7 +70,7 @@ int main(int argc, char *argv[])
 
   Info << "# of obs pts: " << obsPts.size() << endl;
   const labelListList& cc = mesh.cellCells();
-  
+
   forAll(obsPts, pointI)
     {
       vector pt = obsPts[pointI];
@@ -108,7 +108,7 @@ int main(int argc, char *argv[])
 
 	  supportCellsIdx[pointI].setSize(neighbours.size() + 1);;
 	  supportCellsIdx[pointI][0] = hostCellI;
-	  
+
 	  // The first coefficient corresponds to the centre cell.
 	  // The rest is ordered in the same way as the cellCells list.
 	  scalar invDist = 1.0/m;
@@ -142,10 +142,4 @@ int main(int argc, char *argv[])
   return(0);
 }
 
-
-
 // * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
-
-
-
-// ************************************************************************* //

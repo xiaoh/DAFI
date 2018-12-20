@@ -1,12 +1,5 @@
 
-OFstream indexHFile
+OFstream obsMatrix
 (
- runTime.path()/"constant"/"indexH.txt"
+ runTime.path()/"constant"/"obsMatrix"
  );
-
-
-OFstream weightHFile
-(
- runTime.path()/"constant"/"weightH.txt"
- );
-

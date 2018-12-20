@@ -23,19 +23,18 @@ import foam_utilities as foam
 import random_field as rf
 
 
-# global variables
-NVECTOR = 3
-
-
 class Solver(DynModel):
-    """ Dynamic model for OpenFoam Reynolds stress nutFoam solver. """
+    """ Dynamic model for OpenFoam Reynolds stress nutFoam solver.
+
+    The eddy viscosity field (nu_t) is infered by observing the
+    velocity field (U). Nut is modeled as a random field with lognormal
+    distribution and median value equal to the baseline (prior) nut
+    field.
+    """
 
     def __init__(self, nsamples, da_interval, t_end, max_da_iteration,
                  model_input):
         """ Initialize the nutFOAM solver.
-
-        Parses the input file, if needed creates the pseudo
-        observations and KL modes, and initializes all variables.
 
         Note
         ----
@@ -49,87 +48,52 @@ class Solver(DynModel):
               Number of simulation steps for forward model.
             * **nkl_modes** (``int``) -
               Number of KL modes to use.
-            * **verbose** (``int``, ``1``) -
-              Level of printed output. Zero for no output.
-            * **generate_pseudo_obs** (``bool``, ``False``) -
-              Whether to generate pseudo-observations. If True, will
-              read the input file for generating observations. Else
-              will use the existing data file.
-            * **generate_kl** (``bool``, ``False``) -
-              Whether to generate the KL modes. If True, will read the
-              input file for generating KL modes. Else will use the
-              existing KL modes file.
-            * **generate_hmat** (``bool``, ``False``) -
-              Whether to generate the H matrix for a given set of
-              observation points.
             * **enable_parallel** (``bool``, ``False``) -
               Whether to run in parallel.
             * **ncpu** (``int``, ``0``) -
               Number of CPUs to use if ``enable_parallel`` is True. Set
               to zero to use all available CPUs.
-
-        Note
-        ----
-        Directory structure:
-            * dir/
-                * nutfoam_kl.in
-                * nutfoam_pseudo_obs.in
-                * nutfoam_inputs/
-                    * observations/
-                        * observations
-                        * observation_errors
-                        * hmat_index
-                        * hmat_weight
-                        * obs_locations
-                    * kl_modes/
-                        * kl_modes
-                        * covariance
-                    * foam_base/
-                        * 0/
-                            * nut, U, p (baseline RANS results)
-                        * constants/
-                            * polyMesh/
-                                * ...
-                            * ...
-                        * system/
-                            * controlDict (template)
-                            * sampleDict
-                            * ...
+            * **foam_base_dir** (``str``) -
+              OpenFOAM case directory to be copied to run each sample.
+            * **mesh_dir** (``str``) -
+              Directory containing the OpenFOAM mesh coordinates and
+              volume information files (ccx, ccy, ccz, cv).
+            * **obs_file** (``str``) -
+              File containing the observation values.
+            * **obs_err_file** (``str``) -
+              File containing the observation error/covariance (R)
+              matrix.
+            * **kl_modes_file** (``str``) -
+              File containing the KL modes for the nu_t covariance.
+            * **obs_mat_file** (``str``) -
+              File containing the mesh cells and weights at observation
+              locations. Generated with ``getObsMatrix`` utility.
         """
-        # TODO: add messages if verbose
-        # TODO: error/warning if pp specified but no pp
-        # save the main inputs
+        # save the main inputs. ``da_interval`` and ``t_end`` not used
         self.nsamples = nsamples
         self.max_da_iteration = max_da_iteration
-        # self.da_interval = da_interval
-        # self.t_end = t_end
 
         # read input file and set defaults
         param_dict = util.read_input_data(model_input)
         self.forward_interval = int(param_dict['forward_interval'])
-        nkl_modes = int(param_dict['nkl_modes'])
-        if 'verbose' in param_dict:
-            self.verbose = int(param_dict['verbose'])
+        self.dir_foam_base = param_dict['foam_base_dir']
+        dir_mesh = param_dict['mesh_dir']
+        obs_file = param_dict['obs_file']
+        obs_err_file = param_dict['obs_err_file']
+        kl_modes_file = param_dict['kl_modes_file']
+        obs_mat_file = param_dict['obs_mat_file']
+        if 'nkl_modes' in param_dict:
+            nkl_modes = int(param_dict['nkl_modes'])
         else:
-            self.verbose = 1
-        if 'generate_pseudo_obs' in param_dict:
-            generate_pseudo_obs = util.str2bool(
-                param_dict['generate_pseudo_obs'])
-        else:
-            generate_pseudo_obs = False
-        if 'generate_kl' in param_dict:
-            generate_kl = util.str2bool(param_dict['generate_kl'])
-        else:
-            generate_kl = False
-        if 'generate_hmat' in param_dict:
-            generate_hmat = util.str2bool(param_dict['generate_hmat'])
-        else:
-            generate_hmat = False
+            nkl_modes = None # set later to max
         if 'enable_parallel' in param_dict:
             enable_parallel = util.str2bool(param_dict['enable_parallel'])
         else:
             enable_parallel = False
         if enable_parallel:
+            if not has_parallel:
+                err_message = 'Parallel Python (pp) not loaded succesfully.'
+                raise RuntimeError(err_message)
             if 'ncpu' in param_dict:
                 self.ncpu = int(param_dict['ncpu'])
             else:
@@ -137,59 +101,33 @@ class Solver(DynModel):
         else:
             self.ncpu = 1
 
-        # directory structure
-        self.dir = os.getcwd()
-        self.dir_input = ospt.join(self.dir, 'nutfoam_inputs')
-        self.dir_foam_base = ospt.join(self.dir_input, 'foam_base')
-        self.dir_obs = ospt.join(self.dir_input, 'observations')
-        self.dir_kl = ospt.join(self.dir_input, 'kl_modes')
-        self.dir_results = ospt.join(self.dir, 'results_nutfoam')
-        # files
-        file_observation_input = 'nutfoam_pseudo_obs.in'
-        file_observation = ospt.join(self.dir_obs, 'observations')
-        file_obs_error = ospt.join(self.dir_obs, 'observation_errors')
-        file_observation_index = ospt.join(self.dir_obs, 'hmat_index')
-        file_observation_weight = ospt.join(self.dir_obs, 'hmat_weight')
-        file_obs_location = ospt.join(self.dir_obs, 'obs_locations')
-        file_kl_input = 'nutfoam_kl.in'
-        file_kl = ospt.join(self.dir_kl, 'kl_modes')
-        # create directories if they do not exist
-        directories = [self.dir_obs, self.dir_kl, self.dir_results]
-        for directory in directories:
-            util.create_dir(directory)
-
-        # read/generate observations
-        if generate_hmat:
-            _generate_hmat(file_obs_location,
-                           file_observation_index, file_observation_weight)
-        if generate_pseudo_obs:
-            pseudo_obs_dict = util.read_input_data(file_observation_input)
-            _generate_pseudo_observations(
-                pseudo_obs_dict, file_observation, file_obs_error)
-        self.obs = np.loadtxt(file_observation)
-        self.obs_error = np.loadtxt(file_obs_error)
-
-        # read/generate KL modes
-        if generate_kl:
-            kl_dict = util.read_input_data(file_kl_input)
-            _generate_kl_modes(kl_dict, file_kl)
-        kl_modes = np.loadtxt(file_kl, usecols=range(nkl_modes))
-
-        # initiliaze the ln(nu_t) field
-        # replace the template fields in controlDict
-        src = ospt.join(self.dir_foam_base, "system", "controlDict")
-        dst = ospt.join(self.dir_foam_base, "system", "controlDict.template")
-        shutil.copyfile(src, dst)
-        util.replace(src, "<endTime>", '1')
-        util.replace(src, "<writeInterval>", '1')
-        # read FOAM
-        foam_coords = foam.get_cell_coordinates(self.dir_foam_base)
-        foam_volume = foam.get_cell_volumes(self.dir_foam_base)
-        baseline_file = ospt.join(self.dir_foam_base, '0', 'nut')
+        # read baseline nut field
+        baseline_file = os.path.join(self.dir_foam_base, '0', 'nut')
         nut_baseline = foam.read_scalar_from_file(baseline_file)
-        # os.remove(src)
-        shutil.move(dst, src)
-        # create field for ln(nut / nut_baseline). baseline=median
+        self.ncells = len(nut_baseline)
+
+        # read mesh
+        foam_coords = foam.read_cell_coordinates(dir_mesh)
+        foam_volume = foam.read_cell_volumes(dir_mesh)
+
+        # read observations
+        self.obs = np.loadtxt(obs_file)
+        self.obs_error = np.loadtxt(obs_err_file)
+        self.nstate_obs = len(self.obs)
+
+        # create "H matrix"
+        obs_mat = np.loadtxt(obs_mat_file)
+        self.obs_vel2obs = _construct_obsmat_vec(
+            obs_mat, self.nstate_obs, self.ncells)
+
+        # read KL modes
+        if nkl_modes is not None:
+            kl_modes = np.loadtxt(kl_modes_file, usecols=range(nkl_modes))
+        else:
+            kl_modes = np.loadtxt(kl_modes_file)
+            self.nkl_modes = kl_modes.shape[1]
+
+        # initiliaze the ln(nut / nut_baseline). baseline=median
         self.delta_nut_rf = rf.GaussianProcess(
             name='nut', zero_mean=True, coords=foam_coords,
             kl_modes=kl_modes, weight_field=foam_volume)
@@ -205,12 +143,7 @@ class Solver(DynModel):
         # other initialization
         self.da_step = 0
         self.foam_solver = 'nutFoam'
-        self.ncells = len(nut_baseline)
-
-        # create H matrix
-        idx = np.loadtxt(file_observation_index)
-        weight = np.loadtxt(file_observation_weight)
-        self.obs_vel2obs = self._construct_hmat(idx, weight)
+        self.dir_results = 'results_nutfoam'
 
         # initialize parallel python
         if(enable_parallel):
@@ -243,9 +176,9 @@ class Solver(DynModel):
         # generate folders
         max_end_time = self.max_da_iteration * self.forward_interval
         for isample in range(self.nsamples):
-            sample_dir = ospt.join(self.dir, 'sample_{:d}'.format(isample + 1))
+            sample_dir = os.path.join('sample_{:d}'.format(isample + 1))
             shutil.copytree(self.dir_foam_base, sample_dir)
-            control_dict = ospt.join(sample_dir, "system", "controlDict")
+            control_dict = os.path.join(sample_dir, "system", "controlDict")
             util.replace(control_dict, "<endTime>", str(max_end_time))
             util.replace(control_dict, "<writeInterval>",
                          str(self.forward_interval))
@@ -253,7 +186,7 @@ class Solver(DynModel):
         delta_nut, coeffs = self.delta_nut_rf.sample_kl_reduced(
             self.nsamples, self.nstate, return_coeffs=True)
         nut = np.exp(self.log_median_mat + delta_nut)
-        self._modify_openfoam('nut', nut, '0')
+        self._modify_openfoam_scalar('nut', nut, '0')
         # forward to HX (U)
         model_obs = self.forward(None, False)
         return (coeffs, model_obs)
@@ -288,18 +221,18 @@ class Solver(DynModel):
             delta_nut = self.delta_nut_rf.reconstruct_kl_reduced(state_vec)
             nut = np.exp(self.log_median_mat + delta_nut)
             time_dir = '{:.6f}'.format(self.da_step * self.forward_interval)
-            self._modify_openfoam('nut', nut, time_dir)
+            self._modify_openfoam_scalar('nut', nut, time_dir)
         # run openFOAM
         self._call_foam(sample=True)
         # get HX
-        velocities = np.zeros([self.ncells*NVECTOR, self.nsamples])
+        velocities = np.zeros([self.ncells*foam.NVECTOR, self.nsamples])
         time_dir = '{:d}'.format(self.da_step)
         for isample in range(self.nsamples):
-            sample_dir = ospt.join(self.dir, 'sample_{:d}'.format(isample + 1))
+            sample_dir = os.path.join('sample_{:d}'.format(isample + 1))
             # get velocities
-            file_to_read = ospt.join(sample_dir, time_dir, 'U')
+            file_to_read = os.path.join(sample_dir, time_dir, 'U')
             ivel = foam.read_vector_from_file(file_to_read).flatten('C')
-            velocities[:, isample] = ivel.flatten('C')
+            velocities[:, isample] = ivel
         return self.obs_vel2obs.dot(velocities)
 
     def get_obs(self, time):
@@ -316,27 +249,42 @@ class Solver(DynModel):
 
     def clean(self):
         """ Cleanup before exiting. """
+        util.create_dir(self.dir_results)
         # delete last time folder and move results to results folder
         for isample in range(self.nsamples):
-            sample_dir = ospt.join(self.dir, 'sample_{:d}'.format(isample + 1))
-            shutil.rmtree(ospt.join(
+            sample_dir = os.path.join('sample_{:d}'.format(isample + 1))
+            shutil.rmtree(os.path.join(
                 sample_dir,
                 '{:.6f}'.format((self.da_step + 1) * self.forward_interval)))
             shutil.move(sample_dir, self.dir_results)
 
     # internal methods
-    # TODO: finish the docstrings for internal methods.
-    def _modify_openfoam(self, field_name, values, timedir):
-        """ Replace the values of a specific field in an OpenFOAM case.
+    def _modify_openfoam_scalar(self, field_name, values, timedir):
+        """ Replace the values of a specific field in all samples.
+
+        Parameters
+        ----------
+        field_name : str
+            The field file to modify.
+        values : ndarray
+            New values for the field.
+            ``dtype=float``, ``ndim=2``, ``shape=(ncells, nsamples)``
+        timedir : str
+            The time directory in which the field should be modified.
         """
         for isample in range(self.nsamples):
-            sample_dir = ospt.join(self.dir, 'sample_{:d}'.format(isample + 1))
-            field_file = ospt.join(sample_dir, timedir, field_name)
+            sample_dir = os.path.join('sample_{:d}'.format(isample + 1))
+            field_file = os.path.join(sample_dir, timedir, field_name)
             foam.write_scalar_to_file(values[:, isample], field_file)
 
     def _call_foam(self, sample=False):
         """ Run the OpenFOAM cases for all samples, possibly in
         parallel.
+
+        Parameters
+        ----------
+        sample : bool
+            Whether to run the OpenFOAM ``sample`` utility.
         """
         def _run_foam(solver, da_step, forward_interval, case_dir='.',
                       sample=False):
@@ -348,9 +296,9 @@ class Solver(DynModel):
                 ' &>> ' + os.path.join(case_dir, solver + '.log')
             subprocess.call(bash_command, shell=True)
             # save directories
+            dst_time_dir = '{:d}'.format(da_step)
+            dst = os.path.join(case_dir, dst_time_dir)
             if da_step > 0:
-                dst_time_dir = '{:d}'.format(da_step)
-                dst = os.path.join(case_dir, dst_time_dir)
                 os.makedirs(dst)
                 # copy nut from previous time directory
                 src_time_dir = '{:.6f}'.format(
@@ -358,46 +306,45 @@ class Solver(DynModel):
                 src = os.path.join(case_dir, src_time_dir)
                 shutil.copyfile(os.path.join(src, 'nut'),
                                 os.path.join(dst, 'nut'))
-                # copy U and p from current time directory
-                src_time_dir = '{:.6f}'.format(
-                    (da_step+1) * forward_interval)
-                src = os.path.join(case_dir, src_time_dir)
-                shutil.copyfile(os.path.join(src, 'U'), os.path.join(dst, 'U'))
-                shutil.copyfile(os.path.join(src, 'p'), os.path.join(dst, 'p'))
-                # copy other results
-                files = ['phi']
-                directories = ['uniform']
-                for directory in directories:
-                    try:
-                        shutil.copytree(os.path.join(src, directory),
-                                        os.path.join(dst, directory))
-                    except:
-                        pass
-                for file in files:
-                    try:
-                        shutil.copyfile(os.path.join(src, file),
-                                        os.path.join(dst, file))
-                    except:
-                        pass
-                # delete directory
+            # copy U and p from current time directory
+            src_time_dir = '{:.6f}'.format(
+                (da_step+1) * forward_interval)
+            src = os.path.join(case_dir, src_time_dir)
+            shutil.copyfile(os.path.join(src, 'U'), os.path.join(dst, 'U'))
+            shutil.copyfile(os.path.join(src, 'p'), os.path.join(dst, 'p'))
+            # copy other results
+            files = ['phi']
+            directories = ['uniform']
+            for directory in directories:
+                try:
+                    shutil.copytree(os.path.join(src, directory),
+                                    os.path.join(dst, directory))
+                except:
+                    pass
+            for file in files:
+                try:
+                    shutil.copyfile(os.path.join(src, file),
+                                    os.path.join(dst, file))
+                except:
+                    pass
+            # delete directory
+            if da_step > 0:
                 shutil.rmtree(os.path.join(
-                    case_dir,
-                    '{:.6f}'.format((da_step) * forward_interval)))
-                # run sample
-                if sample:
-                    bash_command = 'sample -case ' + case_dir + \
-                        " -time '" + dst_time_dir + "' >> " + \
-                        os.path.join(case_dir, 'sample.log')
-                    subprocess.call(bash_command, shell=True)
+                    case_dir, '{:.6f}'.format((da_step) * forward_interval)))
+            # run sample
+            if sample:
+                bash_command = 'sample -case ' + case_dir + \
+                    " -time '" + dst_time_dir + "' >> " + \
+                    os.path.join(case_dir, 'sample.log')
+                subprocess.call(bash_command, shell=True)
 
         for isample in range(self.nsamples):
-            sample_dir = ospt.join(self.dir,
-                                   'sample_{:d}'.format(isample + 1))
+            sample_dir = os.path.join('sample_{:d}'.format(isample + 1))
             if self.ncpu > 1:
                 self.jobs.append(self.job_server.submit(
                     func=_run_foam,
-                    args=(self.foam_solver, self.da_step, self.forward_interval,
-                          sample_dir, sample),
+                    args=(self.foam_solver, self.da_step,
+                          self.forward_interval, sample_dir, sample),
                     depfuncs=(),
                     modules=('os', 'subprocess', 'shutil')))
             else:
@@ -408,14 +355,28 @@ class Solver(DynModel):
             self.jobs = []
         barrier = 0
 
-    def _construct_hmat(self, idx, weight):
-        """ Construct the matrix to go from all velocities to
-        observation velocities.
+
+def _construct_obsmat_vec(obs_mat, nstate_obs, ncells):
+        """ Construct the matrix to go from entire vector field to
+        values at the observation locations.
+
+        Parameters
+        ----------
+        obs_mat : ndarray
+            Matrix containing the relevant cells for each observation
+            location. The three columns are (1) observation index, (2)
+            cell index, (3) cell weight. This matrix should be read
+            from the output of the ``getObsMatrix`` utility.
+        nstate_obs : int
+            Number of observation states.
+        ncells : int
+            Number of cells in OpenFOAM mesh.
         """
-        weight = np.expand_dims(weight, 1)
+        weight = np.expand_dims(obs_mat[:,2], 1)
+        idx = obs_mat[:, :2]
         nidx0, nidx1 = idx.shape
-        idx3 = np.zeros((nidx0 * NVECTOR, nidx1))
-        weight3 = np.zeros((nidx0 * NVECTOR, 1))
+        idx3 = np.zeros((nidx0 * foam.NVECTOR, nidx1))
+        weight3 = np.zeros((nidx0 * foam.NVECTOR, 1))
         # loop
         current_idx = 0
         for iblock in range(int(idx[:, 0].max()) + 1):
@@ -423,7 +384,7 @@ class Solver(DynModel):
             start, duration = rg[0], len(rg)
             # x velocities
             idx_block = np.copy(idx[start:start + duration, :])
-            idx_block[:, 1] *= NVECTOR
+            idx_block[:, 1] *= foam.NVECTOR
             wgtBlock = np.copy(weight[start:start + duration, :])
             idx_block[:, 0] = current_idx
             # y velocities
@@ -435,26 +396,36 @@ class Solver(DynModel):
             idx_block2[:, 0] += 2
             idx_block2[:, 1] += 2
             # all
-            idx3[NVECTOR * start:NVECTOR * (start + duration),
+            idx3[foam.NVECTOR * start:foam.NVECTOR * (start + duration),
                  :] = np.vstack((idx_block, idx_block1, idx_block2))
-            weight3[NVECTOR * start:NVECTOR * (start + duration), :] = \
-                np.vstack((wgtBlock, wgtBlock, wgtBlock))
-            current_idx += NVECTOR
+            weight3[foam.NVECTOR * start:foam.NVECTOR * (start + duration),
+                :] = np.vstack((wgtBlock, wgtBlock, wgtBlock))
+            current_idx += foam.NVECTOR
         hmat = sp.coo_matrix((weight3.flatten('C'), (idx3[:, 0], idx3[:, 1])),
-                             shape=(self.nstate_obs, self.ncells*NVECTOR))
+                             shape=(nstate_obs, ncells*foam.NVECTOR))
         return hmat.tocsr()
 
 
-# internal functions
-# TODO: implement
-# TODO: docstrings
-def _generate_hmat(infile_loc, outfile_index, outfile_weight):
-    pass
+# pre-processing - not used by DAFI
+def get_vector_at_obs(npoints, obs_mat_file, field_file):
+    """ Get an OpenFOAM vector field at the specified observation
+    locations.
 
-
-def _generate_pseudo_observations(input_dict, outfile_obs, outfile_err):
-    pass
-
-
-def _generate_kl_modes(input_dict, filename):
-    pass
+    Parameters
+    ----------
+    nstate_obs : int
+        Number of observation states.
+    ncells : int
+        Number of cells in OpenFOAM mesh.
+    obs_mat_file : ndarray
+        Output file of the ``getObsMatrix`` utility.
+    field_file : str
+        OpenFOAM field file containg the full vector field.
+    """
+    field = foam.read_vector_from_file(field_file)
+    ncells = len(fields)
+    mesh_mat = np.loadtxt(obs_mat_file)
+    npoints = mesh_mat[-1,0]+1
+    nstate_obs = npoints * 3
+    obsmat = _construct_obsmat_vec(mesh_mat, nstate_obs, ncells, field)
+    return obsmat.dot(field)

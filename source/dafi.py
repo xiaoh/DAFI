@@ -46,25 +46,25 @@ Other inputs:
 import sys
 import os
 import time
-import ast
 import importlib
+import subprocess
 
 # third party imports
 import numpy as np
 
 # local imports
-from data_assimilation.utilities import read_input_data
+import data_assimilation.utilities as util
 # user-specified inverse model filter imported later with importlib
 # user-specified dynamic model imported later with importlib
 
 
 def _print_usage():
-    # print usage of the program.
+    """ Print usage of the program. """
     print("Usage: mfu_main.py <input_file>")
 
 
 def _get_input():
-    # get the input file.
+    """ Get the input file. """
     try:
         input_file = sys.argv[1]
     except IndexError as e:
@@ -74,16 +74,23 @@ def _get_input():
     return input_file
 
 
-def print_code_version():
-    bash_command = "git rev-parse HEAD > .dafi_rev 2> /dev/null"
-    os.system(bash_command)
+def get_code_version():
+    """ Save the Git version of DAFI. """
+    git_dir = os.path.dirname(os.path.realpath(__file__))
+    cwd = os.getcwd()
+    file = os.path.join(cwd, '.dafi_rev')
+    bash_command = "cd {}; ".format(git_dir)
+    bash_command += "git rev-parse HEAD > {} 2> /dev/null; ". format(file)
+    bash_command += "cd {}".format(cwd)
+    subprocess.call(bash_command, shell=True)
 
 
 def main():
+    """ Run DAFI. """
     # required inputs
     input_file_da = _get_input()
-    print_code_version()
-    param_dict = read_input_data(input_file_da)
+    get_code_version()
+    param_dict = util.read_input_data(input_file_da)
     dyn_model = param_dict['dyn_model']
     input_file_dm = param_dict['dyn_model_input']
     da_filter = param_dict['da_filter']
@@ -101,16 +108,16 @@ def main():
         da_t_interval = 1.0
     # output flags
     try:
-        plot_flag = ast.literal_eval(param_dict['plot_flag'])
+        plot_flag = util.str2bool(param_dict['plot_flag'])
     except:
         plot_flag = False
     try:
-        save_flag = ast.literal_eval(param_dict['save_flag'])
+        save_flag = util.str2bool(param_dict['save_flag'])
     except:
         save_flag = True
     # debug flags
     try:
-        rand_seed_flag = ast.literal_eval(param_dict['rand_seed_flag'])
+        rand_seed_flag = util.str2bool(param_dict['rand_seed_flag'])
     except:
         rand_seed_flag = False
     if rand_seed_flag:

@@ -1,5 +1,5 @@
-# Manipulate OpenFOAM files
-###############################################################################
+# Copyright 2018 Virginia Polytechnic Institute and State University.
+""" OpenFOAM file manipulation. """
 
 # system import
 import numpy as np
@@ -14,6 +14,14 @@ import subprocess
 from data_assimilation import utilities as util
 
 
+# global variables
+NSCALAR = 1
+NVECTOR = 3
+NSYMMTENSOR = 6
+NTENSOR = 9
+
+
+# get mesh properties
 def get_number_cells(foam_case='.'):
     bash_command = "checkMesh -case " + foam_case + \
         " -time '0' | grep '    cells:' > tmp.ncells"
@@ -125,6 +133,7 @@ def read_cell_volumes(file_dir):
     return cellVolume
 
 
+# read and write fields
 def extract_scalar(scalar_file):
     """ subFunction of readTurbStressFromFile
         Using regular expression to select scalar value out
@@ -190,7 +199,7 @@ def write_scalar_to_file(Scalar, ScalarFile):
     """
 
     # Find openFoam scalar file's pattern'
-    (resStartk, resEndk) = extractTensorPattern(ScalarFile)
+    (resStartk, resEndk) = extract_foam_pattern(ScalarFile)
 
     tempFile = 'scalarTemp'
     np.savetxt('scalarTemp', Scalar)
@@ -214,7 +223,7 @@ def write_scalar_to_file(Scalar, ScalarFile):
 def read_vector_from_file(UFile):
     """
     """
-    resMid = extractVector(UFile)
+    resMid = extract_vector(UFile)
     fout = open('Utemp', 'w')
     glob_pattern = resMid.group()
     glob_pattern = re.sub(r'\(', '', glob_pattern)
@@ -226,188 +235,62 @@ def read_vector_from_file(UFile):
     return vector
 
 
-def readTurbStressFromFile(tauFile):
-    """
-
-    Arg:
-    tauFile: The directory path of file of tau
-
-    Regurn:
-    tau: Matrix of Reynolds stress (sysmetric tensor)
-    """
-    resMid = extractSymmTensor(tauFile)
-
-    # write it in Tautemp
-    fout = open('tau.txt', 'w')
-    glob_pattern = resMid.group()
-    glob_pattern = re.sub(r'\(', '', glob_pattern)
-    glob_pattern = re.sub(r'\)', '', glob_pattern)
-
-    tau = glob_pattern
-    fout.write(tau)
-    fout.close()
-
-    tau = np.loadtxt('tau.txt')
-    return tau
-
-
-def readTensorFromFile(tauFile):
-    """
-
-    Arg:
-    tauFile: The directory path of file of tau
-
-    Regurn:
-    tau: Matrix of Reynolds stress (sysmetric tensor)
-    """
-    resMid = extractTensor(tauFile)
-
-    # write it in Tautemp
-    fout = open('tau.txt', 'w')
-    glob_pattern = resMid.group()
-    glob_pattern = re.sub(r'\(', '', glob_pattern)
-    glob_pattern = re.sub(r'\)', '', glob_pattern)
-
-    tau = glob_pattern
-    fout.write(tau)
-    fout.close()
-
-    tau = np.loadtxt('tau.txt')
-    return tau
-
-
-def readVelocityFromFile(UFile):
-    """ Function is to get value of U from the openFoam U files
+def extract_vector(vectorFile):
+    """ Function is using regular expression select Vector value out
 
     Args:
-    UFile: directory of U file in OpenFoam
+    UFile: The directory path of file: U
 
     Returns:
-    U: as vector (u1,v1,w1,u2,v2,w2,....uNcell,vNcell,wNcell)
+    resMid: the U as (Ux1,Uy1,Uz1);(Ux2,Uy2,Uz2);........
     """
-    resMid = extractVector(UFile)
 
-    # write it in Utemp
-    fout = open('Utemp', 'w')
-    fout.write(resMid.group())
-    fout.close()
-
-    # write it in UM with the pattern that numpy.load txt could read
-    fin = open('Utemp', 'r')
-    fout = open('UM.txt', 'w')
-
-    while True:
-        line = fin.readline()
-        line = line[1:-2]
-        fout.write(line)
-        fout.write(" ")
-        if not line:
-            break
+    fin = open(vectorFile, 'r')  # need consider directory
+    line = fin.read()  # line is U file to read
     fin.close()
-    fout.close()
-    # to convert UM as U vector: (u1,v1,w1,u2,v2,w2,....uNcell,vNcell,wNcell)
-    U = np.loadtxt('UM.txt')
-    return U
+    # select U as (X X X)pattern (Using regular expression)
+    patternMid = re.compile(r"""
+    (
+    \(                                                   # match(
+    [\+\-]?[\d]+([\.][\d]*)?([Ee][+-]?[\d]+)?            # match figures
+    (\ )                                                 # match space
+    [\+\-]?[\d]+([\.][\d]*)?([Ee][+-]?[\d]+)?            # match figures
+    (\ )                                                 # match space
+    [\+\-]?[\d]+([\.][\d]*)?([Ee][+-]?[\d]+)?            # match figures
+    \)                                                   # match )
+    \n                                                   # match next line
+    )+                                                   # search greedly
+    """, re.DOTALL | re.VERBOSE)
+    resMid = patternMid.search(line)
+    return resMid
 
 
-def readTurbCoordinateFromFile(fileDir):
+def read_tensor_from_file(tauFile):
     """
 
     Arg:
-    fileDir: The directory path of file of ccx, ccy, and ccz
+    tauFile: The directory path of file of tau
 
     Regurn:
-    coordinate: matrix of (x, y, z)
+    tau: Matrix of Reynolds stress (sysmetric tensor)
     """
-    coorX = fileDir + "ccx"
-    coorY = fileDir + "ccy"
-    coorZ = fileDir + "ccz"
-
-    resMidx = extractScalar(coorX)
-    resMidy = extractScalar(coorY)
-    resMidz = extractScalar(coorZ)
+    resMid = extract_tensor(tauFile)
 
     # write it in Tautemp
-    fout = open('xcoor.txt', 'w')
-    glob_patternx = resMidx.group()
-    glob_patternx = re.sub(r'\(', '', glob_patternx)
-    glob_patternx = re.sub(r'\)', '', glob_patternx)
-    fout.write(glob_patternx)
+    fout = open('tau.txt', 'w')
+    glob_pattern = resMid.group()
+    glob_pattern = re.sub(r'\(', '', glob_pattern)
+    glob_pattern = re.sub(r'\)', '', glob_pattern)
+
+    tau = glob_pattern
+    fout.write(tau)
     fout.close()
-    xVec = np.loadtxt('xcoor.txt')
 
-    fout = open('ycoor.txt', 'w')
-    glob_patterny = resMidy.group()
-    glob_patterny = re.sub(r'\(', '', glob_patterny)
-    glob_patterny = re.sub(r'\)', '', glob_patterny)
-    fout.write(glob_patterny)
-    fout.close()
-    yVec = np.loadtxt('ycoor.txt')
-
-    fout = open('zcoor.txt', 'w')
-    glob_patternz = resMidz.group()
-    glob_patternz = re.sub(r'\(', '', glob_patternz)
-    glob_patternz = re.sub(r'\)', '', glob_patternz)
-    fout.write(glob_patternz)
-    fout.close()
-    zVec = np.loadtxt('zcoor.txt')
-
-    coordinate = np.vstack((xVec, yVec, zVec))
-    coordinate = coordinate.T
-    return coordinate
+    tau = np.loadtxt('tau.txt')
+    return tau
 
 
-def readTurbCellAreaFromFile(fileDir):
-    """
-
-    Arg:
-    fileDir: The directory path of file of cv, dz.dat
-
-    Regurn:
-    coordinate: vector of cell area
-    """
-    cellVolume = fileDir + "cv"
-    dvfile = fileDir + "dz.dat"
-    resMid = extractScalar(cellVolume)
-
-    # write it in Tautemp
-    fout = open('cellVolume.txt', 'w')
-    glob_patternx = resMid.group()
-    glob_patternx = re.sub(r'\(', '', glob_patternx)
-    glob_patternx = re.sub(r'\)', '', glob_patternx)
-    fout.write(glob_patternx)
-    fout.close()
-    cvVec = np.loadtxt('cellVolume.txt')
-    cvVec = np.array([cvVec])
-    dz = np.loadtxt(dvfile)
-    cellArea = cvVec / dz
-    cellArea = cellArea.T
-    return cellArea
-
-
-def readScalarFromFile(fileName):
-    """
-
-    Arg:
-    fileName: The file name of scalar file in OpenFOAM form
-
-    Regurn:
-    scalar file in vector form
-    """
-    resMid = extractScalar(fileName)
-
-    # write it in Tautemp
-    fout = open('temp.txt', 'w')
-    glob_patternx = resMid.group()
-    glob_patternx = re.sub(r'\(', '', glob_patternx)
-    glob_patternx = re.sub(r'\)', '', glob_patternx)
-    fout.write(glob_patternx)
-    fout.close()
-    scalarVec = np.loadtxt('temp.txt')
-    return scalarVec
-
-
-def extractSymmTensor(tensorFile):
+def extract_symm_tensor(tensorFile):
     """ subFunction of readTurbStressFromFile
         Using regular expression to select tau value out (sysmetric tensor)
         Requiring the tensor to be 6-components tensor, and output is with
@@ -450,7 +333,7 @@ def extractSymmTensor(tensorFile):
     return resMid
 
 
-def extractTensor(tensorFile):
+def extract_tensor(tensorFile):
     """ subFunction of readTurbStressFromFile
         Using regular expression to select tau value out (general tensor)
         Requiring the tensor to be 9-components tensor, and output is with
@@ -499,66 +382,8 @@ def extractTensor(tensorFile):
     return resMid
 
 
-def extractVector(vectorFile):
-    """ Function is using regular expression select Vector value out
-
-    Args:
-    UFile: The directory path of file: U
-
-    Returns:
-    resMid: the U as (Ux1,Uy1,Uz1);(Ux2,Uy2,Uz2);........
-    """
-
-    fin = open(vectorFile, 'r')  # need consider directory
-    line = fin.read()  # line is U file to read
-    fin.close()
-    # select U as (X X X)pattern (Using regular expression)
-    patternMid = re.compile(r"""
-    (
-    \(                                                   # match(
-    [\+\-]?[\d]+([\.][\d]*)?([Ee][+-]?[\d]+)?            # match figures
-    (\ )                                                 # match space
-    [\+\-]?[\d]+([\.][\d]*)?([Ee][+-]?[\d]+)?            # match figures
-    (\ )                                                 # match space
-    [\+\-]?[\d]+([\.][\d]*)?([Ee][+-]?[\d]+)?            # match figures
-    \)                                                   # match )
-    \n                                                   # match next line
-    )+                                                   # search greedly
-    """, re.DOTALL | re.VERBOSE)
-    resMid = patternMid.search(line)
-    return resMid
-
-
-def extractScalar(scalarFile):
-    """ subFunction of readTurbStressFromFile
-        Using regular expression to select scalar value out
-
-    Args:
-    scalarFile: The directory path of file of scalar
-
-    Returns:
-    resMid: scalar selected;
-            you need use resMid.group() to see the content.
-    """
-    fin = open(scalarFile, 'r')  # need consider directory
-    line = fin.read()  # line is k file to read
-    fin.close()
-    # select k as ()pattern (Using regular expression)
-    patternMid = re.compile(r"""
-        \(                                                   # match"("
-        \n                                                   # match next line
-        (
-        [\+\-]?[\d]+([\.][\d]*)?([Ee][+-]?[\d]+)?            # match figures
-        \n                                                   # match next line
-        )+                                                   # search greedly
-        \)                                                   # match")"
-    """, re.DOTALL | re.VERBOSE)
-    resMid = patternMid.search(line)
-
-    return resMid
-
-
-def extractTensorPattern(tensorFile):
+# file header/footer
+def extract_foam_pattern(tensorFile):
     """ Function is using regular expression select OpenFOAM tensor files pattern
 
     Args:
@@ -597,208 +422,28 @@ def extractTensorPattern(tensorFile):
     return resStart, resEnd
 
 
-def _extractLocPattern(locFile):
-    """ Function is using regular expression select OpenFOAM Location files pattern
-
-    Args:
-    tensorFile: directory of Locations in OpenFoam, which you want to change
-
-    Returns:
-    resStart: Upper Pattern
-    resEnd:  Lower Pattern
-    """
-    fin = open(locFile, 'r')
-    line = fin.read()
-    fin.close()
-    patternStart = re.compile(r"""
-        .                        # Whatever except next line
-        +?                       # Match 1 or more of preceding-Non-greedy
-        \(                       # match (
-    """, re.DOTALL | re.VERBOSE)
-    resStart = patternStart.search(line)
-
-    patternEnd = re.compile(r"""
-        \)                       # match )
-        ((\ )|;|(\n))+          # match space or nextline or ;
-        ((\ )|;|(\n))+          # match space or nextline or ;
-    """, re.DOTALL | re.VERBOSE)
-    resEnd = patternEnd.search(line)
-    return resStart, resEnd
-
-
-def writeLocToFile(coords, locFile):
-    """Write the coords to the locFile
-
-    Args:
-    coords: locations coordinates
-    locFile: path of the location file in OpenFOAM
-
-    Returns:
-    None
-    """
-    # add parentheses to tensor
-    tempFile = 'loctemp'
-    np.savetxt(tempFile, coords)
-    os.system("sed -i -e 's/^/(/g' " + tempFile)
-    os.system(r"sed -i -e 's/\($\)/)/g' " + tempFile)
-    # read tensor out
-    fin = open(tempFile, 'r')
-    field = fin.read()
-    fin.close()
-    # read patterns
-    (resStart, resEnd) = _extractLocPattern(locFile)
-    fout = open(locFile, 'w')
-    fout.write(resStart.group())
-    fout.write("\n")
-    fout.write(field)
-    fout.write(resEnd.group())
-    fout.close()
-
-
-def writeTurbStressToFile(tau, tauFile):
-    """Write the modified tau to the tauFile
-
-    Args:
-    tau: modified reynolds stress
-    tauFile: path of the tau
-
-    Returns:
-    None
-    """
-    # add parentheses to tensor
-    tempFile = 'tauUpdate'
-    np.savetxt(tempFile, tau)
-    os.system("sed -i -e 's/^/(/g' " + tempFile)
-    os.system(r"sed -i -e 's/\($\)/)/g' " + tempFile)
-
-    # read tensor out
-    fin = open(tempFile, 'r')
-    field = fin.read()
-    fin.close()
-    # read patterns
-    (resStartTau, resEndTau) = extractTensorPattern(tauFile)
-
-    fout = open(tauFile, 'w')
-    fout.write(resStartTau.group())
-    fout.write("\n")
-    fout.write(field)
-    fout.write(resEndTau.group())
-    fout.close()
-
-
-def writeVelocityToFile(U, UFile):
-    """Write the modified tau to the tauFile
-
-    Args:
-    U: modified velocity
-    UFile: path of the U file in OpenFOAM
-
-    Returns:
-    None
-    """
-    # add parentheses to tensor
-    tempFile = 'Utemp'
-    np.savetxt(tempFile, U)
-    os.system("sed -i -e 's/^/(/g' " + tempFile)
-    os.system(r"sed -i -e 's/\($\)/)/g' " + tempFile)
-
-    # read tensor out
-    fin = open(tempFile, 'r')
-    field = fin.read()
-    fin.close()
-    # read patterns
-    (resStartU, resEndU) = extractTensorPattern(UFile)
-
-    fout = open(UFile, 'w')
-    fout.write(resStartU.group())
-    fout.write("\n")
-    fout.write(field)
-    fout.write(resEndU.group())
-    fout.close()
-
-
-def org_genFolders(Npara, Ns, caseName, caseNameObservation, DAInterval, Tau):
-    """ Function:to generate case folders
-
-    Args:
-    Npara: number of parameters
-    Ns: number of parameters
-    caseName: templecase name(string)
-    caseNameObservation: Observationcase name
-    DAInterval: data assimilation interval
-
-    Returns:
-    None
-    """
-    # remove previous ensemble case files
-    os.system('rm -fr ' + caseName + '-tmp_*')
-    os.system('rm -fr ' + caseName + '_benchMark')
-    writeInterval = "%.6f" % DAInterval
-    ii = 0
-    caseCount = np.linspace(1, Ns, Ns)
-    for case in caseCount:
-
-        print "#", case, "/", Ns, " Creating folder for Case = ", case
-
-        tmpCaseName = caseName + "-tmp_" + str(case)
-
-        if(ospt.isdir(tmpCaseName)):  # see if tmpCaseName's'directory is existed
-            shutil.rmtree(tmpCaseName)
-        shutil.copytree(caseName, tmpCaseName)  # copy
-
-        # Replace Tau ensemble for cases ensemble
-        tauTemp = Tau[ii, :, :]
-        tauFile = './' + tmpCaseName + '/0/Tau'
-        writeTurbStressToFile(tauTemp, tauFile)
-
-        # Replace case writeInterval
-        rasFile = ospt.join(os.getcwd(), tmpCaseName, "system", "controlDict")
-        util.replace(rasFile, "<writeInterval>", writeInterval)
-
-        ii += 1
-
-    # generate observation folder
-    if(ospt.isdir(caseNameObservation)):
-        shutil.rmtree(caseNameObservation)
-    shutil.copytree(caseName, caseNameObservation)  # copy
-    # prepare case directory
-    rasFile = ospt.join(
-        os.getcwd(),
-        caseNameObservation,
-        "system",
-        "controlDict")
-    util.replace(rasFile, "<writeInterval>", writeInterval)
-
-
-def callFoam(ensembleCaseName, caseSolver, pseudoObs, parallel=False):
-    """ Function is to call myPisoFoam and sampling (solved to next DAInterval)
-
-    Args:
-    ensembleCaseName: name of openFoam ensemble case folder
-
-    Returns:
-    None
-    """
-    if(parallel):
-        # run pisoFoam (or other OpenFOAM solver as appropriate)
-        os.system('mpirun -np 4 pisoFoam -case ' + ensembleCaseName +
-                  ' -parallel > ' + ensembleCaseName + '/log')
-        # extract value at observation location by "sample"_pseudo matrix H)
-        os.system('mpirun -np 4 sample -case ' + ensembleCaseName +
-                  ' -latestTime -parallel > ' + ensembleCaseName + '/log')
-    else:  # same as above, but for single processor runs
-        os.system(caseSolver + ' -case ' + ensembleCaseName + ' &>>' +
-                  ensembleCaseName + '/log')
-        os.system('sample -case ' + ensembleCaseName + ' -latestTime > ' +
-                  ensembleCaseName + '/sample.log')
-
-        # os.system('myPisoFoam -case ' + ensembleCaseName)
-
-        # extract value at observation location
-        if pseudoObs == 1:
-            os.system('sample -case ' + ensembleCaseName + ' -time 0 >> ' +
-                      ensembleCaseName + '/log')
-            os.system('sample -case ' + ensembleCaseName + ' -latestTime >> ' +
-                      ensembleCaseName + '/log')
-        else:
-            pass
+def foam_header(name, location, foamclass, version, format='ascii',
+                 website = 'www.OpenFOAM.org'):
+    header = '/*--------------------------------*- C++ -*---------------' + \
+        '-------------------*\\\n'
+    header += '| =========                 |                            ' + \
+        '                     |\n'
+    header += '| \\\\      /  F ield         | OpenFOAM: The Open Source' + \
+        ' CFD Toolbox           |\n'
+    header += '|  \\\\    /   O peration     | Version:  ' + \
+        '{}.x                                 |\n'.format(version)
+    header += '|   \\\\  /    A nd           | Web:      ' + \
+        '{}                      |\n'.format(website)
+    header += '|    \\\\/     M anipulation  |                          ' + \
+        '                       |\n'
+    header += '\\*------------------------------------------------------' + \
+        '---------------------*/\n'
+    header += 'FoamFile\n{\n'
+    header += '    version     {};\n'.format(version)
+    header += '    format      {};\n'.format(format)
+    header += '    class       {};\n'.format(foamclass)
+    header += '    location    "{}";\n'.format(location)
+    header += '    object      {};\n'.format(name) + '}\n'
+    header += '// * * * * * * * * * * * * * * * * * * * * * * * * * * * ' + \
+        '* * * * * * * * * * //\n'
+    return header

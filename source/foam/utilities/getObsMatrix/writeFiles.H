@@ -1,10 +1,11 @@
-if(indexHFile.good())
+
+if(obsMatrix.good())
   {
     forAll(supportCellsIdx, i)
       {
 	forAll(supportCellsIdx[i], j)
 	  {
-	    indexHFile << i << "  " << supportCellsIdx[i][j] << endl;
+	    obsMatrix << i << "  " << supportCellsIdx[i][j] << "  " << invDistCoeffs[i][j] << endl;
 	  }
       }
   }
@@ -12,26 +13,6 @@ if(indexHFile.good())
    {
      FatalErrorIn(args.executable())
        << "Cannot open file "
-       << runTime.path()/"constant"/"indexH.txt"
+       << runTime.path()/"constant"/"obsMatrix"
        << exit(FatalError);
    };
-
-
-if(weightHFile.good())
-  {
-    forAll(invDistCoeffs, i)
-      {
-	forAll(invDistCoeffs[i], j)
-	  {
-	    weightHFile << invDistCoeffs[i][j] << endl;
-	  }
-      }
-  }
- else
-   {
-     FatalErrorIn(args.executable())
-       << "Cannot open file "
-       << runTime.path()/"constant"/"weightH.txt"
-       << exit(FatalError);
-   };
-
