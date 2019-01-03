@@ -12,16 +12,16 @@ import random_field as rf
 
 
 # inputs - coordinates
-nxpoints = 40
-nypoints = 40
+nxpoints = 100
+nypoints = 100
 ncells = nxpoints*nypoints
 
 # inputs - length scales
 constant_length_scales = True
-length_scales = (0.5, 1.1)
+length_scales = (2.0, 1.0)
 
 # inputs - plot locations
-point_list = [120, 210, 50]
+point_list = [5050, 0, 4999]
 
 # inputs - standard deviation (sigma) field
 stddev_field = np.ones(ncells)*1
@@ -59,6 +59,7 @@ ax.set_ylabel('Cell ID')
 ax.set_xlim([0, ncells])
 ax.set_ylim([0, ncells])
 ax.set_aspect('equal')
+ax.invert_yaxis()
 divider = make_axes_locatable(ax)
 cax = divider.append_axes("right", size="5%", pad=0.05)
 plt.colorbar(im, cax=cax)
@@ -71,8 +72,8 @@ for ipoint in point_list:
     im = ax.matshow(cov_plot)
     ax.set_title('Covariance for Point ({:d}, {:d})'.format(
         coords[ipoint, 0], coords[ipoint, 1]))
-    ax.set_xlim([0, nxpoints])
-    ax.set_ylim([0, nypoints])
+    ax.set_xlim([-0.5, nxpoints-0.5])
+    ax.set_ylim([-0.5, nypoints-0.5])
     # plt.axis('equal')
     ax.set_aspect('equal')
     ax.xaxis.tick_bottom()

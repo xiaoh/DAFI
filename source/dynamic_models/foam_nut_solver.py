@@ -85,7 +85,7 @@ class Solver(DynModel):
         if 'nkl_modes' in param_dict:
             nkl_modes = int(param_dict['nkl_modes'])
         else:
-            nkl_modes = None # set later to max
+            nkl_modes = None  # set later to max
         if 'enable_parallel' in param_dict:
             enable_parallel = util.str2bool(param_dict['enable_parallel'])
         else:
@@ -220,7 +220,7 @@ class Solver(DynModel):
             self.da_step += 1
             delta_nut = self.delta_nut_rf.reconstruct_kl_reduced(state_vec)
             nut = np.exp(self.log_median_mat + delta_nut)
-            time_dir = '{:.6f}'.format(self.da_step * self.forward_interval)
+            time_dir = '{:d}'.format(self.da_step * self.forward_interval)
             self._modify_openfoam_scalar('nut', nut, time_dir)
         # run openFOAM
         self._call_foam(sample=True)
@@ -228,7 +228,7 @@ class Solver(DynModel):
         velocities = np.zeros([self.ncells*foam.NVECTOR, self.nsamples])
         time_dir = '{:d}'.format(self.da_step)
         for isample in range(self.nsamples):
-            sample_dir = os.path.join('sample_{:d}'.format(isample + 1))
+            sample_dir = 'sample_{:d}'.format(isample + 1)
             # get velocities
             file_to_read = os.path.join(sample_dir, time_dir, 'U')
             ivel = foam.read_vector_from_file(file_to_read).flatten('C')
@@ -255,7 +255,7 @@ class Solver(DynModel):
             sample_dir = os.path.join('sample_{:d}'.format(isample + 1))
             shutil.rmtree(os.path.join(
                 sample_dir,
-                '{:.6f}'.format((self.da_step + 1) * self.forward_interval)))
+                '{:d}'.format((self.da_step + 1) * self.forward_interval)))
             shutil.move(sample_dir, self.dir_results)
 
     # internal methods
@@ -301,13 +301,13 @@ class Solver(DynModel):
             if da_step > 0:
                 os.makedirs(dst)
                 # copy nut from previous time directory
-                src_time_dir = '{:.6f}'.format(
+                src_time_dir = '{:d}'.format(
                     da_step * forward_interval)
                 src = os.path.join(case_dir, src_time_dir)
                 shutil.copyfile(os.path.join(src, 'nut'),
                                 os.path.join(dst, 'nut'))
             # copy U and p from current time directory
-            src_time_dir = '{:.6f}'.format(
+            src_time_dir = '{:d}'.format(
                 (da_step+1) * forward_interval)
             src = os.path.join(case_dir, src_time_dir)
             shutil.copyfile(os.path.join(src, 'U'), os.path.join(dst, 'U'))
@@ -330,7 +330,7 @@ class Solver(DynModel):
             # delete directory
             if da_step > 0:
                 shutil.rmtree(os.path.join(
-                    case_dir, '{:.6f}'.format((da_step) * forward_interval)))
+                    case_dir, '{:d}'.format((da_step) * forward_interval)))
             # run sample
             if sample:
                 bash_command = 'sample -case ' + case_dir + \
@@ -357,75 +357,72 @@ class Solver(DynModel):
 
 
 def _construct_obsmat_vec(obs_mat, nstate_obs, ncells):
-        """ Construct the matrix to go from entire vector field to
-        values at the observation locations.
+    """ Construct the matrix to go from entire vector field to values
+    at the observation locations.
 
-        Parameters
-        ----------
-        obs_mat : ndarray
-            Matrix containing the relevant cells for each observation
-            location. The three columns are (1) observation index, (2)
-            cell index, (3) cell weight. This matrix should be read
-            from the output of the ``getObsMatrix`` utility.
-        nstate_obs : int
-            Number of observation states.
-        ncells : int
-            Number of cells in OpenFOAM mesh.
-        """
-        weight = np.expand_dims(obs_mat[:,2], 1)
-        idx = obs_mat[:, :2]
-        nidx0, nidx1 = idx.shape
-        idx3 = np.zeros((nidx0 * foam.NVECTOR, nidx1))
-        weight3 = np.zeros((nidx0 * foam.NVECTOR, 1))
-        # loop
-        current_idx = 0
-        for iblock in range(int(idx[:, 0].max()) + 1):
-            rg = np.where(idx[:, 0] == iblock)[0]
-            start, duration = rg[0], len(rg)
-            # x velocities
-            idx_block = np.copy(idx[start:start + duration, :])
-            idx_block[:, 1] *= foam.NVECTOR
-            wgtBlock = np.copy(weight[start:start + duration, :])
-            idx_block[:, 0] = current_idx
-            # y velocities
-            idx_block1 = np.copy(idx_block)
-            idx_block1[:, 0] += 1
-            idx_block1[:, 1] += 1
-            # z velocities
-            idx_block2 = np.copy(idx_block)
-            idx_block2[:, 0] += 2
-            idx_block2[:, 1] += 2
-            # all
-            idx3[foam.NVECTOR * start:foam.NVECTOR * (start + duration),
-                 :] = np.vstack((idx_block, idx_block1, idx_block2))
-            weight3[foam.NVECTOR * start:foam.NVECTOR * (start + duration),
-                :] = np.vstack((wgtBlock, wgtBlock, wgtBlock))
-            current_idx += foam.NVECTOR
-        hmat = sp.coo_matrix((weight3.flatten('C'), (idx3[:, 0], idx3[:, 1])),
-                             shape=(nstate_obs, ncells*foam.NVECTOR))
-        return hmat.tocsr()
+    Parameters
+    ----------
+    obs_mat : ndarray
+        Matrix containing the relevant cells for each observation
+        location. The three columns are (1) observation index, (2) cell
+        index, (3) cell weight. This matrix should be read from the
+        output of the ``getObsMatrix`` utility.
+    nstate_obs : int
+        Number of observation states.
+    ncells : int
+        Number of cells in OpenFOAM mesh.
+    """
+    weight = np.expand_dims(obs_mat[:, 2], 1)
+    idx = obs_mat[:, :2]
+    nidx0, nidx1 = idx.shape
+    idx3 = np.zeros((nidx0 * foam.NVECTOR, nidx1))
+    weight3 = np.zeros((nidx0 * foam.NVECTOR, 1))
+    # loop
+    current_idx = 0
+    for iblock in range(int(idx[:, 0].max()) + 1):
+        rg = np.where(idx[:, 0] == iblock)[0]
+        start, duration = rg[0], len(rg)
+        # x velocities
+        idx_block = np.copy(idx[start:start + duration, :])
+        idx_block[:, 1] *= foam.NVECTOR
+        wgtBlock = np.copy(weight[start:start + duration, :])
+        idx_block[:, 0] = current_idx
+        # y velocities
+        idx_block1 = np.copy(idx_block)
+        idx_block1[:, 0] += 1
+        idx_block1[:, 1] += 1
+        # z velocities
+        idx_block2 = np.copy(idx_block)
+        idx_block2[:, 0] += 2
+        idx_block2[:, 1] += 2
+        # all
+        idx3[foam.NVECTOR * start:foam.NVECTOR * (start + duration), :] = \
+            np.vstack((idx_block, idx_block1, idx_block2))
+        weight3[foam.NVECTOR * start:foam.NVECTOR * (start + duration), :] = \
+            np.vstack((wgtBlock, wgtBlock, wgtBlock))
+        current_idx += foam.NVECTOR
+    hmat = sp.coo_matrix((weight3.flatten('C'), (idx3[:, 0], idx3[:, 1])),
+                         shape=(nstate_obs, ncells*foam.NVECTOR))
+    return hmat.tocsr()
 
 
 # pre-processing - not used by DAFI
-def get_vector_at_obs(npoints, obs_mat_file, field_file):
+def get_vector_at_obs(obs_mat_file, field_file):
     """ Get an OpenFOAM vector field at the specified observation
     locations.
 
     Parameters
     ----------
-    nstate_obs : int
-        Number of observation states.
-    ncells : int
-        Number of cells in OpenFOAM mesh.
     obs_mat_file : ndarray
         Output file of the ``getObsMatrix`` utility.
     field_file : str
         OpenFOAM field file containg the full vector field.
     """
     field = foam.read_vector_from_file(field_file)
-    ncells = len(fields)
+    ncells = len(field)
+    field = field.flatten('C')
     mesh_mat = np.loadtxt(obs_mat_file)
-    npoints = mesh_mat[-1,0]+1
+    npoints = int(mesh_mat[-1, 0]) + 1
     nstate_obs = npoints * 3
-    obsmat = _construct_obsmat_vec(mesh_mat, nstate_obs, ncells, field)
+    obsmat = _construct_obsmat_vec(mesh_mat, nstate_obs, ncells)
     return obsmat.dot(field)

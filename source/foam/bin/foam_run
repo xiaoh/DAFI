@@ -6,7 +6,7 @@ if [ "x$1" = "x-h" ]; then
 fi
 
 if [ $# -eq 0 ]; then
-    DIRS=.
+    DIR=.
 else    
     DIR=$1
 fi
@@ -19,6 +19,5 @@ fi
 cd $DIR
 . $WM_PROJECT_DIR/bin/tools/RunFunctions
 application=`getApplication`
-echo "Running $application in $DIR"
 runApplication $application
 

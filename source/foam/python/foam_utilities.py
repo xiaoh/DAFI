@@ -1,7 +1,7 @@
 # Copyright 2018 Virginia Polytechnic Institute and State University.
 """ OpenFOAM file manipulation. """
 
-# system import
+# standard library imports
 import numpy as np
 import os
 import os.path as ospt
@@ -126,10 +126,8 @@ def read_cell_volumes(file_dir):
     glob_patternx = re.sub(r'\)', '', glob_patternx)
     fout.write(glob_patternx)
     fout.close()
-    cvVec = np.loadtxt('cellVolume.txt')
+    cellVolume = np.loadtxt('cellVolume.txt')
     os.remove('cellVolume.txt')
-    cvVec = np.array([cvVec])
-    cellVolume = cvVec.T
     return cellVolume
 
 
@@ -399,7 +397,7 @@ def extract_foam_pattern(tensorFile):
     patternStart = re.compile(r"""
         .                        # Whatever except next line
         +?                       # Match 1 or more of preceding-Non-greedy
-        internalField            # match interanlField
+        internalField            # match internalField
         [a-zA-Z\ \n]+            # match class contained a-z A-Z space and \n
         <((vector)|(symmTensor)|(scalar))>    # match '<vector>' or '<scalar>'
         ((\ )|(\n))+?            # space or next line--non greedy
@@ -423,7 +421,7 @@ def extract_foam_pattern(tensorFile):
 
 
 def foam_header(name, location, foamclass, version, format='ascii',
-                 website = 'www.OpenFOAM.org'):
+                website='www.OpenFOAM.org'):
     header = '/*--------------------------------*- C++ -*---------------' + \
         '-------------------*\\\n'
     header += '| =========                 |                            ' + \

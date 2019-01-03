@@ -12,7 +12,7 @@ import scipy.sparse.linalg as spla
 
 # generate covariance matrix
 def generate_cov(kernel, corr_flag=False, stddev=None, stddev_constant=True,
-                 sp_tol=0.001, perform_checks=False, tol=1e-05, verbose=0,
+                 sp_tol=1e-10, perform_checks=False, tol=1e-05, verbose=0,
                  **kwargs):
     """ Create a sparse covariance matrix from specified kernel and tolerances.
 
@@ -63,9 +63,9 @@ def generate_cov(kernel, corr_flag=False, stddev=None, stddev_constant=True,
         if verbose > 1:
             tic2 = time.time()
             print("  Checking if covariance is positive-definite ...")
-        check = check_positive_definite(cov, tol)
+        check = check_positive_definite_dense(cov.todense(), tol)
         if not check:
-            raise ValueError("Not possitive-definitie.")
+            raise ValueError("Not possitive-definite.")
         if verbose > 1:
             toc2 = time.time()
             print("    Time to check positive-definite: {:.1f}s".format(
@@ -83,7 +83,7 @@ def corr_to_cov(corr, stddev, stddev_constant=True):
         cov = stddev**2 * corr
     else:
         stddev = np.atleast_2d(stddev)
-        cov = corr*np.dot(stddev.T, stddev)
+        cov = corr * np.dot(stddev.T, stddev)
     return cov
 
 
@@ -118,10 +118,31 @@ def check_symmetric(mat, rtol=1e-05, atol=0.0):
 
 
 def check_positive_definite(mat, tol=1e-05):
-    """ Checks if a symmetric matrix is positive-definite. """
-    # TODO: square exponential fails if (l != 1). Why?
+    """ Checks if a symmetric matrix is positive-definite.
+
+    Not very stable for very small eigenvalues.
+    """
     min_eig = spla.eigsh(mat, k=1, which='SA', return_eigenvectors=False)[0]
     return (min_eig + tol >= 0)
+
+
+def check_positive_definite_dense(mat, tol=1e-05):
+    """ Checks if a symmetric matrix is positive-definite. """
+    min_eig = np.linalg.eigvalsh(mat).min()
+    return (min_eig + tol >= 0)
+
+
+def check_positive_definite_dense_fast(mat):
+    """ Checks if a symmetric matrix is positive-definite.
+
+    Not very stable for very small eigenvalues.
+    """
+    try:
+        np.linalg.cholesky(mat)
+        out = True
+    except:
+        out = False
+    return out
 
 
 # utilities
@@ -135,6 +156,27 @@ def sparse_to_nan(mat):
     return spnan
 
 
+def cov2corr(cov):
+    """
+    covariance matrix to correlation matrix.
+    """
+    stddev = np.sqrt(cov.diagonal())
+    stddev = np.atleast_2d(stddev)
+    corr = cov / np.dot(stddev.T, stddev)
+    return corr
+
+
+def source_cov_to_result_corr(cov, weights, mat):
+    """ For PDE-informed covariance. """
+    weights = np.squeeze(weights)
+    weights = np.atleast_2d(weights)
+    weight_mat = np.sqrt(np.dot(weights.T, weights))
+    cov = cov * weight_mat
+    inv_mat = np.linalg.solve(mat, np.identity(mat.shape[0]))
+    cov_out = np.dot(np.dot(inv_mat, cov), np.transpose(inv_mat))  # L*cov*L^T
+    return cov2corr(cov_out)
+
+
 # kernels
 def kernel_sqrexp(coords, length_scales, constant_length_scales=True):
     """
@@ -142,7 +184,7 @@ def kernel_sqrexp(coords, length_scales, constant_length_scales=True):
     npoints = coords.shape[0]
     nphys_dims = coords.shape[1]
     # alpha = 2 specifying a Squre exponential kernel
-    alpha = 2
+    alpha = 2.0
     # calculate
     exp = np.zeros([npoints, npoints])
 
@@ -156,8 +198,7 @@ def kernel_sqrexp(coords, length_scales, constant_length_scales=True):
         if not constant_length_scales:
             lensc = vec_to_mat(lensc)
         exp += ((pos_1 - pos_2) / (lensc))**alpha
-    return np.exp(-exp)
-    # return np.exp(-0.5*exp)
+    return np.exp(-0.5*exp)
 
 
 def kernel_input_file(filename):

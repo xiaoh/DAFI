@@ -124,6 +124,8 @@ class DAFilter2(DAFilter):
               integer or ``np.inf``. Default is L2 norm.
             * **perturb_obs** (``bool``, ``True``) -
               Perturb the observations for each sample.
+            * **obs_err_multiplier** (``float``, ``1.0``) -
+              Factor by which to multiply the observation error (R).
         """
         self.name = 'Generic DA filtering technique'
         self.short_name = None
@@ -192,6 +194,10 @@ class DAFilter2(DAFilter):
             self._perturb_obs = utils.str2bool(input_dict['perturb_obs'])
         except:
             self._perturb_obs = True
+        if 'obs_err_multiplier' in input_dict:
+            self.obs_err_factor = float(input_dict['obs_err_multiplier'])
+        else:
+            self.obs_err_factor = 1.0
 
         # initialize iteration array
         self.time_array = np.arange(0.0, self.t_end, self.da_interval)
@@ -303,6 +309,7 @@ class DAFilter2(DAFilter):
                     self.state_vec_forecast)
                 # get observation data at current step
                 obs_vec, self.obs_error = self.dyn_model.get_obs(self.time)
+                self.obs_error *= self.obs_err_factor
                 if self._perturb_obs:
                     self.obs = self._perturb_vec(
                         obs_vec, self.obs_error, self.nsamples)
