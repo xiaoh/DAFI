@@ -1018,7 +1018,7 @@ class FoamTauSolver(DynModel):
         """ Do nothing (static model). """
         return X
 
-    def forward(self, X):
+    def state_to_observation(self, X):
         """ Call the dynamic core to evolve the ensemble states to time $tDest$
 
         Args:

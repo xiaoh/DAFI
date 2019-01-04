@@ -175,7 +175,7 @@ class Solver(DynModel):
                 np.random.normal(0, dx_std, self.nsamples)
         # augment the state with KL expansion coefficient
         augstate_init = np.concatenate((state_init, para_init))
-        model_obs = self.forward(augstate_init)
+        model_obs = self.state_to_observation(augstate_init)
         return augstate_init, model_obs
 
     def forecast_to_time(self, state_vec_current, next_end_time):
@@ -183,7 +183,7 @@ class Solver(DynModel):
 
         return state_vec_current
 
-    def forward(self, state_vec):
+    def state_to_observation(self, state_vec):
         """ Forward the states to observation space (from X to HX).
 
         Parameters

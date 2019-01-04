@@ -277,7 +277,8 @@ class DAFilter2(DAFilter):
 
         # sensitivity only
         if self._sensitivity_only:
-            self.model_obs = self.dyn_model.forward(self.state_vec_analysis)
+            self.model_obs = self.dyn_model.state_to_observation(
+                self.state_vec_analysis)
             if self.ver >= 1:
                 print("\nSensitivity study completed.")
             sys.exit(0)
@@ -305,7 +306,7 @@ class DAFilter2(DAFilter):
                 # forward the state vector to observation space
                 if self.forward_step != 1:
                     self.state_vec_forecast = self.state_vec_analysis.copy()
-                self.model_obs = self.dyn_model.forward(
+                self.model_obs = self.dyn_model.state_to_observation(
                     self.state_vec_forecast)
                 # get observation data at current step
                 obs_vec, self.obs_error = self.dyn_model.get_obs(self.time)

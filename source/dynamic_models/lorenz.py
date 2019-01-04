@@ -181,7 +181,7 @@ class Solver(DynModel):
         for isamp in range(self.nsamples):
             state_vec[:, isamp] = self.init_state \
                 + np.random.normal(0, self.init_std)
-        model_obs = self.forward(state_vec)
+        model_obs = self.state_to_observation(state_vec)
         return state_vec, model_obs
 
     def forecast_to_time(self, state_vec_current, end_time):
@@ -222,8 +222,8 @@ class Solver(DynModel):
         np.savetxt(savedir + os.sep + 'time_{}'.format(da_step), time_series)
         return state_vec_forecast
 
-    def forward(self, state_vec):
-        """ Forward the states to observation space (from X to HX).
+    def state_to_observation(self, state_vec):
+        """ Map the states to observation space (from X to HX).
 
         Parameters
         ----------

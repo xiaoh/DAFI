@@ -83,8 +83,10 @@ class DynModel(object):
         state_vec = np.zeros([self.nstate, self._nsamples])
         return state_vec
 
-    def forward(self, state_vec):
-        """ Forward the states to observation space (from X to HX).
+    def state_to_observation(self, state_vec):
+        """ Map the states to observation space (from X to HX).
+
+        This is the forward model.
 
         Parameters
         ----------
