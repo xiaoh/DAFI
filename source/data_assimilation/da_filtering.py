@@ -6,6 +6,7 @@ import ast
 import warnings
 import os
 import sys
+import importlib
 
 # third party imports
 import numpy as np
@@ -789,21 +790,25 @@ class EnKF_MDA(DAFilter2):
         self._save_debug(debug_dict)
 
 
-# developing
-class EnKF_Lasso(DAFilter2):
-    """ Implementation of the ensemble Kalman Filter with Lasso
-    (EnKF-Lasso).
+class EnKF_Regularized(DAFilter2):
+    """ Implementation of the regularized ensemble Kalman Filter (EnKF).
 
     It inherits most methods from parent class (``DAFIlter2``), but
-    replaces the ``correct_forecasts`` method to use EnKF-Lasso for the
-    data-assimilation step.
+    replaces the ``correct_forecasts`` method to use penalized EnKF for
+    the data-assimilation step.
 
-    The EnKF_lasso is updated by: ``Xa = Xf + K*(obs - HX) - penalty``
-    where *Xf* is the forecasted state vector (by the forward model),
-    *Xa* is the updated vector after data-assimilation, *K* is the
-    Kalman gain matrix, *obs* is the observation vector, and *HX* is
-    the forecasted state vector in observation space. See the
-    documentation for more information.
+    For detail on the implementation see
+    [cite paper once it is published].
+
+    Note
+    ----
+    Additional inputs in ``input_dict``:
+        * **penalties_python_file** (``string``) -
+          Path to python file that contains function called
+          ``penalties`` that returns a list of dictionaries. Each
+          dictionary represents one penalty and includes:
+          ``lambda`` (float), ``weight_matrix`` (ndarray),
+          ``penalty`` (function), and ``gradient`` (function).
     """
 
     def __init__(self, nsamples, da_interval, t_end, max_da_iteration,
@@ -817,17 +822,23 @@ class EnKF_Lasso(DAFilter2):
         super(self.__class__, self).__init__(
             nsamples, da_interval, t_end, max_da_iteration, dyn_model,
             input_dict)
-        self.name = 'Ensemble Kalman Filter - Lasso'
-        self.short_name = 'EnKF-Lasso'
+        self.name = 'Regularized Ensemble Kalman Filter'
+        self.short_name = 'EnKF_Reg'
+        # load penalties
+        pfile = input_dict['penalties_python_file']
+        sys.path.append(os.path.dirname(pfile))
+        penalties = getattr(importlib.import_module(
+            os.path.splitext(os.path.basename(pfile))[0]), 'penalties')
+        self.penalties = penalties(self)
 
     def _correct_forecasts(self):
-        """ Correct the propagated ensemble (filtering step) using
-        EnKF-Lasso
+        """ Correct the propagated ensemble (filtering step) using EnKF
 
         **Updates:**
             * self.state_vec_analysis
         """
 
+        # TODO: Consider moving these two functions to DAFilter2. Remove from all the child classes. Add one-line docstring.
         def _check_condition_number(hpht):
             con_inv = la.cond(hpht + self.obs_error)
             if self._verb >= 2:
@@ -849,37 +860,31 @@ class EnKF_Lasso(DAFilter2):
         xp = _mean_subtracted_matrix(self.state_vec_forecast)
         hxp = _mean_subtracted_matrix(self.model_obs)
         coeff = (1.0 / (self.nsamples - 1.0))
-        p = coeff * xp.dot(xp.T)
         pht = coeff * np.dot(xp, hxp.T)
         hpht = coeff * hxp.dot(hxp.T)
         _check_condition_number(hpht)
         inv = la.inv(hpht + self.obs_error)
-        inv = inv.A  # convert np.matrix to np.ndarray
         kalman_gain_matrix = pht.dot(inv)
-
-        # calculate the lasso penalty
-        lamda = 1e-10
-        h_mat = hxp.dot(la.pinv(xp))
-        inv_obs_error = la.inv(self.obs_error)
-
-        htrh = np.dot(h_mat.T, inv_obs_error.dot(h_mat))
-        inv_lasso = la.pinv(htrh) + p  # htrh is singular
-        weight_lasso_vec = np.zeros(htrh.shape[0])
-
-        for i in range(self.nstate):
-            if i >= 3000*3 and i <= self.nstate - 3:
-                for j in range(3):
-                    weight_lasso_vec[j+i] = (int((i-9000))/3)/30.0
-
-        weight_lasso_mat = np.tile(weight_lasso_vec, (self.nsamples, 1)).T
-        weight_lasso_mat2 = weight_lasso_mat.dot(weight_lasso_mat.T)
-
-        penalty_lasso = inv_lasso.dot(weight_lasso_mat2)
-        penalty_lasso = penalty_lasso.A
+        # calculate the "K2" matrix
+        hxx = np.dot(hxp, xp.T)
+        k2_gain_matrix = \
+            coeff* np.dot(kalman_gain_matrix, hxx) - coeff*np.dot(xp, xp.T)
+        # calculate penalty matrix
+        penalty_mat = np.zeros([self.nstate, self.nsamples])
+        for ipenalty in self.penalties:
+            w_mat = ipenalty['weight_matrix']
+            lamb = ipenalty['lambda']
+            func_penalty = ipenalty['penalty']
+            func_gradient = ipenalty['gradient']
+            for isamp in range(self.nsamples):
+                istate = self.state_vec_forecast[:,isamp]
+                gpw = np.dot(func_gradient(istate).T, w_mat)
+                gpwg = np.dot(gpw, func_penalty(istate))
+                penalty_mat[:, isamp] += lamb*gpwg
         # analysis step
-        dx = np.dot(kalman_gain_matrix, self.obs - self.model_obs)
-        self.state_vec_analysis = self.state_vec_forecast + dx - \
-            lamda * penalty_lasso.dot(self.state_vec_forecast)
+        dx1 = np.dot(kalman_gain_matrix, self.obs - self.model_obs)
+        dx2 = np.dot(k2_gain_matrix, penalty_mat)
+        self.state_vec_analysis = self.state_vec_forecast + dx1 + dx2
         # debug
         debug_dict = {
             'K': kalman_gain_matrix, 'inv': inv, 'HPHT': hpht, 'PHT': pht,
