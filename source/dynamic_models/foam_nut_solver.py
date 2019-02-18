@@ -187,8 +187,8 @@ class Solver(DynModel):
             self.nsamples, self.nstate, return_coeffs=True)
         nut = np.exp(self.log_median_mat + delta_nut)
         self._modify_openfoam_scalar('nut', nut, '0')
-        # forward to HX (U)
-        model_obs = self.forward(None, False)
+        # map to HX (U)
+        model_obs = self.state_to_observation(None, False)
         return (coeffs, model_obs)
 
     def forecast_to_time(self, state_vec_current, end_time):
@@ -203,8 +203,8 @@ class Solver(DynModel):
         """
         return state_vec_current
 
-    def forward(self, state_vec, update=True):
-        """ Forward the states to observation space (from X to HX).
+    def state_to_observation(self, state_vec, update=True):
+        """ Map the states to observation space (from X to HX).
 
         Modifies the OpenFOAM cases to use nu_t reconstructed from the
         specified coeffiecients. Runs OpenFOAM, and returns the

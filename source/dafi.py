@@ -125,7 +125,7 @@ def main():
             rand_seed = int(param_dict['rand_seed'])
         except:
             rand_seed = 1.0
-    # remove all the inputs meant for this file, mfu_main.py.
+    # remove all the inputs meant for this file, dafi.py.
     # what is left are inputs meant for the specific DA filter method used.
     main_inputs = [
         'dyn_model', 'dyn_model_input', 'da_filter', 't_end', 'da_t_interval',
