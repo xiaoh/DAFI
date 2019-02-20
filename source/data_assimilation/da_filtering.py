@@ -260,7 +260,7 @@ class DAFilter2(DAFilter):
 
         **Updates:**
             * self.time
-            * self.iter
+            * self.forward_step
             * self.da_step
             * self.state_vec_analysis
             * self.state_vec_forecast
@@ -478,7 +478,7 @@ class DAFilter2(DAFilter):
         if self._debug_flag:
             for key, value in debug_dict.items():
                 fname = self._debug_dir + os.sep + key + \
-                    '_{}'.format(self.da_step)
+                    '_{}_{}'.format(self.da_step, self.forward_step)
                 np.savetxt(fname, value)
 
     def _calc_misfits(self):
@@ -868,7 +868,7 @@ class EnKF_Regularized(DAFilter2):
         # calculate the "K2" matrix
         hxx = np.dot(hxp, xp.T)
         k2_gain_matrix = \
-            coeff* np.dot(kalman_gain_matrix, hxx) - coeff*np.dot(xp, xp.T)
+            coeff * np.dot(kalman_gain_matrix, hxx) - coeff*np.dot(xp, xp.T)
         # calculate penalty matrix
         penalty_mat = np.zeros([self.nstate, self.nsamples])
         for ipenalty in self.penalties:
@@ -877,7 +877,7 @@ class EnKF_Regularized(DAFilter2):
             func_penalty = ipenalty['penalty']
             func_gradient = ipenalty['gradient']
             for isamp in range(self.nsamples):
-                istate = self.state_vec_forecast[:,isamp]
+                istate = self.state_vec_forecast[:, isamp]
                 gpw = np.dot(func_gradient(istate).T, w_mat)
                 gpwg = np.dot(gpw, func_penalty(istate))
                 penalty_mat[:, isamp] += lamb*gpwg
@@ -886,7 +886,9 @@ class EnKF_Regularized(DAFilter2):
         dx2 = np.dot(k2_gain_matrix, penalty_mat)
         self.state_vec_analysis = self.state_vec_forecast + dx1 + dx2
         # debug
-        debug_dict = {
-            'K': kalman_gain_matrix, 'inv': inv, 'HPHT': hpht, 'PHT': pht,
-            'HXP': hxp, 'XP': xp}
+        # debug_dict = {
+        #     'K': kalman_gain_matrix, 'inv': inv, 'HPHT': hpht, 'PHT': pht,
+        #     'HXP': hxp, 'XP': xp}
+        debug_dict = {'dx1': dx1, 'dx2': dx2, 'K': kalman_gain_matrix,
+                      'K2': k2_gain_matrix}
         self._save_debug(debug_dict)
