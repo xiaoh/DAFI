@@ -700,7 +700,7 @@ class EnRML(DAFilter2):
         # analysis step
         dx = np.dot(gauss_newton_matrix, self.obs - self.model_obs) + penalty
         x = self.beta * self.state_vec_prior + (
-            1.0-self.beta) * x + self.beta*dx
+            1.0 - self.beta) * x + self.beta*dx
 
         self.state_vec_analysis = x.copy()
         # TODO: I'm pretty sure this copy is unnecesary. Check.
@@ -790,8 +790,8 @@ class EnKF_MDA(DAFilter2):
         self._save_debug(debug_dict)
 
 
-class EnKF_Regularized(DAFilter2):
-    """ Implementation of the regularized ensemble Kalman Filter (EnKF).
+class REnKF(DAFilter2):
+    """ Implementation of the regularized ensemble Kalman Filter (REnKF).
 
     It inherits most methods from parent class (``DAFIlter2``), but
     replaces the ``correct_forecasts`` method to use penalized EnKF for
@@ -823,13 +823,21 @@ class EnKF_Regularized(DAFilter2):
             nsamples, da_interval, t_end, max_da_iteration, dyn_model,
             input_dict)
         self.name = 'Regularized Ensemble Kalman Filter'
-        self.short_name = 'EnKF_Reg'
+        self.short_name = 'REnKF'
         # load penalties
         pfile = input_dict['penalties_python_file']
         sys.path.append(os.path.dirname(pfile))
         penalties = getattr(importlib.import_module(
             os.path.splitext(os.path.basename(pfile))[0]), 'penalties')
         self.penalties = penalties(self)
+        self.cost1_all = []
+        self.cost2_all = []
+        self.cost3_all = []
+        self.lamda_all = []
+        self.dx1_all = []
+        self.dx2_all = []
+        self.k2_all = []
+        self.penalty_all = []
 
     def _correct_forecasts(self):
         """ Correct the propagated ensemble (filtering step) using EnKF
@@ -870,23 +878,45 @@ class EnKF_Regularized(DAFilter2):
         k2_gain_matrix = \
             coeff* np.dot(kalman_gain_matrix, hxx) - coeff*np.dot(xp, xp.T)
         # calculate penalty matrix
-        penalty_mat = np.zeros([self.nstate, self.nsamples])
+        penalty_mat = np.zeros([len(self.state_vec_forecast), self.nsamples])
         for ipenalty in self.penalties:
             w_mat = ipenalty['weight_matrix']
             lamb = ipenalty['lambda']
+            lamda = lamb(self.forward_step)
+            if self.forward_step > 1 and self.cost3_all[-1] > 0.1*self.cost2_all[-1]:
+                lamda=self.lamda_all[-1]
+
             func_penalty = ipenalty['penalty']
             func_gradient = ipenalty['gradient']
+
             for isamp in range(self.nsamples):
                 istate = self.state_vec_forecast[:,isamp]
                 gpw = np.dot(func_gradient(istate).T, w_mat)
                 gpwg = np.dot(gpw, func_penalty(istate))
-                penalty_mat[:, isamp] += lamb*gpwg
+                penalty_mat[:, isamp] += lamda * gpwg
+        penalty = func_penalty(istate)
         # analysis step
         dx1 = np.dot(kalman_gain_matrix, self.obs - self.model_obs)
         dx2 = np.dot(k2_gain_matrix, penalty_mat)
         self.state_vec_analysis = self.state_vec_forecast + dx1 + dx2
+        dx = dx1 + dx2
+        p = coeff*np.dot(xp, xp.T)
+        cost1 = 0.5 * np.dot(dx.T.dot(la.inv(p)), dx)
+        delta_y = self.obs - self.model_obs
+        cost2 = 0.5 * np.dot(delta_y.T.dot(la.inv(self.obs_error)), delta_y)
+        cost3 = 0.5 * lamda * np.dot(func_penalty(istate).T.dot(w_mat), func_penalty(istate))
+        self.cost1_all.append(np.linalg.norm(cost1))
+        self.cost2_all.append(np.linalg.norm(cost2))
+        self.cost3_all.append(np.linalg.norm(cost3))
+        self.lamda_all.append(lamda)
+        self.dx1_all.append(np.linalg.norm(dx1))
+        self.dx2_all.append(np.linalg.norm(dx2))
+        self.k2_all.append(np.linalg.norm(k2_gain_matrix))
+        self.penalty_all.append(np.linalg.norm(penalty))
         # debug
         debug_dict = {
             'K': kalman_gain_matrix, 'inv': inv, 'HPHT': hpht, 'PHT': pht,
-            'HXP': hxp, 'XP': xp}
+            'HXP': hxp, 'XP': xp, 'cost1': self.cost1_all, 'cost2': self.cost2_all, 
+            'cost3': self.cost3_all, 'lamda': self.lamda_all, 'dx1': self.dx1_all,
+            'dx2': self.dx2_all, 'k2': self.k2_all, 'penalty': self.penalty_all}
         self._save_debug(debug_dict)

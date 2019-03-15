@@ -183,7 +183,7 @@ def kernel_sqrexp(coords, length_scales, constant_length_scales=True):
     """
     npoints = coords.shape[0]
     nphys_dims = coords.shape[1]
-    # alpha = 2 specifying a Squre exponential kernel
+    # alpha = 2 specifying a Square exponential kernel
     alpha = 2.0
     # calculate
     exp = np.zeros([npoints, npoints])
