@@ -260,7 +260,7 @@ class DAFilter2(DAFilter):
 
         **Updates:**
             * self.time
-            * self.iter
+            * self.forward_step
             * self.da_step
             * self.state_vec_analysis
             * self.state_vec_forecast
@@ -280,8 +280,7 @@ class DAFilter2(DAFilter):
         if self._sensitivity_only:
             self.model_obs = self.dyn_model.state_to_observation(
                 self.state_vec_analysis)
-            if self.ver >= 1:
-                print("\nSensitivity study completed.")
+            print("\nSensitivity study completed.")
             sys.exit(0)
         # main DA loop - through time
         early_stop = False
@@ -478,7 +477,7 @@ class DAFilter2(DAFilter):
         if self._debug_flag:
             for key, value in debug_dict.items():
                 fname = self._debug_dir + os.sep + key + \
-                    '_{}'.format(self.da_step)
+                    '_{}_{}'.format(self.da_step, self.forward_step)
                 np.savetxt(fname, value)
 
     def _calc_misfits(self):
@@ -876,21 +875,28 @@ class REnKF(DAFilter2):
         # calculate the "K2" matrix
         hxx = np.dot(hxp, xp.T)
         k2_gain_matrix = \
-            coeff* np.dot(kalman_gain_matrix, hxx) - coeff*np.dot(xp, xp.T)
+            coeff * np.dot(kalman_gain_matrix, hxx) - coeff*np.dot(xp, xp.T)
         # calculate penalty matrix
         penalty_mat = np.zeros([len(self.state_vec_forecast), self.nsamples])
         for ipenalty in self.penalties:
             w_mat = ipenalty['weight_matrix']
+
             lamb = ipenalty['lambda']
             lamda = lamb(self.forward_step)
             if self.forward_step > 1 and self.cost3_all[-1] > 0.1*self.cost2_all[-1]:
                 lamda=self.lamda_all[-1]
 
+            # if self.forward_step-1 < ipenalty['rampup']:
+            #     ramp = float(self.forward_step-1) / ipenalty['rampup']
+            # else:
+            #     ramp = 1.0
+            # lamb = ipenalty['lambda'] * ramp
+
             func_penalty = ipenalty['penalty']
             func_gradient = ipenalty['gradient']
 
             for isamp in range(self.nsamples):
-                istate = self.state_vec_forecast[:,isamp]
+                istate = self.state_vec_forecast[:, isamp]
                 gpw = np.dot(func_gradient(istate).T, w_mat)
                 gpwg = np.dot(gpw, func_penalty(istate))
                 penalty_mat[:, isamp] += lamda * gpwg

@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
 
 rm -rf results*
+rm -rf debug*
 rm -f *.log
 rm -f .time
 #rm -f .dafi_rev
