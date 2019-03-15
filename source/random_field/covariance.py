@@ -183,7 +183,6 @@ def kernel_sqrexp(coords, length_scales, constant_length_scales=True):
     """
     npoints = coords.shape[0]
     nphys_dims = coords.shape[1]
-    # alpha = 2 specifying a Squre exponential kernel
     alpha = 2.0
     # calculate
     exp = np.zeros([npoints, npoints])
@@ -206,3 +205,33 @@ def kernel_input_file(filename):
     """
     # TODO: perform the calculations here.
     return np.loadtxt(filename)
+
+
+def kernel_mixed_periodic_sqrexp(coords, length_scales, constant_length_scales=True, factor=6.0, period=None):
+    """ Periodic in some directions and square exponential in others.
+    """
+    npoints = coords.shape[0]
+    nphys_dims = coords.shape[1]
+    alpha = 2.0
+    if period is None:
+        period = [None]*nphys_dims
+    # calculate
+    exp = np.zeros([npoints, npoints])
+
+    def vec_to_mat(vec):
+        vec = np.atleast_2d(vec)
+        return np.sqrt(np.dot(vec.T, vec))
+
+    for ipdim in range(nphys_dims):
+        pos_1, pos_2 = np.meshgrid(coords[:, ipdim], coords[:, ipdim])
+        dpos = (pos_1 - pos_2)
+        lensc = length_scales[ipdim]
+        if not constant_length_scales:
+            lensc = vec_to_mat(lensc)
+        per = period[ipdim]
+        if per is None:
+            exp += -0.5*(dpos / (lensc))**alpha
+        else:
+            length_ratio = lensc * factor / per
+            exp += -2.0*(np.sin(np.abs(dpos)*np.pi/per) / lensc)**2
+    return np.exp(exp)

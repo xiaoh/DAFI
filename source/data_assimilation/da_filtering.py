@@ -280,8 +280,7 @@ class DAFilter2(DAFilter):
         if self._sensitivity_only:
             self.model_obs = self.dyn_model.state_to_observation(
                 self.state_vec_analysis)
-            if self.ver >= 1:
-                print("\nSensitivity study completed.")
+            print("\nSensitivity study completed.")
             sys.exit(0)
         # main DA loop - through time
         early_stop = False
@@ -873,7 +872,11 @@ class EnKF_Regularized(DAFilter2):
         penalty_mat = np.zeros([self.nstate, self.nsamples])
         for ipenalty in self.penalties:
             w_mat = ipenalty['weight_matrix']
-            lamb = ipenalty['lambda']
+            if self.forward_step-1 < ipenalty['rampup']:
+                ramp = float(self.forward_step-1) / ipenalty['rampup']
+            else:
+                ramp = 1.0
+            lamb = ipenalty['lambda'] * ramp
             func_penalty = ipenalty['penalty']
             func_gradient = ipenalty['gradient']
             for isamp in range(self.nsamples):
