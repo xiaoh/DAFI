@@ -58,7 +58,7 @@
         mesh
     );
 
-    dimensionedScalar nutMin("nutMin", dimensionSet(0,2,-1,0,0,0,0), 1e-12); //JL
+    dimensionedScalar nutMin("nutMin", dimensionSet(0,2,-1,0,0,0,0), 1e-12);
 
     #include "createPhi.H"
 

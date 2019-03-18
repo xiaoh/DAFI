@@ -68,6 +68,9 @@ class Solver(DynModel):
             * **obs_mat_file** (``str``) -
               File containing the mesh cells and weights at observation
               locations. Generated with ``getObsMatrix`` utility.
+            * **transform** (``str``) -
+              Tranformation option for nut s.t. T(nut)~GP(0,K). Options:
+              linear, log.
         """
         # save the main inputs. ``da_interval`` and ``t_end`` not used
         self.nsamples = nsamples
@@ -100,6 +103,10 @@ class Solver(DynModel):
                 self.ncpu = 0
         else:
             self.ncpu = 1
+        if 'transform' in param_dict:
+            transform = param_dict['transform']
+        else:
+            transform = 'linear'
 
         # read baseline nut field
         baseline_file = os.path.join(self.dir_foam_base, '0', 'nut')
@@ -127,12 +134,22 @@ class Solver(DynModel):
             kl_modes = np.loadtxt(kl_modes_file)
             self.nkl_modes = kl_modes.shape[1]
 
-        # initiliaze the ln(nut / nut_baseline). baseline=median
+        # initiliaze the Gaussian process
+        if transform == 'linear':
+            # nut - nut_baseline ~ GP. baseline=mean
+            def lin(x):
+                return x
+            self.transform = lin
+            self.transform_inv = lin
+        elif transform == 'log':
+            # ln(nut / nut_baseline) ~ GP. baseline=median
+            self.transform = np.log
+            self.transform_inv = np.exp
         self.delta_nut_rf = rf.GaussianProcess(
             name='nut', zero_mean=True, coords=foam_coords,
             kl_modes=kl_modes, weight_field=foam_volume)
-        self.log_median = np.log(nut_baseline)
-        self.log_median_mat = np.tile(self.log_median, [self.nsamples, 1]).T
+        self.baseline = self.transform(nut_baseline)
+        self.baseline_mat = np.tile(self.baseline, [self.nsamples, 1]).T
 
         # required attributes for DAFI
         self.name = 'FoamNutSolver'
@@ -185,7 +202,7 @@ class Solver(DynModel):
         # update X (nut)
         delta_nut, coeffs = self.delta_nut_rf.sample_kl_reduced(
             self.nsamples, self.nstate, return_coeffs=True)
-        nut = np.exp(self.log_median_mat + delta_nut)
+        nut = self.transform_inv(self.baseline_mat + delta_nut)
         self._modify_openfoam_scalar('nut', nut, '0')
         # map to HX (U)
         model_obs = self.state_to_observation(None, False)
@@ -219,7 +236,7 @@ class Solver(DynModel):
         if update:
             self.da_step += 1
             delta_nut = self.delta_nut_rf.reconstruct_kl_reduced(state_vec)
-            nut = np.exp(self.log_median_mat + delta_nut)
+            nut = self.transform_inv(self.baseline_mat + delta_nut)
             time_dir = '{:d}'.format(self.da_step * self.forward_interval)
             self._modify_openfoam_scalar('nut', nut, time_dir)
         # run openFOAM
@@ -423,6 +440,6 @@ def get_vector_at_obs(obs_mat_file, field_file):
     field = field.flatten('C')
     mesh_mat = np.loadtxt(obs_mat_file)
     npoints = int(mesh_mat[-1, 0]) + 1
-    nstate_obs = npoints * 3
+    nstate_obs = npoints * foam.NVECTOR
     obsmat = _construct_obsmat_vec(mesh_mat, nstate_obs, ncells)
     return obsmat.dot(field)
