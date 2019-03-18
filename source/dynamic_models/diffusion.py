@@ -21,7 +21,7 @@ from data_assimilation.utilities import read_input_data
 class Solver(DynModel):
     """ Dynamic model for solving one dimension heat diffusion equation. """
 
-    def __init__(self, nsamples, da_interval, t_end, max_pseudo_time,
+    def __init__(self, nsamples, da_interval, t_end, max_da_iteration,
                  model_input):
         """ Parse input file and assign values to class attributes.
 
@@ -51,8 +51,6 @@ class Solver(DynModel):
               Relative standard deviation of prior state vector.
             * **x_abs_std** (``float``) -
               Absolute standard deviation of prior state vector.
-            * **std_coef** (``float``) -
-              coefficient of standard deviation of prior state vector.
             * **obs_rel_std** (``float``) -
               Relative standard deviation of observation.
         """
@@ -65,13 +63,14 @@ class Solver(DynModel):
 
         # read input file
         param_dict = read_input_data(model_input)
-        self.x_rel_std = float(param_dict['x_rel_std'])
-        self.x_abs_std = float(param_dict['x_abs_std'])
-        self.std_coef = float(param_dict['std_coef'])
         self.obs_rel_std = float(param_dict['obs_rel_std'])
         self.obs_abs_std = float(param_dict['obs_abs_std'])
+        self.length_scale = float(param_dict['length_scale'])
         self.nmodes = int(param_dict['nmodes'])
         self.sigma = float(param_dict['sigma'])
+        self.projected_truth_flag = int(param_dict['projected_truth_flag'])
+        self.calculate_kl_flag = int(param_dict['calculate_kl_flag'])
+
         mu_init = float(param_dict['mu_init'])
 
         # required attributes
@@ -93,7 +92,7 @@ class Solver(DynModel):
         # dimension of state space
         self.nstate = len(self.init_state)
         # dimension of augmented state space
-        self.nstate_aug = len(self.augstate_init)
+        # self.nstate_aug = len(self.augstate_init)
 
         # create source term fx
         S = np.zeros(self.nstate)
@@ -101,30 +100,29 @@ class Solver(DynModel):
             S[i] = math.sin(2*np.pi*self.x_coor[i]/5)
         S = np.mat(S).T
         self.fx = S.A
-
+        
+        if self.calculate_kl_flag:
         # create modes for K-L expansion
-        cov = np.zeros((self.nstate, self.nstate))
-        for i in range(self.nstate):
-            for j in range(self.nstate):
-                cov[i][j] = self.sigma * self.sigma * math.exp(
-                    -abs(self.x_coor[i]-self.x_coor[j])**2/self.max_length**2)
-        eigVals, eigVecs = sp.linalg.eigsh(cov, k=self.nmodes)
-        ascendingOrder = eigVals.argsort()
-        descendingOrder = ascendingOrder[::-1]
-        eigVals = eigVals[descendingOrder]
-        eigVecs = eigVecs[:, descendingOrder]
-
-        # calculate KL modes: eigVec * sqrt(eigVal)
-        KL_mode_raw = np.zeros([self.nstate, self.nmodes])
-        for i in np.arange(self.nmodes):
-            KL_mode_raw[:, i] = eigVecs[:, i] * np.sqrt(eigVals[i])
-        # normalize the KL modes
-        self.KL_mode = np.zeros([self.nstate, self.nmodes])
-        for i in range(self.nmodes):
-            self.KL_mode[:, i] = KL_mode_raw[:, i] / \
-                np.linalg.norm(KL_mode_raw[:, i])
-        np.savetxt('KLmodes.dat', self.KL_mode)
-
+            cov = np.zeros((self.nstate, self.nstate))
+            for i in range(self.nstate):
+                for j in range(self.nstate):
+                    cov[i][j] = self.sigma * self.sigma * math.exp(
+                        -abs(self.x_coor[i]-self.x_coor[j])**2/self.length_scale**2/2)
+            cov_weigted = cov * self.space_interval
+            eigVals, eigVecs = sp.linalg.eigsh(cov, k=self.nmodes)
+            ascendingOrder = eigVals.argsort()
+            descendingOrder = ascendingOrder[::-1]
+            eigVals = eigVals[descendingOrder]
+            eigVecs = eigVecs[:, descendingOrder]
+            eigVecs_weighed = np.dot(np.diag(self.space_interval * np.ones(len(self.x_coor))), eigVecs)
+            # calculate KL modes: eigVec * sqrt(eigVal)
+            self.KL_mode = np.zeros([self.nstate, self.nmodes])
+            for i in np.arange(self.nmodes):
+                self.KL_mode[:, i] = eigVecs_weighed[::-1, i] * np.sqrt(eigVals[i])
+            np.savetxt('KLmodes.dat', self.KL_mode)
+            np.savetxt('norm_eigVals.dat', eigVals/eigVals[0])
+        else:
+            self.KL_mode = np.loadtxt('KLmodes.dat')
         # project the baseline to KL basis
         log_mu_init = [np.log(mu_init)] * self.nstate
         for i in range(self.nmodes):
@@ -148,9 +146,6 @@ class Solver(DynModel):
         nsamples : number of samples
         nstate_obs : size of observation space
         nmodes : number of modes
-        x_rel_std : relative standard deviation of state vector
-        x_abs_std : absolute standard deviation of state vector
-        std_coef : standard deviation coefficient
         omega_init : initial KL-expansion coefficient
 
 
@@ -169,12 +164,10 @@ class Solver(DynModel):
         para_init = np.zeros([self.nmodes, self.nsamples])
         # generate initial KL expansion coefficient
         for i in range(self.nmodes):
-            dx_std = self.std_coef * abs(
-                self.x_rel_std * self.omega_init[i] + self.x_abs_std)
             para_init[i, :] = self.omega_init[i] + \
-                np.random.normal(0, dx_std, self.nsamples)
+                np.random.normal(0, 1, self.nsamples)
         # augment the state with KL expansion coefficient
-        augstate_init = np.concatenate((state_init, para_init))
+        augstate_init = para_init # np.concatenate((state_init, para_init)) TODO
         model_obs = self.state_to_observation(augstate_init)
         return augstate_init, model_obs
 
@@ -210,7 +203,7 @@ class Solver(DynModel):
         """
         u_mat = np.zeros((self.nstate, self.nsamples))
         model_obs = np.zeros((self.nstate_obs, self.nsamples))
-        omega = state_vec[self.nstate:, :]
+        omega = state_vec#[self.nstate:, :]
         # solve model in observation space for each sample
         for i_nsample in range(self.nsamples):
             mu_dot = np.zeros(self.nstate-1)
@@ -308,6 +301,10 @@ class Solver(DynModel):
             norm_mode = np.trapz(
                 self.KL_mode[:, i] * self.KL_mode[:, i], x=self.x_coor)
             omega[i] = omega[i] / norm_mode
+
+        omega = np.zeros(40)
+        omega[0:3] = np.array([1, 1, 1])
+
         np.savetxt('omega_truth.dat', omega)
         # save the misfit of the synthetic truth and the projected truth
         for i in range(self.nmodes):
@@ -316,8 +313,12 @@ class Solver(DynModel):
         norm_misfit = np.sqrt(np.trapz(misfit * misfit, x=self.x_coor))
         np.savetxt('project_misfit.dat', [norm_misfit, 0])
         # solve forward model
-        mu = mu[:-1]
-        mu_dot = mu_dot[:-1]
+        if self.projected_truth_flag:
+            mu = np.exp(project_mu[:-1])
+            mu_dot = np.gradient(mu, self.space_interval)
+        else:
+            mu = mu[:-1]
+            mu_dot = mu_dot[:-1]
         # calculate coeffient of Du = E
         A = 0.5 * mu_dot / self.space_interval + mu / \
             self.space_interval/self.space_interval
