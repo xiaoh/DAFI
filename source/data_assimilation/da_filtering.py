@@ -881,10 +881,12 @@ class REnKF(DAFilter2):
         for ipenalty in self.penalties:
             w_mat = ipenalty['weight_matrix']
 
-            lamb = ipenalty['lambda']
-            lamda = lamb(self.forward_step)
-            if self.forward_step > 1 and self.cost3_all[-1] > 0.1*self.cost2_all[-1]:
-                lamda=self.lamda_all[-1]
+            # lamda = ipenalty['lambda'] # FIXED
+            lamb = ipenalty['lambda']  # Function
+            lamda = lamb(self.forward_step)  # Function
+
+            # if self.forward_step > 1 and self.cost3_all[-1] > 0.1*self.cost2_all[-1]: # Function, not too large
+            # lamda=self.lamda_all[-1] # Function, not too large
 
             # if self.forward_step-1 < ipenalty['rampup']:
             #     ramp = float(self.forward_step-1) / ipenalty['rampup']
@@ -910,7 +912,9 @@ class REnKF(DAFilter2):
         cost1 = 0.5 * np.dot(dx.T.dot(la.inv(p)), dx)
         delta_y = self.obs - self.model_obs
         cost2 = 0.5 * np.dot(delta_y.T.dot(la.inv(self.obs_error)), delta_y)
-        cost3 = 0.5 * lamda * np.dot(func_penalty(istate).T.dot(w_mat), func_penalty(istate))
+        cost3 = 0.5 * \
+            lamda * np.dot(func_penalty(istate).T.dot(w_mat),
+                           func_penalty(istate))
         self.cost1_all.append(np.linalg.norm(cost1))
         self.cost2_all.append(np.linalg.norm(cost2))
         self.cost3_all.append(np.linalg.norm(cost3))
@@ -922,7 +926,7 @@ class REnKF(DAFilter2):
         # debug
         debug_dict = {
             'K': kalman_gain_matrix, 'inv': inv, 'HPHT': hpht, 'PHT': pht,
-            'HXP': hxp, 'XP': xp, 'cost1': self.cost1_all, 'cost2': self.cost2_all, 
+            'HXP': hxp, 'XP': xp, 'cost1': self.cost1_all, 'cost2': self.cost2_all,
             'cost3': self.cost3_all, 'lamda': self.lamda_all, 'dx1': self.dx1_all,
             'dx2': self.dx2_all, 'k2': self.k2_all, 'penalty': self.penalty_all}
         self._save_debug(debug_dict)

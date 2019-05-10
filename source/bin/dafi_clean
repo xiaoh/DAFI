@@ -5,3 +5,6 @@ rm -rf debug*
 rm -f *.log
 rm -f .time
 #rm -f .dafi_rev
+
+# if dafi failed:
+rm -rf sample_* 

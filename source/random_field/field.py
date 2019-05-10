@@ -44,6 +44,8 @@ def calc_kl_modes(nmodes, cov, weight_field, normalize=False):
                 '{}: number of KL modes might be too large!'.format(imode)
             warnings.warn(warn_message)
             kl_modes[:, imode] = eig_vecs_weighted[:, imode] * 0
+    coverage = kl_coverage(cov, eig_vals, weight_field)
+    np.savetxt('kl_coverage', coverage)  # CM
     return eig_vals, kl_modes
 
 
@@ -54,8 +56,8 @@ def kl_coverage(cov, eig_vals, weight_field):
     weight_vec = np.atleast_2d(weight_field)
     weight_mat = np.sqrt(np.dot(weight_vec.T, weight_vec))
     cov_weighted = cov.multiply(weight_mat)
-    cov_trace = sum(cov_weighted.diagonal())
-    return sum(eig_vals) / cov_trace
+    cov_trace = np.sum(cov_weighted.diagonal())
+    return np.cumsum(eig_vals) / cov_trace
 
 
 # linear algebra functions

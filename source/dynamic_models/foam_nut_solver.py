@@ -136,13 +136,15 @@ class Solver(DynModel):
 
         # initiliaze the Gaussian process
         if transform == 'linear':
-            # nut - nut_baseline ~ GP. baseline=mean
+            # nut - nut_baseline ~ GP
+            # baseline=mean
             def lin(x):
                 return x
             self.transform = lin
             self.transform_inv = lin
         elif transform == 'log':
-            # ln(nut / nut_baseline) ~ GP. baseline=median
+            # ln(nut) _ ln(nut_baseline) = ln(nut / nut_baseline) ~ GP
+            # baseline=median
             self.transform = np.log
             self.transform_inv = np.exp
         self.delta_nut_rf = rf.GaussianProcess(
