@@ -102,7 +102,7 @@ class Solver(DynModel):
         self.fx = S.A
 
         if self.calculate_kl_flag:
-        # create modes for K-L expansion
+            # create modes for K-L expansion
             cov = np.zeros((self.nstate, self.nstate))
             for i in range(self.nstate):
                 for j in range(self.nstate):
@@ -114,11 +114,13 @@ class Solver(DynModel):
             descendingOrder = ascendingOrder[::-1]
             eigVals = eigVals[descendingOrder]
             eigVecs = eigVecs[:, descendingOrder]
-            eigVecs_weighed = np.dot(np.diag(self.space_interval * np.ones(len(self.x_coor))), eigVecs)
+            eigVecs_weighed = np.dot(
+                np.diag(self.space_interval * np.ones(len(self.x_coor))), eigVecs)
             # calculate KL modes: eigVec * sqrt(eigVal)
             self.KL_mode = np.zeros([self.nstate, self.nmodes])
             for i in np.arange(self.nmodes):
-                self.KL_mode[:, i] = eigVecs_weighed[::-1, i] * np.sqrt(eigVals[i])
+                self.KL_mode[:, i] = eigVecs_weighed[::-1, i] * \
+                    np.sqrt(eigVals[i])
             np.savetxt('KLmodes.dat', self.KL_mode)
             np.savetxt('norm_eigVals.dat', eigVals/eigVals[0])
         else:
@@ -167,7 +169,8 @@ class Solver(DynModel):
             para_init[i, :] = self.omega_init[i] + \
                 np.random.normal(0, 1, self.nsamples)
         # augment the state with KL expansion coefficient
-        augstate_init = para_init # np.concatenate((state_init, para_init)) TODO
+        # np.concatenate((state_init, para_init)) TODO
+        augstate_init = para_init
         model_obs = self.state_to_observation(augstate_init)
         return augstate_init, model_obs
 
@@ -203,7 +206,7 @@ class Solver(DynModel):
         """
         u_mat = np.zeros((self.nstate, self.nsamples))
         model_obs = np.zeros((self.nstate_obs, self.nsamples))
-        omega = state_vec#[self.nstate:, :]
+        omega = state_vec  # [self.nstate:, :]
         # solve model in observation space for each sample
         for i_nsample in range(self.nsamples):
             mu_dot = np.zeros(self.nstate-1)
