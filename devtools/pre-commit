@@ -1,16 +1,11 @@
 #!/bin/bash
 #
-# This pre-commit hook tests that the documentation builds correctly.
-# It can be disabled by using the "-n" option with "git commit".
+# This pre-commit hook tests that:
+#   * the documentation builds,
+#   * all Python files pass pep8, and
+#   * the unit tests pass.
+# Copy to: .git/hooks
 #
-# See http://git-scm.com/book/en/Customizing-Git-Git-Hooks for details.
-#
-# This pre-commit hook requires that you have the "###PROJECT###" project on your python
-# path, in order for the DJANGO_SETTINGS_MODULE=###PROJECT###.settings to work.
-# This is needed to build the apidoc.
-#
-# To easily put the "###PROJECT###" project on your python path, use the same virtualenv
-# and in the project folder, execute "add2virtualenv ." once.
 
 # documentation
 echo "Checking documentation build..."

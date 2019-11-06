@@ -70,10 +70,10 @@ For more on the EnKF see the *Theory* section.
 Additionally, a data-assimilation method allows us to infer any model parameter that is uncertain.
 For this tutorial we will assume that we are very confident about the values of beta and sigma, but will let the algorithm infer the value of rho.
 
-In this tutorial we will go step-by-step on how to build a model for our problem that we can couple with *vt_dainv* to run the data assimilation.
+In this tutorial we will go step-by-step on how to build a model for our problem that we can couple with *dafi* to run the data assimilation.
 
 
-Overview of vt_dainv
+Overview of dafi
 --------------------
 At its basic the code consists of 3 components\:
 
@@ -118,7 +118,7 @@ Building the Dynamic Model
 --------------------------
 To create a new dynamic model you need to create a python file in the folder ``source/dyn_models/``.
 This file must contain a class called *Solver* which has *DynModel* as its parent class.
-The class *DynModel* can be imported from ``dainv.dyn_model``.
+The class *DynModel* can be imported from ``data_assimilation.dyn_model``.
 The *Solver* class then needs to have some required attributes and methods which will be discussed later.
 
 For this case the file is already created and is named ``lorenz.py``.
@@ -126,7 +126,7 @@ It is recommended you open this file and follow along.
 The code snippets in this tutorial do not include the docstrings.
 
 We start by importing all necessary packages.
-Note that we are importing some things from vt_dainv:
+Note that we are importing some things from dafi:
 
 * *DynModel* class
 * the ``utilities`` package, which will help us read input files.
@@ -141,8 +141,8 @@ Note that we are importing some things from vt_dainv:
     from scipy.integrate import ode
 
     # local import
-    from dainv.dyn_model import DynModel
-    import dainv.utilities as utils
+    from data_assimilation.dyn_model import DynModel
+    import data_assimilation.utilities as utils
 
 Before creating the *Solver* class, we will create a function for solving the Lorenz equations.
 It will be helpful to have this as a separate function since we will call it several times.
@@ -480,7 +480,7 @@ We will not need it in this case and will simply add a ``pass`` statement.
 
 Running the Code
 ----------------
-Now that we have created our own dynamic model, and an input file for our specific case, we can run the ``vt_dainv.py`` data assimilation code.
+Now that we have created our own dynamic model, and an input file for our specific case, we can run the ``dafi.py`` data assimilation code.
 In order to run the code you will need to source the ``init_da`` file if you haven't already.
 This is done as follows::
 
@@ -491,9 +491,9 @@ where ``$VT_DIR`` is replaced with the correct path to the directory.
 
 Next we have to create the main input file.
 This is the input file for the data assimilation code
-The input file is called *dainv.in* and looks like this\:
+The input file is called *dafi.in* and looks like this\:
 
-.. literalinclude:: ../../tutorials/lorenz/dainv.in
+.. literalinclude:: ../../tutorials/lorenz/dafi.in
 
 The input file above has all possible inputs, just for reference, but we have commented out those which are not used in this case or for which we use the default values.
 
@@ -508,7 +508,7 @@ Finally we specify the number of samples as 100.
 
 Finally, we can run the data-assimilation code::
 
-    vt_dainv.py dainv.in
+    dafi.py dafi.in
 
 Information on the progress will be printed to the screen.
 This should take about 1-2 minutes.

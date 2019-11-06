@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 # Copyright 2018 Virginia Polytechnic Insampletitute and State University.
 """ This module is for postprocessing the data for the Lorenz model. """
 
@@ -11,8 +11,8 @@ import numpy as np
 import matplotlib.pyplot as plt
 
 # local import
-import data_assimilation.utilities as utils
-from dynamic_models.lorenz import solve_lorenz
+import dafi.utilities as utils
+from dafi.dynamic_models.lorenz import solve_lorenz
 
 # what to plot
 plot_truth = True

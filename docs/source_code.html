@@ -8,7 +8,7 @@
   
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   
-  <title>Source Code &mdash; vt_dainv  documentation</title>
+  <title>Source Code &mdash; dafi  documentation</title>
   
 
   
@@ -17,46 +17,41 @@
   
 
   
+  <script type="text/javascript" src="_static/js/modernizr.min.js"></script>
+  
+    
+      <script type="text/javascript" id="documentation_options" data-url_root="./" src="_static/documentation_options.js"></script>
+        <script type="text/javascript" src="_static/jquery.js"></script>
+        <script type="text/javascript" src="_static/underscore.js"></script>
+        <script type="text/javascript" src="_static/doctools.js"></script>
+        <script type="text/javascript" src="_static/language_data.js"></script>
+        <script async="async" type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.5/latest.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    
+    <script type="text/javascript" src="_static/js/theme.js"></script>
 
-  
-  
     
 
   
-
-  
-  
-    <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
-  
-
-  
-
-  
-        <link rel="index" title="Index"
-              href="genindex.html"/>
-        <link rel="search" title="Search" href="search.html"/>
-    <link rel="top" title="vt_dainv  documentation" href="index.html"/>
-        <link rel="next" title="vt_dainv.py (exec)" href="vt_dainv.html"/>
-        <link rel="prev" title="Tutorial: Lorenz63" href="tutorial_lorenz.html"/> 
-
-  
-  <script src="_static/js/modernizr.min.js"></script>
-
+  <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
+  <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="dafi.py (exec)" href="dafi_py.html" />
+    <link rel="prev" title="Tutorial: Diffusion" href="tutorial_diffusion.html" /> 
 </head>
 
-<body class="wy-body-for-nav" role="document">
+<body class="wy-body-for-nav">
 
    
   <div class="wy-grid-for-nav">
-
     
     <nav data-toggle="wy-nav-shift" class="wy-nav-side">
       <div class="wy-side-scroll">
-        <div class="wy-side-nav-search">
+        <div class="wy-side-nav-search" >
           
 
           
-            <a href="index.html" class="icon icon-home"> vt_dainv
+            <a href="index.html" class="icon icon-home"> dafi
           
 
           
@@ -88,12 +83,13 @@
             
               <p class="caption"><span class="caption-text">Contents:</span></p>
 <ul class="current">
-<li class="toctree-l1"><a class="reference internal" href="install.html">Installing VT-DAInv</a></li>
+<li class="toctree-l1"><a class="reference internal" href="install.html">Getting Started</a></li>
 <li class="toctree-l1"><a class="reference internal" href="theory.html">Theory</a></li>
 <li class="toctree-l1"><a class="reference internal" href="tutorial_lorenz.html">Tutorial: Lorenz63</a></li>
+<li class="toctree-l1"><a class="reference internal" href="tutorial_diffusion.html">Tutorial: Diffusion</a></li>
 <li class="toctree-l1 current"><a class="current reference internal" href="#">Source Code</a><ul>
-<li class="toctree-l2"><a class="reference internal" href="vt_dainv.html">vt_dainv.py (exec)</a></li>
-<li class="toctree-l2"><a class="reference internal" href="dainv.html">dainv</a></li>
+<li class="toctree-l2"><a class="reference internal" href="dafi_py.html">dafi.py (exec)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="dafi_package.html">dafi</a></li>
 </ul>
 </li>
 </ul>
@@ -107,17 +103,18 @@
     <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
 
       
-      <nav class="wy-nav-top" role="navigation" aria-label="top navigation">
+      <nav class="wy-nav-top" aria-label="top navigation">
         
           <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
-          <a href="index.html">vt_dainv</a>
+          <a href="index.html">dafi</a>
         
       </nav>
 
 
-      
       <div class="wy-nav-content">
+        
         <div class="rst-content">
+        
           
 
 
@@ -164,11 +161,11 @@
 <p>This section contains the auto-documentation for the source code of the different packages.</p>
 <div class="toctree-wrapper compound">
 <ul>
-<li class="toctree-l1"><a class="reference internal" href="vt_dainv.html">vt_dainv.py (exec)</a></li>
-<li class="toctree-l1"><a class="reference internal" href="dainv.html">dainv</a><ul>
-<li class="toctree-l2"><a class="reference internal" href="dainv_da_filtering.html">dainv.da_filtering</a></li>
-<li class="toctree-l2"><a class="reference internal" href="dainv_dyn_model.html">dainv.dyn_model</a></li>
-<li class="toctree-l2"><a class="reference internal" href="dainv_utilities.html">dainv.utilities</a></li>
+<li class="toctree-l1"><a class="reference internal" href="dafi_py.html">dafi.py (exec)</a></li>
+<li class="toctree-l1"><a class="reference internal" href="dafi_package.html">dafi</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="dafi_filters.html">dafi.filters</a></li>
+<li class="toctree-l2"><a class="reference internal" href="dafi_dyn_model.html">dafi.dyn_model</a></li>
+<li class="toctree-l2"><a class="reference internal" href="dafi_utilities.html">dafi.utilities</a></li>
 </ul>
 </li>
 </ul>
@@ -177,18 +174,16 @@
 
 
            </div>
-           <div class="articleComments">
-            
-           </div>
+           
           </div>
           <footer>
   
     <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
       
-        <a href="vt_dainv.html" class="btn btn-neutral float-right" title="vt_dainv.py (exec)" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right"></span></a>
+        <a href="dafi_py.html" class="btn btn-neutral float-right" title="dafi.py (exec)" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right"></span></a>
       
       
-        <a href="tutorial_lorenz.html" class="btn btn-neutral" title="Tutorial: Lorenz63" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left"></span> Previous</a>
+        <a href="tutorial_diffusion.html" class="btn btn-neutral float-left" title="Tutorial: Diffusion" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left"></span> Previous</a>
       
     </div>
   
@@ -197,11 +192,11 @@
 
   <div role="contentinfo">
     <p>
-        &copy; Copyright 2018, carlos.
+        &copy; Copyright 2018, carlos
 
     </p>
   </div>
-  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/snide/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/rtfd/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>. 
 
 </footer>
 
@@ -214,37 +209,15 @@
   
 
 
-  
-
-    <script type="text/javascript">
-        var DOCUMENTATION_OPTIONS = {
-            URL_ROOT:'./',
-            VERSION:'',
-            COLLAPSE_INDEX:false,
-            FILE_SUFFIX:'.html',
-            HAS_SOURCE:  true,
-            SOURCELINK_SUFFIX: '.txt'
-        };
-    </script>
-      <script type="text/javascript" src="_static/jquery.js"></script>
-      <script type="text/javascript" src="_static/underscore.js"></script>
-      <script type="text/javascript" src="_static/doctools.js"></script>
-      <script type="text/javascript" src="https://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
-
-  
-
-  
-  
-    <script type="text/javascript" src="_static/js/theme.js"></script>
-  
-
-  
-  
   <script type="text/javascript">
       jQuery(function () {
-          SphinxRtdTheme.StickyNav.enable();
+          SphinxRtdTheme.Navigation.enable(true);
       });
   </script>
+
+  
+  
+    
    
 
 </body>

@@ -1,0 +1,373 @@
+
+
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>dafi.dyn_model &mdash; dafi  documentation</title>
+  
+
+  
+  
+  
+  
+
+  
+  <script type="text/javascript" src="_static/js/modernizr.min.js"></script>
+  
+    
+      <script type="text/javascript" id="documentation_options" data-url_root="./" src="_static/documentation_options.js"></script>
+        <script type="text/javascript" src="_static/jquery.js"></script>
+        <script type="text/javascript" src="_static/underscore.js"></script>
+        <script type="text/javascript" src="_static/doctools.js"></script>
+        <script type="text/javascript" src="_static/language_data.js"></script>
+        <script async="async" type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.5/latest.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    
+    <script type="text/javascript" src="_static/js/theme.js"></script>
+
+    
+
+  
+  <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
+  <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="dafi.utilities" href="dafi_utilities.html" />
+    <link rel="prev" title="dafi.filters" href="dafi_filters.html" /> 
+</head>
+
+<body class="wy-body-for-nav">
+
+   
+  <div class="wy-grid-for-nav">
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+          
+
+          
+            <a href="index.html" class="icon icon-home"> dafi
+          
+
+          
+          </a>
+
+          
+            
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <p class="caption"><span class="caption-text">Contents:</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="install.html">Getting Started</a></li>
+<li class="toctree-l1"><a class="reference internal" href="theory.html">Theory</a></li>
+<li class="toctree-l1"><a class="reference internal" href="tutorial_lorenz.html">Tutorial: Lorenz63</a></li>
+<li class="toctree-l1"><a class="reference internal" href="tutorial_diffusion.html">Tutorial: Diffusion</a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="source_code.html">Source Code</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="dafi_py.html">dafi.py (exec)</a></li>
+<li class="toctree-l2 current"><a class="reference internal" href="dafi_package.html">dafi</a><ul class="current">
+<li class="toctree-l3"><a class="reference internal" href="dafi_filters.html">dafi.filters</a></li>
+<li class="toctree-l3 current"><a class="current reference internal" href="#">dafi.dyn_model</a></li>
+<li class="toctree-l3"><a class="reference internal" href="dafi_utilities.html">dafi.utilities</a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+
+            
+          
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="index.html">dafi</a>
+        
+      </nav>
+
+
+      <div class="wy-nav-content">
+        
+        <div class="rst-content">
+        
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="index.html">Docs</a> &raquo;</li>
+        
+          <li><a href="source_code.html">Source Code</a> &raquo;</li>
+        
+          <li><a href="dafi_package.html">dafi</a> &raquo;</li>
+        
+      <li>dafi.dyn_model</li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+            
+            <a href="_sources/dafi_dyn_model.rst.txt" rel="nofollow"> View page source</a>
+          
+        
+      </li>
+    
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <div class="section" id="module-dafi.dyn_model">
+<span id="dafi-dyn-model"></span><h1>dafi.dyn_model<a class="headerlink" href="#module-dafi.dyn_model" title="Permalink to this headline">¶</a></h1>
+<p>Template for dynamic models.</p>
+<dl class="class">
+<dt id="dafi.dyn_model.DynModel">
+<em class="property">class </em><code class="sig-prename descclassname">dafi.dyn_model.</code><code class="sig-name descname">DynModel</code><span class="sig-paren">(</span><em class="sig-param">nsamples</em>, <em class="sig-param">da_interval</em>, <em class="sig-param">t_end</em>, <em class="sig-param">max_da_iteration</em>, <em class="sig-param">input_file</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/dafi/dyn_model.html#DynModel"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#dafi.dyn_model.DynModel" title="Permalink to this definition">¶</a></dt>
+<dd><p>Parent class for dynamic models.</p>
+<p>Use this as a template to write new dynamic models.
+The required attributes and methods are summarized below.</p>
+<dl class="attribute">
+<dt id="dafi.dyn_model.DynModel.name">
+<code class="sig-name descname">name</code><a class="headerlink" href="#dafi.dyn_model.DynModel.name" title="Permalink to this definition">¶</a></dt>
+<dd><dl class="field-list simple">
+<dt class="field-odd">Type</dt>
+<dd class="field-odd"><p>Name of the forward model for reporting. <code class="docutils literal notranslate"><span class="pre">str</span></code></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="dafi.dyn_model.DynModel.nstate">
+<code class="sig-name descname">nstate</code><a class="headerlink" href="#dafi.dyn_model.DynModel.nstate" title="Permalink to this definition">¶</a></dt>
+<dd><dl class="field-list simple">
+<dt class="field-odd">Type</dt>
+<dd class="field-odd"><p>Number of states in the state vector. <code class="docutils literal notranslate"><span class="pre">int</span></code></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="dafi.dyn_model.DynModel.nstate_obs">
+<code class="sig-name descname">nstate_obs</code><a class="headerlink" href="#dafi.dyn_model.DynModel.nstate_obs" title="Permalink to this definition">¶</a></dt>
+<dd><dl class="field-list simple">
+<dt class="field-odd">Type</dt>
+<dd class="field-odd"><p>Number of states in the observation vector. <code class="docutils literal notranslate"><span class="pre">int</span></code></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="dafi.dyn_model.DynModel.init_state">
+<code class="sig-name descname">init_state</code><a class="headerlink" href="#dafi.dyn_model.DynModel.init_state" title="Permalink to this definition">¶</a></dt>
+<dd><dl class="field-list simple">
+<dt class="field-odd">Type</dt>
+<dd class="field-odd"><p>Initial mean value of the state vector. <code class="docutils literal notranslate"><span class="pre">ndarray</span></code></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="dafi.dyn_model.DynModel.__init__">
+<code class="sig-name descname">__init__</code><span class="sig-paren">(</span><em class="sig-param">nsamples</em>, <em class="sig-param">da_interval</em>, <em class="sig-param">t_end</em>, <em class="sig-param">max_da_iteration</em>, <em class="sig-param">input_file</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/dafi/dyn_model.html#DynModel.__init__"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#dafi.dyn_model.DynModel.__init__" title="Permalink to this definition">¶</a></dt>
+<dd><p>Parse input file and assign values to class attributes.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>nsamples</strong> (<em>int</em>) – Ensemble size.</p></li>
+<li><p><strong>da_interval</strong> (<em>float</em>) – Time interval between data assimilation steps.</p></li>
+<li><p><strong>t_end</strong> (<em>float</em>) – Final time.</p></li>
+<li><p><strong>max_da_iteration</strong> (<em>int</em>) – Maximum number of DA iterations at a given time-step.</p></li>
+<li><p><strong>input_file</strong> (<em>str</em>) – Input file name.</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="dafi.dyn_model.DynModel.clean">
+<code class="sig-name descname">clean</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/dafi/dyn_model.html#DynModel.clean"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#dafi.dyn_model.DynModel.clean" title="Permalink to this definition">¶</a></dt>
+<dd><p>Cleanup before exiting.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="dafi.dyn_model.DynModel.forecast_to_time">
+<code class="sig-name descname">forecast_to_time</code><span class="sig-paren">(</span><em class="sig-param">state_vec</em>, <em class="sig-param">next_end_time</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/dafi/dyn_model.html#DynModel.forecast_to_time"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#dafi.dyn_model.DynModel.forecast_to_time" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return states at the next end time.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>state_vec</strong> (<em>ndarray</em>) – Current ensemble matrix of states (Xa). [nstate x nsamples]</p></li>
+<li><p><strong>next_end_time</strong> (<em>float</em>) – Next end time.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p><strong>state_vec</strong> – Updated ensemble matrix of states (Xf).
+<code class="docutils literal notranslate"><span class="pre">dtype=float</span></code>, <code class="docutils literal notranslate"><span class="pre">ndim=2</span></code>, <code class="docutils literal notranslate"><span class="pre">shape=(nstate,</span> <span class="pre">nsamples)</span></code></p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>ndarray</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="dafi.dyn_model.DynModel.generate_ensemble">
+<code class="sig-name descname">generate_ensemble</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/dafi/dyn_model.html#DynModel.generate_ensemble"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#dafi.dyn_model.DynModel.generate_ensemble" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return states at the first data assimilation time-step.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p><ul class="simple">
+<li><p><strong>state_vec</strong> (<em>ndarray</em>) – Ensemble matrix of states (Xi).
+<code class="docutils literal notranslate"><span class="pre">dtype=float</span></code>, <code class="docutils literal notranslate"><span class="pre">ndim=2</span></code>, <code class="docutils literal notranslate"><span class="pre">shape=(nstate,</span> <span class="pre">nsamples)</span></code></p></li>
+<li><p><strong>model_obs</strong> (<em>ndarray</em>) – Ensemble matrix of states in observation space.
+<code class="docutils literal notranslate"><span class="pre">dtype=float</span></code>, <code class="docutils literal notranslate"><span class="pre">ndim=2</span></code>,
+<code class="docutils literal notranslate"><span class="pre">shape=(nstate_obs,</span> <span class="pre">nsamples)</span></code></p></li>
+</ul>
+</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="dafi.dyn_model.DynModel.get_obs">
+<code class="sig-name descname">get_obs</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/dafi/dyn_model.html#DynModel.get_obs"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#dafi.dyn_model.DynModel.get_obs" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return the observation and error matrix.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>time</strong> (<em>float</em>) – Time at which observation is requested.</p>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p><ul class="simple">
+<li><p><strong>obs</strong> (<em>ndarray</em>) – Observations.
+<code class="docutils literal notranslate"><span class="pre">dtype=float</span></code>, <code class="docutils literal notranslate"><span class="pre">ndim=2</span></code>,
+<code class="docutils literal notranslate"><span class="pre">shape=(nstate_obs,</span> <span class="pre">nsamples)</span></code></p></li>
+<li><p><strong>obs_error</strong> (<em>ndarray</em>) – Observation error.
+<code class="docutils literal notranslate"><span class="pre">dtype=float</span></code>, <code class="docutils literal notranslate"><span class="pre">ndim=2</span></code>,
+<code class="docutils literal notranslate"><span class="pre">shape=(nstate_obs,</span> <span class="pre">nstate_obs)</span></code></p></li>
+</ul>
+</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="dafi.dyn_model.DynModel.state_to_observation">
+<code class="sig-name descname">state_to_observation</code><span class="sig-paren">(</span><em class="sig-param">state_vec</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/dafi/dyn_model.html#DynModel.state_to_observation"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#dafi.dyn_model.DynModel.state_to_observation" title="Permalink to this definition">¶</a></dt>
+<dd><p>Map the states to observation space (from X to HX).</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>state_vec</strong> (<em>ndarray</em>) – Current state variables.
+<code class="docutils literal notranslate"><span class="pre">dtype=float</span></code>, <code class="docutils literal notranslate"><span class="pre">ndim=2</span></code>, <code class="docutils literal notranslate"><span class="pre">shape=(nstate,</span> <span class="pre">nsamples)</span></code></p>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p><strong>model_obs</strong> – Ensemble in observation space. <code class="docutils literal notranslate"><span class="pre">dtype=float</span></code>, <code class="docutils literal notranslate"><span class="pre">ndim=2</span></code>,
+<code class="docutils literal notranslate"><span class="pre">shape=(nstate_obs,</span> <span class="pre">nsamples)</span></code></p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>ndarray</p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+</div>
+
+
+           </div>
+           
+          </div>
+          <footer>
+  
+    <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
+      
+        <a href="dafi_utilities.html" class="btn btn-neutral float-right" title="dafi.utilities" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right"></span></a>
+      
+      
+        <a href="dafi_filters.html" class="btn btn-neutral float-left" title="dafi.filters" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left"></span> Previous</a>
+      
+    </div>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &copy; Copyright 2018, carlos
+
+    </p>
+  </div>
+  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/rtfd/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script>
+
+  
+  
+    
+   
+
+</body>
+</html>

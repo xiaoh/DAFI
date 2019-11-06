@@ -10,7 +10,7 @@ import subprocess
 import numpy as np
 
 # local imports
-from data_assimilation import utilities as utils
+import dafi.utilities as utils
 
 
 class TestUtilities(unittest.TestCase):

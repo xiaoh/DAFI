@@ -1,0 +1,10 @@
+#!/usr/bin/env bash
+
+START=$(date +%s.%N)
+
+dafi.py dafi.in  > log.dafi
+
+END=$(date +%s.%N)
+DIFF=$(echo "$END - $START" | bc)
+echo $DIFF  > log.time
+

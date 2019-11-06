@@ -19,7 +19,7 @@
 
 # -- Project information -----------------------------------------------------
 
-project = u'vt_dainv'
+project = u'dafi'
 copyright = u'2018, carlos'
 author = u'carlos'
 
@@ -110,7 +110,7 @@ html_static_path = ['_static']
 # -- Options for HTMLHelp output ---------------------------------------------
 
 # Output file base name for HTML help builder.
-htmlhelp_basename = 'vt_dainvdoc'
+htmlhelp_basename = 'dafidoc'
 
 
 # -- Options for LaTeX output ------------------------------------------------
@@ -137,7 +137,7 @@ latex_elements = {
 # (source start file, target name, title,
 #  author, documentclass [howto, manual, or own class]).
 latex_documents = [
-    (master_doc, 'vt_dainv.tex', u'vt\\_dainv Documentation',
+    (master_doc, 'dafi.tex', u'vt\\_dafi Documentation',
      u'carlos', 'manual'),
 ]
 
@@ -147,7 +147,7 @@ latex_documents = [
 # One entry per manual page. List of tuples
 # (source start file, name, description, authors, manual section).
 man_pages = [
-    (master_doc, 'vt_dainv', u'vt_dainv Documentation',
+    (master_doc, 'dafi', u'dafi Documentation',
      [author], 1)
 ]
 
@@ -158,8 +158,8 @@ man_pages = [
 # (source start file, target name, title, author,
 #  dir menu entry, description, category)
 texinfo_documents = [
-    (master_doc, 'vt_dainv', u'vt_dainv Documentation',
-     author, 'vt_dainv', 'One line description of project.',
+    (master_doc, 'dafi', u'dafi Documentation',
+     author, 'dafi', 'One line description of project.',
      'Miscellaneous'),
 ]
 

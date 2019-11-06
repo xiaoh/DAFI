@@ -1,3 +1,4 @@
+#!/usr/bin/env bash
 
 echo "Building documentation"
 cd $(git rev-parse --show-toplevel)/docs/sphinx

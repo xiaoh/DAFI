@@ -7,13 +7,13 @@ Install
 To install simply clone from the GitHub repository::
 
     cd $INSTALL_LOCATION
-    git clone https://github.com/xiaoh/vt_dainv.git
+    git clone https://github.com/xiaoh/dafi.git
 
 Replace ``$INSTALL_LOCATION`` with the path to where you want to install the code.
 
 When using the code you will need to source the following file in your terminal::
 
-    source $INSTALL_LOCATION/vt_dainv/source/init_da
+    source $INSTALL_LOCATION/dafi/source/init
 
 Prerequisites\:
 
@@ -57,9 +57,9 @@ The source code is in ``docs/sphinx/``.
 To compile run ``devtools/build_documentation``.
 Sometimes it might be required to ``make clean`` from within ``docs/sphinx/``.
 
-FOAM_Tau_Solver users
----------------------
-If running FOAM_TAU_Solver you will need the following additional prerequisites\:
+OpenFOAM users
+--------------
+If running FOAM_NUT_Solver or FOAM_TAU_Solver you will need the following additional prerequisites\:
 
 * OpenFOAM 2.x
 

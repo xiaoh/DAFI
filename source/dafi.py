@@ -1,5 +1,6 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 # Copyright 2018 Virginia Polytechnic Institute and State University.
+
 """ Inverse modeling main executable.
 
 Example
@@ -53,14 +54,14 @@ import subprocess
 import numpy as np
 
 # local imports
-import data_assimilation.utilities as util
+import dafi.utilities as util
 # user-specified inverse model filter imported later with importlib
 # user-specified dynamic model imported later with importlib
 
 
 def _print_usage():
     """ Print usage of the program. """
-    print("Usage: mfu_main.py <input_file>")
+    print("Usage: dafi.py <input_file>")
 
 
 def _get_input():
@@ -78,7 +79,7 @@ def get_code_version():
     """ Save the Git version of DAFI. """
     git_dir = os.path.dirname(os.path.realpath(__file__))
     cwd = os.getcwd()
-    file = os.path.join(cwd, '.dafi_rev')
+    file = os.path.join(cwd, '.dafi_ver')
     bash_command = "cd {}; ".format(git_dir)
     bash_command += "git rev-parse HEAD > {} 2> /dev/null; ". format(file)
     bash_command += "cd {}".format(cwd)
@@ -143,12 +144,12 @@ def main():
         np.random.seed(rand_seed)
     # dynamic model
     DynModel = getattr(
-        importlib.import_module('dynamic_models.' + dyn_model), 'Solver')
+        importlib.import_module('dafi.dynamic_models.' + dyn_model), 'Solver')
     dynamic_model = DynModel(nsamples, da_t_interval, t_end, max_da_iteration,
                              input_file_dm)
     # inverse model
     InvFilter = getattr(
-        importlib.import_module('data_assimilation.da_filtering'), da_filter)
+        importlib.import_module('dafi.filters'), da_filter)
     inverse_model = InvFilter(nsamples, da_t_interval, t_end, max_da_iteration,
                               dynamic_model, param_dict)
 
