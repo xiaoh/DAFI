@@ -48,21 +48,30 @@ def calc_kl_modes(nmodes, cov, weight_field, normalize=False):
     return eig_vals, kl_modes
 
 
-def kl_coverage(cov, eig_vals, weight_field):
+def kl_coverage(cov, eig_vals, weight_field, sparse=False):
     """ Calculate the percentage of the covariance covered by N KL
     modes.
     """
     weight_vec = np.atleast_2d(weight_field)
     weight_mat = np.sqrt(np.dot(weight_vec.T, weight_vec))
-    cov_weighted = cov.multiply(weight_mat)
+    # import pdb; pdb.set_trace()
+    if sparse:
+        cov_weighted = cov.multiply(weight_mat)
+    else:
+        cov_weighted = cov * weight_mat
     cov_trace = np.sum(cov_weighted.diagonal())
     return np.cumsum(eig_vals) / cov_trace
 
 
 # linear algebra functions
+def integral(field, weight_field):
+    """ Calculate the integral of a field. """
+    return np.sum(field * weight_field)
+
+
 def inner_product(field_1, field_2, weight_field):
     """ Calculate the inner product between two fields. """
-    return np.sum(field_1 * field_2 * weight_field)
+    return integral(field_1 * field_2, weight_field)
 
 
 def norm(field, weight_field):

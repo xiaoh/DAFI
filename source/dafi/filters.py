@@ -71,7 +71,7 @@ class Inverse(object):
         pass
 
 
-class Inverse2(Inverse):
+class Filter(Inverse):
     """ Parent class for ensemble-based Bayesian inversion techniques.
 
     This class includes more implemented methods than the Inverse
@@ -552,7 +552,7 @@ class Inverse2(Inverse):
 
 
 # child classes (specific filtering techniques)
-class EnKF(Inverse2):
+class EnKF(Filter):
     """ Implementation of the ensemble Kalman Filter (EnKF).
 
     It inherits most methods from parent class (``DAFIlter2``), but
@@ -625,7 +625,7 @@ class EnKF(Inverse2):
         self._save_debug(debug_dict)
 
 
-class EnRML(Inverse2):
+class EnRML(Filter):
     """ Implementation of the ensemble Randomized Maximal Likelihood
     (EnRML).
 
@@ -717,7 +717,7 @@ class EnRML(Inverse2):
         self._save_debug(debug_dict)
 
 
-class EnKF_MDA(Inverse2):
+class EnKF_MDA(Filter):
     """ Implementation of the ensemble Kalman Filter-Multi data
     assimilaton (EnKF-MDA).
 
@@ -796,7 +796,7 @@ class EnKF_MDA(Inverse2):
         self._save_debug(debug_dict)
 
 
-class REnKF(Inverse2):
+class REnKF(Filter):
     """ Implementation of the regularized ensemble Kalman Filter (REnKF).
 
     It inherits most methods from parent class (``DAFIlter2``), but

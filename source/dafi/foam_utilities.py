@@ -34,26 +34,22 @@ def get_number_cells(foam_case='.'):
 
 
 def get_cell_coordinates(foam_case='.'):
-    bash_command = "writeCellCentres -case " + foam_case + " -time '0' " + \
-        "&> /dev/null"
+    bash_command = "simpleFoam -postProcess -func writeCellCentres " + \
+        "-case " + foam_case + " -time '0' " + "&> /dev/null"
     subprocess.call(bash_command, shell=True)
     coords = read_cell_coordinates(ospt.join(foam_case, '0'))
-    os.remove(ospt.join(foam_case, '0', 'ccx'))
-    os.remove(ospt.join(foam_case, '0', 'ccy'))
-    os.remove(ospt.join(foam_case, '0', 'ccz'))
+    os.remove(ospt.join(foam_case, '0', 'Cx'))
+    os.remove(ospt.join(foam_case, '0', 'Cy'))
+    os.remove(ospt.join(foam_case, '0', 'Cz'))
     return coords
 
 
 def get_cell_volumes(foam_case='.'):
-    bash_command = "writeCellCentres -case " + foam_case + " -time '0' " + \
-        "&> /dev/null"
+    bash_command = "simpleFoam -postProcess -func writeCellVolumes " + \
+        "-case " + foam_case + " -time '0' " + "&> /dev/null"
     subprocess.call(bash_command, shell=True)
-    os.rename(ospt.join(foam_case, '0', 'V'), ospt.join(foam_case, '0', 'cv'))
     vol = read_cell_volumes(ospt.join(foam_case, '0'))
-    os.remove(ospt.join(foam_case, '0', 'cv'))
-    os.remove(ospt.join(foam_case, '0', 'ccx'))
-    os.remove(ospt.join(foam_case, '0', 'ccy'))
-    os.remove(ospt.join(foam_case, '0', 'ccz'))
+    os.remove(ospt.join(foam_case, '0', 'V'))
     return vol
 
 
@@ -61,15 +57,14 @@ def read_cell_coordinates(file_dir, group=None):
     """
 
     Arg:
-    file_dir: The directory path of file of ccx, ccy, and ccz
+    file_dir: The directory path of file of Cx, Cy, and Cz
 
     Regurn:
     coordinate: matrix of (x, y, z)
     """
-    coorX = ospt.join(file_dir, "ccx")
-    coorY = ospt.join(file_dir, "ccy")
-    coorZ = ospt.join(file_dir, "ccz")
-
+    coorX = ospt.join(file_dir, "Cx")
+    coorY = ospt.join(file_dir, "Cy")
+    coorZ = ospt.join(file_dir, "Cz")
     resMidx = extract_scalar(coorX, group)
     resMidy = extract_scalar(coorY, group)
     resMidz = extract_scalar(coorZ, group)
@@ -111,12 +106,12 @@ def read_cell_volumes(file_dir):
     """
 
     Arg:
-    file_dir: The directory path of file of cv
+    file_dir: The directory path of file of V
 
     Regurn:
     coordinate: vector of cell area
     """
-    cellVolume = ospt.join(file_dir, "cv")
+    cellVolume = ospt.join(file_dir, "V")
     resMid = extract_scalar(cellVolume)
 
     # write it in Tautemp
@@ -199,7 +194,7 @@ def write_scalar_to_file(Scalar, ScalarFile):
     """
 
     # Find openFoam scalar file's pattern'
-    (resStartk, resEndk) = extract_foam_pattern(ScalarFile)
+    (resStart, resEnd) = extract_foam_pattern(ScalarFile)
 
     tempFile = 'scalarTemp'
     np.savetxt('scalarTemp', Scalar)
@@ -208,13 +203,45 @@ def write_scalar_to_file(Scalar, ScalarFile):
     fin = open(tempFile, 'r')
     field = fin.read()
     fin.close()
-    # revise k
 
     fout = open(ScalarFile, 'w')
-    fout.write(resStartk.group())
+    fout.write(resStart.group())
     fout.write("\n")
     fout.write(field)
-    fout.write(resEndk.group())
+    fout.write(resEnd.group())
+    fout.close()
+
+    os.remove('scalarTemp')
+
+
+def write_vector_to_file(Scalar, ScalarFile):
+    """Write the modified scalar to the scalar the OpenFOAM file
+
+    Args:
+    Scalar: E.g. DeltaXi or DeltaEta
+    ScalarFile: path of the Scalar file in OpenFOAM
+
+    Returns:
+    None
+
+    """
+
+    # Find openFoam scalar file's pattern'
+    (resStart, resEnd) = extract_foam_pattern(ScalarFile)
+
+    tempFile = 'scalarTemp'
+    np.savetxt('scalarTemp', Scalar)
+
+    # read scalar field
+    fin = open(tempFile, 'r')
+    field = fin.read()
+    fin.close()
+
+    fout = open(ScalarFile, 'w')
+    fout.write(resStart.group())
+    fout.write("\n(")
+    fout.write(field.replace("\n",")\n(")[:-1])
+    fout.write(resEnd.group())
     fout.close()
 
     os.remove('scalarTemp')
@@ -470,7 +497,8 @@ def extract_foam_pattern(tensorFile):
 
 
 def foam_header(name, location, foamclass, version, format='ascii',
-                website='www.OpenFOAM.org'):
+                website='www.OpenFOAM.org', input_version='2.0',
+                location_flag=False):
     header = '/*--------------------------------*- C++ -*---------------' + \
         '-------------------*\\\n'
     header += '| =========                 |                            ' + \
@@ -486,10 +514,11 @@ def foam_header(name, location, foamclass, version, format='ascii',
     header += '\\*------------------------------------------------------' + \
         '---------------------*/\n'
     header += 'FoamFile\n{\n'
-    header += '    version     {};\n'.format(version)
+    header += '    version     {};\n'.format(input_version)
     header += '    format      {};\n'.format(format)
     header += '    class       {};\n'.format(foamclass)
-    header += '    location    "{}";\n'.format(location)
+    if location_flag:
+        header += '    location    "{}";\n'.format(location)
     header += '    object      {};\n'.format(name) + '}\n'
     header += '// * * * * * * * * * * * * * * * * * * * * * * * * * * * ' + \
         '* * * * * * * * * * //\n'
