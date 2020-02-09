@@ -19,7 +19,7 @@ Contributors:
 Project Structure
 -----------------
 * **source/** Source code - main executable ``dafi.py``.
-* **docs/** Documentation - main file is ``index.html``. Use pre-commit hook to check. 
+* **docs/** Documentation - main file is ``index.html``. Use pre-commit hook to check.
   Uses Sphinx to create html. Published in ghpages.
 * **tests/** Unit tests for the source code. Use pre-commit hooks to check.
 * **tutorials/** Tutorial cases, follow in documentation.

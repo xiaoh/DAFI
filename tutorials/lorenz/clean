@@ -1,8 +1,7 @@
 #!/usr/bin/env bash
 
-rm -rf results*
-rm -f log.*
-rm -f .dafi_ver
+rm -rf results* debug
+rm -f dafi.log .dafi_ver .time
 
 rm -rf __pycache__
 rm -f *.pyc

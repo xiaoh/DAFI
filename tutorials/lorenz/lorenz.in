@@ -3,31 +3,30 @@
 dt_interval: 0.01
 
 # initial distribution (Gaussian) of the infered parameters.
-x_init_mean = -8.5
-y_init_mean = -7.0
-z_init_mean = 27.0
-rho_init_mean = 29.0 
+x_init_mean: -8.5
+y_init_mean: -7.0
+z_init_mean: 27.0
+rho_init_mean: 29.0
 
-x_init_std = 0.4
-y_init_std = 2.0
-z_init_std = 1.4
-rho_init_std = 4.0
+x_init_std: 0.4
+y_init_std: 2.0
+z_init_std: 1.4
+rho_init_std: 4.0
 
 # values of fixed parameters
-beta = 2.7
-sigma = 10.0 
+beta: 2.7
+sigma: 10.0
 
 # observation error: stddev(x) = error_relative * x
-x_obs_rel_std = 0.10
-z_obs_rel_std = 0.10
-x_obs_abs_std = 0.05
-z_obs_abs_std = 0.05
+x_obs_rel_std: 0.10
+z_obs_rel_std: 0.10
+x_obs_abs_std: 0.05
+z_obs_abs_std: 0.05
 
 # truth for creating synthetic measurements
-x_true = -8.0
-y_true = -9.0
-z_true = 28.0
-rho_true = 28.0
-beta_true = 2.7
-sigma_true = 10.0
-
+x_true: -8.0
+y_true: -9.0
+z_true: 28.0
+rho_true: 28.0
+beta_true: 2.7
+sigma_true: 10.0

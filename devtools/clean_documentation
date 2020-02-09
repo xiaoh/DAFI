@@ -1,8 +1,0 @@
-#!/usr/bin/env bash
-
-cd $(git rev-parse --show-toplevel)
-rm -f docs/*.html
-rm -r docs/_*
-rm -f docs/searchindex.js
-rm -r docs/sphinx/_build
-rm -f docs/objects.inv

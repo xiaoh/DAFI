@@ -1,18 +1,15 @@
 #!/usr/bin/env bash
 
 # Possible usage:
-#   >>> nohup ./run.sh &
+#   >>> nohup ./run &
 #
 # To monitor:
-#   >>> watch -n 5 "ps -ef | grep mfuMain.py"
-#   or
-#   >>>tail -f log.enkf
+#   >>> tail -f dafi.log
 
 START=$(date +%s.%N)
 
-dafi.py dafi.in &> log.dafi
+dafi dafi.in &> dafi.log
 
 END=$(date +%s.%N)
 DIFF=$(echo "$END - $START" | bc)
-echo $DIFF  > log.time
-
+echo $DIFF  > .time

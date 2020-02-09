@@ -1,8 +1,20 @@
-
-*.pyc
-__pycache__
+# Mac OS
 .DS_Store
-docs/sphinx/_build/
 
-linux64GccDPOpt/
+# built package
+build
+dist
+MANIFEST
+
+# compiled Python
+*.pyc
+__pycache_
+_
+# OpenFOAM
 *.dep
+linux64GccDPOpt
+
+# tutorials
+results*
+*.log
+.dafi_ver

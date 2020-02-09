@@ -4,15 +4,25 @@
 
 # standard library imports
 import os
+import importlib
 
 # third party imports
 import numpy as np
-
 import matplotlib.pyplot as plt
+import yaml
 
 # local import
-import dafi.utilities as utils
-from dafi.dynamic_models.lorenz import solve_lorenz
+# lorenz model imported later with importlib
+
+
+input_file = 'dafi.in'
+with open(input_file, 'r') as f:
+   input_dict = yaml.load(f, yaml.SafeLoader)
+dyn_model = input_dict['dafi']['dyn_model']
+spec = importlib.util.spec_from_file_location("dyn_model", dyn_model)
+dyn_model = importlib.util.module_from_spec(spec)
+spec.loader.exec_module(dyn_model)
+lorenz = getattr(dyn_model, 'lorenz')
 
 # what to plot
 plot_truth = True
@@ -29,7 +39,8 @@ observe_state = [True, False, True]
 
 # create directory
 savedir = 'results_postprocess'
-utils.create_dir(savedir)
+if not os.path.exists(savedir):
+    os.makedirs(savedir)
 
 # directories where results are saved
 da_dir = "results_dafi"
@@ -86,7 +97,7 @@ if plot_samps or plot_sampmean:
 if plot_baseline:
     t_base = truth[:, 0]
     params = np.loadtxt(lorenz_dir + os.sep + 'params.dat')
-    Xbase = solve_lorenz(t_base, X0m[:3], [X0m[3:], params[0], params[1]])
+    Xbase = lorenz(t_base, X0m[:3], [X0m[3:], params[0], params[1]])
 
 # get rho
 if plot_samps or plot_sampmean:

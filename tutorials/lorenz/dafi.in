@@ -1,32 +1,11 @@
 
-## Required dafi.py inputs
-dyn_model lorenz
-dyn_model_input ./lorenz.in
-da_filter EnKF
-nsamples 100
-max_da_iteration 1
+dafi:
+    model_file: ../_dynamic_models/lorenz.py
+    inverse_method: EnKF
+    nsamples: 100
+    t_end: 10.0
 
-## Optional dafi.py inputs
-t_end 60.0
-da_t_interval 0.5
-#plot_flag True
-#save_flag True
-#rand_seed_flag False
-#rand_seed 1 
+inverse:
 
-## Optional inputs for DAFilter2 class filters
-#perturb_obs True
-#save_dir ./results_dafi
-#verbosity 1 
-#debug_flag False
-#debug_dir debug
-#sensitivity_only False
-#reach_max_flag True
-#convergence_option variance
-#convergence_residual None
-#convergence_norm 2
-
-## Required inputs for EnRML filter
-#beta 0.1
-#criteria 1e-3
-
+model:
+    input_file: lorenz.in
