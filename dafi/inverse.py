@@ -15,7 +15,7 @@ from numpy import linalg as la
 
 
 # parent classes (templates)
-class InverseMethod(object):
+class InverseMethodBase(object):
     """ Parent class for ensemble-based Bayesian inversion techniques.
 
     Use this as a template to write new inversion classes.
@@ -67,7 +67,7 @@ class InverseMethod(object):
         pass
 
 
-class InverseMethodDAFI(InverseMethod):
+class InverseMethod(InverseMethodBase):
     """ Parent class for ensemble-based Bayesian inversion techniques.
 
     This class includes more implemented methods than the InverseMethod
@@ -163,7 +163,10 @@ class InverseMethodDAFI(InverseMethod):
         self._save_iterations = input_dict.get('save_iterations', False)
 
         # initialize iteration array
-        self.time_array = np.arange(0.0, self.t_end+self.t_interval, self.t_interval)
+        if self._stationary:
+            self.time_array = [0.]
+        else:
+            self.time_array = np.arange(0.0, self.t_end+self.t_interval, self.t_interval)
         self.iteration_array = np.arange(0, self.max_iterations)
 
         # initialize states: these change at every iteration
@@ -197,7 +200,6 @@ class InverseMethodDAFI(InverseMethod):
         # Generate initial state Ensemble
         self.state_forecast, self.state_obs = \
             self.model.generate_ensemble()
-
         # main loop - through time
         early_stop = False
         for time in self.time_array:
@@ -207,7 +209,7 @@ class InverseMethodDAFI(InverseMethod):
                 print(f"\nData-assimilation step: {self.i_time}" +
                       f"\nTime: {self.time}")
             # model: propagate the state ensemble to next DA time.
-            if self.i_time != 0:
+            if self.i_time != 1:
                 self.state_forecast = self.model.forecast_to_time(
                                             self.state_analysis, self.time)
 
@@ -215,6 +217,9 @@ class InverseMethodDAFI(InverseMethod):
             obs_vec, self.obs_error = self.model.get_obs(self.time)
             self.obs_error *= self.obs_err_factor
             self.obs = _vec_to_mat(obs_vec, self.nsamples)
+
+            # prior state for iterative methods that require it
+            self.state_prior = self.state_forecast
 
             # DA iterations at fixed time-step
             save_iter = self._save_iterations and len(self.iteration_array) > 1
@@ -236,7 +241,6 @@ class InverseMethodDAFI(InverseMethod):
                     self.obs, self.obs_perturbation = _perturb_vec(
                         obs_vec, self.obs_error, self.nsamples)
                 # data assimilation
-                self.state_prior = self.state_forecast
                 self.state_analysis, report_analysis = self.analysis()
                 # iteration: store results, report, check convergence
                 conv, report_conv = self._check_store_convergence()
@@ -379,7 +383,7 @@ class InverseMethodDAFI(InverseMethod):
 
 
 # child classes (specific filtering techniques)
-class EnKF(InverseMethodDAFI):
+class EnKF(InverseMethod):
     """ Implementation of the ensemble Kalman Filter (EnKF).
 
     It inherits most methods from parent class (``InverseMethod``),
@@ -432,7 +436,7 @@ class EnKF(InverseMethodDAFI):
         return state_analysis, report
 
 
-class EnRML(InverseMethodDAFI):
+class EnRML(InverseMethod):
     """ Implementation of the ensemble Randomized Maximal Likelihood
     (EnRML).
 
@@ -463,7 +467,6 @@ class EnRML(InverseMethodDAFI):
             input_dict)
         self.name = 'Ensemble Randomized Maximal Likelihood (EnRML)'
         self.beta = float(input_dict['step_length'])
-        self.niter = float(input_dict['iterations'])
 
     def analysis(self,):
         """ Correct the propagated ensemble (filtering step) using EnRML
@@ -471,43 +474,35 @@ class EnRML(InverseMethodDAFI):
         # calculate the Gauss-Newton matrix
         xp0 = _mean_subtracted_matrix(self.state_prior)
         p0 = (1.0 / (self.nsamples - 1.0)) * xp0.dot(xp0.T)
-        state = self.state_prior.copy()
-        state_obs = self.state_obs
-        report = ''
+        x = self.state_forecast
 
-        for i in range(self.niter):
-            if i!=0:
-                state_obs = self.model.state_to_observation(state)
-            xp = _mean_subtracted_matrix(state)
-            hxp = _mean_subtracted_matrix(state_obs)
-            gen = np.dot(hxp, la.pinv(xp))
-            sen_mat = p0.dot(gen.T)
-            cyyi = np.dot(np.dot(gen, p0), gen.T)
-            conn = _check_condition_number(cyyi + self.obs_error)
-            inv = la.inv(cyyi + self.obs_error)
-            inv = inv.A  # convert np.matrix to np.ndarray
-            gauss_newton_matrix = sen_mat.dot(inv)
-            # calculate the penalty
-            penalty = np.dot(gauss_newton_matrix, gen.dot(state-self.state_prior))
+        xp = _mean_subtracted_matrix(x)
+        hxp = _mean_subtracted_matrix(self.state_obs)
+        gen = np.dot(hxp, la.pinv(xp))
+        sen_mat = p0.dot(gen.T)
+        cyyi = np.dot(np.dot(gen, p0), gen.T)
+        conn = _check_condition_number(cyyi + self.obs_error)
+        inv = la.inv(cyyi + self.obs_error)
+        gauss_newton_matrix = sen_mat.dot(inv)
+        # calculate the penalty
+        penalty = np.dot(gauss_newton_matrix, gen.dot(x-self.state_prior))
 
-            # analysis step
-            dx = np.dot(gauss_newton_matrix, self.obs - state_obs) + penalty
-            state = self.beta * self.state_prior + \
-                             (1.0 - self.beta) * state + self.beta * dx
+        # analysis step
+        dx = np.dot(gauss_newton_matrix, self.obs - self.state_obs) + penalty
+        x = self.beta * self.state_prior + \
+                         (1.0 - self.beta) * x + self.beta * dx
+        report = f"    Condition number of (cyyi + R) is {conn}"
 
-            report += f"\n\n    EnRML Loop {i}:"
-            report = f"\n       Condition number of (cyyi + R) is {conn}"
-
-            # debug
-            if self._debug:
-                debug_dict = {
-                    'GN': gauss_newton_matrix, 'pen': penalty, 'inv': inv,
-                    'cyyi': cyyi, 'Hxp': hxp, 'xp': xp}
-                self._save_debug(debug_dict, f'{i}_')
-        return state_analysis, report
+        # debug
+        if self._debug:
+            debug_dict = {
+                'GN': gauss_newton_matrix, 'pen': penalty, 'inv': inv,
+                'cyyi': cyyi, 'Hxp': hxp, 'xp': xp}
+            self._save_debug(debug_dict, f'{i}_')
+        return x, report
 
 
-class EnKF_MDA(InverseMethodDAFI):
+class EnKF_MDA(InverseMethod):
     """ Implementation of the ensemble Kalman Filter-Multi data
     assimilaton (EnKF-MDA).
 
@@ -537,49 +532,40 @@ class EnKF_MDA(InverseMethodDAFI):
             nsamples, t_interval, t_end, max_iterations, model,
             input_dict)
         self.name = 'Ensemble Kalman Filter-Multi Data Assimilation (EnKF-MDA)'
-        self.niter = float(input_dict['iterations'])
-        self.alpha = [self.niter] * self.niter
+        self.alpha = self.max_iterations
+        self.convergence_option = 'max'
+        self.convergence_residual = None
 
     def analysis(self,):
         """ Correct the propagated ensemble (filtering step) using
         EnKF_MDA.
         """
+        # calculate the Kalman gain matrix
+        x = self.state_forecast.copy()
+        xp = _mean_subtracted_matrix(self.state_forecast)
+        hxp = _mean_subtracted_matrix(self.state_obs)
         coeff = (1.0 / (self.nsamples - 1.0))
-        state = self.state_forecast.copy()
-        state_obs = self.state_obs.copy()
+        pht = coeff * np.dot(xp, hxp.T)
+        hpht = coeff * hxp.dot(hxp.T)
+        conn =  _check_condition_number(hpht + self.alpha * self.obs_error)
+        inv = la.inv(hpht + self.alpha * self.obs_error)
+        kalman_gain_matrix = pht.dot(inv)
+        # analysis step
         obs = self.obs - self.obs_perturbation
-        report = ''
-
-        for i,alpha in enumerate(self.alpha):
-            if i!=0:
-                state_obs = self.model.state_to_observation(state)
-            # calculate the Kalman gain matrix
-            xp = _mean_subtracted_matrix(state)
-            hxp = _mean_subtracted_matrix(state_obs)
-            pht = coeff * np.dot(xp, hxp.T)
-            hpht = coeff * hxp.dot(hxp.T)
-            conn =  _check_condition_number(hpht + alpha * self.obs_error)
-            inv = la.inv(hpht + alpha * self.obs_error)
-            inv = inv.A  # convert np.matrix to np.ndarray
-            kalman_gain_matrix = pht.dot(inv)
-            # analysis step
-            _, obs_perturbation = _perturb_vec(
-                obs, self.obs_error, self.nsamples)
-            obs_mda = obs + np.sqrt(alpha) * obs_perturbation
-            dx = np.dot(kalman_gain_matrix, obs_mda - self.state_obs)
-            state += dx
-            report += f"\n\n    MDA Loop {i}:"
-            report += f"\n      Condition number of (HPHT + aR) is {conn}\n"
-            # debug
-            if self._debug:
-                debug_dict = {
-                    'K': kalman_gain_matrix, 'inv': inv, 'HPHT': hpht, 'PHT': pht,
-                    'Hxp': hxp, 'xp': xp}
-                self._save_debug(debug_dict, f'{i}_')
-        return state, report
+        obs_mda = obs + np.sqrt(self.alpha) * self.obs_perturbation
+        dx = np.dot(kalman_gain_matrix, obs_mda - self.state_obs)
+        x += dx
+        report = f"    Condition number of (HPHT + aR) is {conn}\n"
+        # debug
+        if self._debug:
+            debug_dict = {
+                'K': kalman_gain_matrix, 'inv': inv, 'HPHT': hpht, 'PHT': pht,
+                'Hxp': hxp, 'xp': xp}
+            self._save_debug(debug_dict, f'{i}_')
+        return x, report
 
 
-class REnKF(InverseMethodDAFI):
+class REnKF(InverseMethod):
     """ Implementation of the regularized ensemble Kalman Filter
     (REnKF).
 
