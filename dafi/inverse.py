@@ -143,12 +143,16 @@ class InverseMethod(InverseMethodBase):
         # InverseMethodDAFI-specific inputs
         self.convergence_option = input_dict.get('convergence_option',
                                                  'max')
-        if self.convergence_option not in ['variance', 'residual', 'max']:
+        if self.convergence_option not in ['discrepancy', 'residual', 'max']:
             raise NotImplementedError('Invalid convergence_option.')
-        if self.convergence_option is 'residual':
+        if self.convergence_option == 'residual':
             self.convergence_residual = input_dict['convergence_residual']
         else:
             self.convergence_residual = None
+        if self.convergence_option == 'discrepancy':
+            self.convergence_factor = input_dict['convergence_factor']
+        else:
+            self.convergence_factor = None
         self.obs_err_factor = input_dict.get('obs_err_multiplier', 1.)
         # private attributes
         self._debug = input_dict.get('debug', False)
@@ -226,7 +230,7 @@ class InverseMethod(InverseMethodBase):
             self._store_iter = {'xa': [], 'xf': [], 'Hx': [], 'y': []}
             std_y = _cov_to_std(self.obs_error)
             self._store_convergence = {
-                'misfit': [], 'std_Hx': [], 'std_y': std_y}
+                'misfit': [], 'noise_level': [], 'residual': []}
             for iteration in self.iteration_array:
                 self.i_iteration = iteration + 1
                 if self._verb >= 1:
@@ -310,7 +314,7 @@ class InverseMethod(InverseMethodBase):
             for iter, value in enumerate(self._store_iter[var]):
                 np.savetxt(dir + os.sep + var + f'_{iter+1}', value)
         # save misfit
-        var_list = ['misfit', 'std_y', 'std_Hx']
+        var_list = ['misfit', 'noise_level', 'residual']
         for var in var_list:
             np.savetxt(tdir + os.sep + var,
                 np.atleast_1d(np.array(self._store_convergence[var])))
@@ -340,27 +344,27 @@ class InverseMethod(InverseMethodBase):
         # TODO: THEORY: verify these. Should norm of misfit be weighted by R?
         if self.convergence_option != 'max' or compute_all:
             # norm of misfit
-            nnorm_vec = self.nobs
-            nnorm_mat = self.nobs * self.nsamples
             diff = self.obs - self.state_obs
-            misfit_norm = la.norm(diff) / nnorm_mat
+            misfit_norm = la.norm(np.mean(diff, axis=1))
             self._store_convergence['misfit'].append(misfit_norm)
-        if self.convergence_option == 'variance' or compute_all:
-            # norm of misfit < norm of observation error
-            conv_variance = misfit_norm < self._store_convergence['std_y']
+        if self.convergence_option == 'discrepancy' or compute_all:
+            noise_level = np.sqrt(np.trace(self.obs_error))
+            if self.convergence_factor is None:
+                conv_variance = False
+            else:
+                noise_criteria = self.convergence_factor * noise_level
+                conv_variance = misfit_norm < noise_criteria
+            self._store_convergence['noise_level'].append(noise_level)
         if self.convergence_option == 'residual' or compute_all:
-            # norm of misfit plateaued
-            sigma_hx = np.std(self.state_obs, axis=1)
-            sigma_hx_norm = la.norm(sigma_hx) / nnorm_vec
             residual = _iteration_residual(
                 self._store_convergence['misfit'], self.i_iteration-1)
-            self._store_convergence['std_Hx'].append(sigma_hx_norm)
             if self.convergence_residual is None:
                 conv_residual = False
             else:
                 conv_residual = residual < self.convergence_residual
+            self._store_convergence['residual'].append(residual)
         # return iteration convergence (bool)
-        if self.convergence_option == 'variance':
+        if self.convergence_option == 'discrepancy':
             conv = conv_variance
         elif self.convergence_option == 'residual':
             conv = conv_residual
@@ -368,14 +372,12 @@ class InverseMethod(InverseMethodBase):
             conv = False
         # report
         if compute_all:
-            report = f"    Norm of standard deviation of Hx: {sigma_hx_norm}"
-            report += "\n    Norm of standard deviation of " + \
-                f"observation: {self._store_convergence['std_y']}"
-            report += f"\n    Norm of misfit: {misfit_norm}"
-            report += f"\n    Convergence (variance): {conv_variance}"
+            report = f"\n    Convergence (variance): {conv_variance}"
+            report += f"\n      Norm of misfit: {misfit_norm}"
+            report += f"\n      Noise level: {noise_level}"
             report += f"\n    Convergence (residual): {conv_residual}"
             report += f"\n      Relative iterative residual: {residual}"
-            report += "\n      Relative convergence criterion: " + \
+            report += "\n       Relative convergence criterion: " + \
                 f"{self.convergence_residual}"
         else:
             report = ""
@@ -697,7 +699,7 @@ def _iteration_residual(list, iter,):
     if iter > 0:
         iterative_residual = abs(list[iter] - list[iter-1]) / abs(list[0])
     else:
-        iterative_residual = None
+        iterative_residual = np.nan
     return iterative_residual
 
 def _vec_to_mat(vec, ncol,):
