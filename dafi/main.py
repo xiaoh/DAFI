@@ -18,7 +18,7 @@ def run(model_file, inverse_method, nsamples,
         inputs_model={}, inputs_inverse={}):
     """ Run DAFI.
 
-    """ # TODO: docstring
+    """ 
 
     # random seed: do this before importing local modules that use np.random
     if rand_seed is not None:

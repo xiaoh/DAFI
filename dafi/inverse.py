@@ -79,7 +79,7 @@ class InverseMethod(InverseMethodBase):
     specific filtering techniques.
 
     [1]
-    """ #TODO: DOCSTRING: add citation
+    """
 
     def __init__(self, nsamples, t_interval, t_end, max_iterations,
                  model, input_dict,):
@@ -121,11 +121,16 @@ class InverseMethod(InverseMethodBase):
             * **convergence_residual** (``float``, None) -
               Residual value for convergence if ``reach_max`` is
               ``False`` and ``convergence_option`` is ``residual``.
-            * **perturb_obs** (``bool``, ``True``) -
-              Perturb the observations for each sample. #
+            * **perturb_obs_option** (``str``, ``iter``) -
+              Option on when to perturb observations:
+              ``iter`` to perturb at each iteration (inner loop),
+              ``time`` to perturb only once each data assimilaton time
+              (outer loop),  ``never`` to not perturb observations
             * **obs_err_multiplier** (``float``, ``1.0``) -
               Factor by which to multiply the observation error matrix.
               This is done by some authors in the literature.
+            * **analysis_to_obs** (``bool``, ``False``) -
+              Map analysis state to observation space
         """
         self.name = 'Generic inverse method'
         self.model = model
@@ -135,10 +140,6 @@ class InverseMethod(InverseMethodBase):
         self.t_interval = t_interval
         self.t_end = t_end
         self.max_iterations = max_iterations
-        if t_end == t_interval:
-            self._stationary = True
-        else:
-            self._stationary = False
 
         # InverseMethodDAFI-specific inputs
         self.convergence_option = input_dict.get('convergence_option',
@@ -163,11 +164,13 @@ class InverseMethod(InverseMethodBase):
         default_save_dir = os.curdir + os.sep + 'results_dafi'
         self._save_dir = input_dict.get('save_dir', default_save_dir)
         self._verb = input_dict.get('verbosity', 1)
-        self._perturb_obs = input_dict.get('perturb_obs', True)
+        self._perturb_obs = input_dict.get('perturb_obs_option', 'iter')
         self._save_iterations = input_dict.get('save_iterations', False)
+        self._analysis_to_obs = input_dict.get('analysis_to_obs', False)
 
         # initialize iteration array
-        if self._stationary:
+        stationary = t_end == t_interval
+        if stationary:
             self.time_array = [0.]
         else:
             self.time_array = np.arange(0.0, self.t_end+self.t_interval, self.t_interval)
@@ -186,7 +189,7 @@ class InverseMethod(InverseMethodBase):
         self.state_analysis = np.zeros(
             [self.model.nstate, self.nsamples])
         # ensemble matrix mapped to observation space (nsamples, nstateSample)
-        self.state_obs = np.zeros([self.model.nobs, self.nsamples])
+        self.state_in_obsspace = np.zeros([self.model.nobs, self.nsamples])
         # observation matrix (nobs, nsamples)
         self.obs = np.zeros([self.model.nobs, self.nsamples])
         # observation perturbation matrix (nobs, nsamples)
@@ -197,13 +200,15 @@ class InverseMethod(InverseMethodBase):
 
         # for storage and saving: these grow each iteration
         self._store_results = {'xa': [], 'xf': [], 'Hx': [], 'y': [], 'R': []}
+        if self._analysis_to_obs:
+            self._store_results['Hxa'] = []
+
 
     def solve(self):
         """ Solve the inverse problem.
         """
         # Generate initial state Ensemble
-        self.state_forecast, self.state_obs = \
-            self.model.generate_ensemble()
+        self.state_forecast = self.model.generate_ensemble()
         # main loop - through time
         early_stop = False
         for time in self.time_array:
@@ -221,6 +226,9 @@ class InverseMethod(InverseMethodBase):
             obs_vec, self.obs_error = self.model.get_obs(self.time)
             self.obs_error *= self.obs_err_factor
             self.obs = _vec_to_mat(obs_vec, self.nsamples)
+            if self._perturb_obs == 'time':
+                self.obs, self.obs_perturbation = _perturb_vec(
+                    obs_vec, self.obs_error, self.nsamples)
 
             # prior state for iterative methods that require it
             self.state_prior = self.state_forecast
@@ -238,10 +246,12 @@ class InverseMethod(InverseMethodBase):
                 # map the state vector to observation space
                 if self.i_iteration != 1:
                     self.state_forecast = self.state_analysis.copy()
-                self.state_obs = self.model.state_to_observation(
+                self.state_in_obsspace = self.model.state_to_observation(
                     self.state_forecast)
+                if self.i_iteration == 1:
+                    self.state_in_obsspace_prior = self.state_in_obsspace
                 # Perturb observations
-                if self._perturb_obs:
+                if self._perturb_obs == 'iter':
                     self.obs, self.obs_perturbation = _perturb_vec(
                         obs_vec, self.obs_error, self.nsamples)
                 # data assimilation
@@ -249,17 +259,25 @@ class InverseMethod(InverseMethodBase):
                 # iteration: store results, report, check convergence
                 conv, report_conv = self._check_store_convergence()
                 if save_iter:
-                    self._store_iter_results()
+                    self._store_inner_iter()
                 if self._verb >= 2 and len(self.iteration_array) > 1:
                     print(report_analysis)
                     print(report_conv)
                 if conv and (self.i_iteration < self.max_iterations):
                     early_stop = True
                     break
-            # time-step: store results, report
+            # time-step
+            # map xa to obs space
+            if self._analysis_to_obs:
+                self.state_in_obsspace = self.model.state_to_observation(
+                    self.state_forecast)
+                if save_iter:
+                    self._store_iter['Hx'].append(
+                        self.state_in_obsspace.copy())
+            # store results, report
             self._store()
             if save_iter:
-                self._save_iter()
+                self._save_inner_iter()
             if self._verb >= 1:
                 if early_stop:
                     message = "convergence early stop."
@@ -271,6 +289,8 @@ class InverseMethod(InverseMethodBase):
     def save(self,):
         """ Saves results to text files. """
         var_list = ['xa', 'xf', 'Hx', 'y', 'R']
+        if self._analysis_to_obs:
+            var_list.append('Hxa')
         _create_dir(self._save_dir)
         np.savetxt(self._save_dir + os.sep + 'time',
             self.time_array)
@@ -295,14 +315,14 @@ class InverseMethod(InverseMethodBase):
         raise NotImplementedError(error_message)
 
     # private methods used to simplify main code
-    def _store_iter_results(self,):
+    def _store_inner_iter(self,):
         """ Store iteration results for current time step. """
         self._store_iter['y'].append(self.obs.copy())
-        self._store_iter['Hx'].append(self.state_obs.copy())
+        self._store_iter['Hx'].append(self.state_in_obsspace.copy())
         self._store_iter['xa'].append(self.state_analysis.copy())
         self._store_iter['xf'].append(self.state_forecast.copy())
 
-    def _save_iter(self,):
+    def _save_inner_iter(self,):
         """ Save iteration results for current time step. """
         tdir = self._save_dir + os.sep + f't_{self.i_time}'
         _create_dir(tdir)
@@ -320,13 +340,15 @@ class InverseMethod(InverseMethodBase):
                 np.atleast_1d(np.array(self._store_convergence[var])))
 
     def _store(self,):
-        """ Store the important variables at each iteration. """
+        """ Store results at each time. """
         # save results
         self._store_results['y'].append(self.obs.copy())
-        self._store_results['Hx'].append(self.state_obs.copy())
+        self._store_results['Hx'].append(self.state_in_obsspace_prior.copy())
+        if self._analysis_to_obs:
+            self._store_results['Hxa'].append(self.state_in_obsspace.copy())
         self._store_results['R'].append(self.obs_error.copy())
         self._store_results['xa'].append(self.state_analysis.copy())
-        self._store_results['xf'].append(self.state_forecast.copy())
+        self._store_results['xf'].append(self.state_prior.copy())
 
     def _save_debug(self, debug_dict, post_name=None):
         """ Save specified ndarrays to the debug directory. """
@@ -341,10 +363,8 @@ class InverseMethod(InverseMethodBase):
         """ Calculate and store misfits, and return iteration convergence. """
         compute_all = self._save_iterations or (self._verb >= 2)
         comput2_all = compute_all and (len(self.iteration_array) > 1)
-        # TODO: THEORY: verify these. Should norm of misfit be weighted by R?
         if self.convergence_option != 'max' or compute_all:
-            # norm of misfit
-            diff = self.obs - self.state_obs
+            diff = self.obs - self.state_in_obsspace
             misfit_norm = la.norm(np.mean(diff, axis=1))
             self._store_convergence['misfit'].append(misfit_norm)
         if self.convergence_option == 'discrepancy' or compute_all:
@@ -418,7 +438,7 @@ class EnKF(InverseMethod):
         """
         # calculate the Kalman gain matrix
         xp = _mean_subtracted_matrix(self.state_forecast)
-        hxp = _mean_subtracted_matrix(self.state_obs)
+        hxp = _mean_subtracted_matrix(self.state_in_obsspace)
         coeff = (1.0 / (self.nsamples - 1.0))
         pht = coeff * np.dot(xp, hxp.T)
         hpht = coeff * hxp.dot(hxp.T)
@@ -427,7 +447,7 @@ class EnKF(InverseMethod):
         inv = la.inv(hpht + self.obs_error)
         kalman_gain_matrix = pht.dot(inv)
         # analysis step
-        dx = np.dot(kalman_gain_matrix, self.obs - self.state_obs)
+        dx = np.dot(kalman_gain_matrix, self.obs - self.state_in_obsspace)
         state_analysis = self.state_forecast + dx
         # debug
         if self._debug:
@@ -462,13 +482,12 @@ class EnRML(InverseMethod):
         ----
         See InverseMethodDAFI.__init__ for details.
         """
-        # TODO: DOCSTRING: add the additional inputs to the docstring as in
-        #                  DAFilter2.__init__
         super(self.__class__, self).__init__(
             nsamples, t_interval, t_end, max_iterations, model,
             input_dict)
         self.name = 'Ensemble Randomized Maximal Likelihood (EnRML)'
         self.beta = float(input_dict['step_length'])
+        self._perturb_obs = 'time'
 
     def analysis(self,):
         """ Correct the propagated ensemble (filtering step) using EnRML
@@ -479,7 +498,7 @@ class EnRML(InverseMethod):
         x = self.state_forecast
 
         xp = _mean_subtracted_matrix(x)
-        hxp = _mean_subtracted_matrix(self.state_obs)
+        hxp = _mean_subtracted_matrix(self.state_in_obsspace)
         gen = np.dot(hxp, la.pinv(xp))
         sen_mat = p0.dot(gen.T)
         cyyi = np.dot(np.dot(gen, p0), gen.T)
@@ -490,7 +509,8 @@ class EnRML(InverseMethod):
         penalty = np.dot(gauss_newton_matrix, gen.dot(x-self.state_prior))
 
         # analysis step
-        dx = np.dot(gauss_newton_matrix, self.obs - self.state_obs) + penalty
+        dx = np.dot(gauss_newton_matrix,
+                    self.obs - self.state_in_obsspace) + penalty
         x = self.beta * self.state_prior + \
                          (1.0 - self.beta) * x + self.beta * dx
         report = f"    Condition number of (cyyi + R) is {conn}"
@@ -528,8 +548,7 @@ class EnKF_MDA(InverseMethod):
         Note
         ----
         See InverseMethodDAFI.__init__ for details.
-        """# TODO: DOCSTRING: add the additional inputs to the docstring as in
-        #                  DAFilter2.__init__
+        """
         super(self.__class__, self).__init__(
             nsamples, t_interval, t_end, max_iterations, model,
             input_dict)
@@ -545,7 +564,7 @@ class EnKF_MDA(InverseMethod):
         # calculate the Kalman gain matrix
         x = self.state_forecast.copy()
         xp = _mean_subtracted_matrix(self.state_forecast)
-        hxp = _mean_subtracted_matrix(self.state_obs)
+        hxp = _mean_subtracted_matrix(self.state_in_obsspace)
         coeff = (1.0 / (self.nsamples - 1.0))
         pht = coeff * np.dot(xp, hxp.T)
         hpht = coeff * hxp.dot(hxp.T)
@@ -555,7 +574,7 @@ class EnKF_MDA(InverseMethod):
         # analysis step
         obs = self.obs - self.obs_perturbation
         obs_mda = obs + np.sqrt(self.alpha) * self.obs_perturbation
-        dx = np.dot(kalman_gain_matrix, obs_mda - self.state_obs)
+        dx = np.dot(kalman_gain_matrix, obs_mda - self.state_in_obsspace)
         x += dx
         report = f"    Condition number of (HPHT + aR) is {conn}\n"
         # debug
@@ -587,7 +606,7 @@ class REnKF(InverseMethod):
           dictionary represents one penalty and includes:
           ``lambda`` (float), ``weight_matrix`` (ndarray),
           ``penalty`` (function), and ``gradient`` (function).
-    """ #TODO: DOCSTRING: cite paper
+    """
 
     def __init__(self, nsamples, t_interval, t_end, max_iterations,
                  model, input_dict,):
@@ -607,14 +626,7 @@ class REnKF(InverseMethod):
         penalties = getattr(importlib.import_module(
             os.path.splitext(os.path.basename(pfile))[0]), 'penalties')
         self.penalties = penalties(self)
-        self.cost1_all = []
-        self.cost2_all = []
-        self.cost3_all = []
-        self.lamda_all = []
-        self.dx1_all = []
-        self.dx2_all = []
-        self.k2_all = []
-        self.penalty_all = []
+
 
     def analysis(self,):
         """ Correct the propagated ensemble (filtering step) using
@@ -622,7 +634,7 @@ class REnKF(InverseMethod):
         """
         # calculate the Kalman gain matrix
         xp = _mean_subtracted_matrix(self.state_forecast)
-        hxp = _mean_subtracted_matrix(self.state_obs)
+        hxp = _mean_subtracted_matrix(self.state_in_obsspace)
         coeff = (1.0 / (self.nsamples - 1.0))
         pht = coeff * np.dot(xp, hxp.T)
         hpht = coeff * hxp.dot(hxp.T)
@@ -638,52 +650,30 @@ class REnKF(InverseMethod):
         penalty_mat = np.zeros([len(self.state_forecast), self.nsamples])
         for ipenalty in self.penalties:
             w_mat = ipenalty['weight_matrix']
-
-            lamb = ipenalty['lambda']  # Function
-            lamda = lamb(self.i_iteration)  # Function
-
+            lamb = ipenalty['lambda']
+            lamda = lamb(self.i_iteration)
             func_penalty = ipenalty['penalty']
             func_gradient = ipenalty['gradient']
-
             for isamp in range(self.nsamples):
                 istate = self.state_forecast[:, isamp]
                 gpw = np.dot(func_gradient(istate).T, w_mat)
                 gpwg = np.dot(gpw, func_penalty(istate))
                 penalty_mat[:, isamp] += lamda * gpwg
-        penalty = func_penalty(istate)
         # analysis step
-        dx1 = np.dot(kalman_gain_matrix, self.obs - self.state_obs)
+        dx1 = np.dot(kalman_gain_matrix, self.obs - self.state_in_obsspace)
         dx2 = np.dot(k2_gain_matrix, penalty_mat)
         state_analysis = self.state_forecast + dx1 + dx2
 
         # debug
         if self._debug:
-            # TODO: Xinlei: are these general or specific to a problem you
-            #               were looking at? E.g. cost1, ..., cost3.
-            dx = dx1 + dx2
-            p = coeff*np.dot(xp, xp.T)
-            cost1 = 0.5 * np.dot(dx.T.dot(la.inv(p)), dx)
-            delta_y = self.obs - self.state_obs
-            cost2 = 0.5 * np.dot(delta_y.T.dot(la.inv(self.obs_error)),
-                                 delta_y)
-            cost3 = 0.5 * lamda * np.dot(func_penalty(istate).T.dot(w_mat),
-                                         func_penalty(istate))
-            self.cost1_all.append(np.linalg.norm(cost1))
-            self.cost2_all.append(np.linalg.norm(cost2))
-            self.cost3_all.append(np.linalg.norm(cost3))
-            self.lamda_all.append(lamda)
-            self.dx1_all.append(np.linalg.norm(dx1))
-            self.dx2_all.append(np.linalg.norm(dx2))
-            self.k2_all.append(np.linalg.norm(k2_gain_matrix))
-            self.penalty_all.append(np.linalg.norm(penalty))
+            # TODO: Save each penalty separately if debug
             # debug
             debug_dict = {
                 'K': kalman_gain_matrix, 'inv': inv, 'HPHT': hpht, 'PHT': pht,
-                'Hxp': hxp, 'xp': xp, 'cost1': self.cost1_all,
-                'cost2': self.cost2_all, 'cost3': self.cost3_all,
-                'lamda': self.lamda_all, 'dx1': self.dx1_all,
-                'dx2': self.dx2_all, 'k2': self.k2_all,
-                'penalty': self.penalty_all}
+                'Hxp': hxp, 'xp': xp, 'lamda': lamda,
+                'dx1': dx1, 'dx2': dx2, 'k2': k2_gain_matrix,
+                'penalty': penalty_mat,
+                }
             self._save_debug(debug_dict)
         return state_analysis, report
 
@@ -738,8 +728,6 @@ def _perturb_vec(mean, cov, nsamps,):
     return np.tile(mean, (nsamps, 1)).T + perturb, perturb
 
 def _cov_to_std(cov,):
-    # TODO: THEORY: what if not diagonal?
-    # TODO: THEORY: should it include the obs_err_factor? Currently it does.
     nvars = cov.shape[0]
     std = np.sqrt(np.diag(cov))
     std_norm = la.norm(std) / nvars
