@@ -40,6 +40,7 @@ Optional DAFI inputs:
 import os
 import subprocess
 import argparse
+import time
 
 # third party imports
 import yaml
@@ -62,12 +63,13 @@ def _get_code_version():
     bash_command = f'cd {git_dir}; git rev-parse HEAD > {file}; cd {cwd}; '
     success = False
     try:
-        subprocess.check_call(bash_command, stderr=subprocess.DEVNULL)
+        subprocess.check_call(bash_command, stderr=subprocess.DEVNULL,
+            shell=True)
         sucess = True
     except subprocess.CalledProcessError:
         # not a git directory
         bash_command = f'rm {file}; cd {cwd}; '
-        subprocess.call(bash_command, shell=True)
+        subprocess.check_call(bash_command, shell=True)
     except OSError:
         # git command not found
         pass
@@ -102,6 +104,9 @@ if __name__ == "__main__":
     args = _parse_args()
     (inputs_dafi, inputs_inverse, inputs_model) = _read_input(args.input_file)
     _ = _get_code_version()
+    ts = time.time()
     _ = dafi.run(**inputs_dafi,
                  inputs_inverse=inputs_inverse,
                  inputs_model=inputs_model)
+    with open(".time", "w") as text_file:
+        print(f"{time.time()-ts}", file=text_file)
