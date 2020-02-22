@@ -1,6 +1,6 @@
 # Copyright 2020 Virginia Polytechnic Institute and State University.
 """ Package containing modules for manipulating random fields. """
 
-from vtdafi.random_field.field import *
-from vtdafi.random_field import covariance
-from vtdafi.random_field import foam_utilities as foam
+from dafi.random_field.field import *
+from dafi.random_field import covariance
+from dafi.random_field import foam_utilities as foam

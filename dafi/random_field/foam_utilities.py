@@ -4,14 +4,9 @@
 # standard library imports
 import numpy as np
 import os
-import os.path as ospt
-import shutil
 import re
 import tempfile
 import subprocess
-
-# local import
-import dafi.utilities as util
 
 
 # global variables
@@ -21,505 +16,305 @@ NSYMMTENSOR = 6
 NTENSOR = 9
 
 
-# get mesh properties
+# get mesh properties by running OpenFOAM shell utilities
 def get_number_cells(foam_case='.'):
     bash_command = "checkMesh -case " + foam_case + \
         " -time '0' | grep '    cells:' > tmp.ncells"
-    subprocess.call(bash_command, shell=True)
-    file = open('tmp.ncells', 'r')
-    line = fin.read()
-    file.close()
-    os.remove('tmp.ncells')
-    return int(line.split()[-1])
+    cells = subprocess.check_output(bash_command, shell=True)
+    cells = cells.decode("utf-8").replace('\n', '').split(':')[1].strip()
+    return int(cells)
 
 
-def get_cell_coordinates(foam_case='.'):
+def get_cell_coordinates(foam_case='.', timedir='0', keep_file=False):
     bash_command = "simpleFoam -postProcess -func writeCellCentres " + \
-        "-case " + foam_case + " -time '0' " + "&> /dev/null"
+        "-case " + foam_case + f" -time '{timedir}' " + "&> /dev/null"
     subprocess.call(bash_command, shell=True)
-    coords = read_cell_coordinates(ospt.join(foam_case, '0'))
-    os.remove(ospt.join(foam_case, '0', 'Cx'))
-    os.remove(ospt.join(foam_case, '0', 'Cy'))
-    os.remove(ospt.join(foam_case, '0', 'Cz'))
+    os.remove(os.path.join(foam_case, timedir, 'Cx'))
+    os.remove(os.path.join(foam_case, timedir, 'Cy'))
+    os.remove(os.path.join(foam_case, timedir, 'Cz'))
+    file = os.path.join(foam_case, timedir, 'C')
+    coords = read_cell_coordinates(file, group='internalField')
+    if not keep_file:
+        os.remove(file)
     return coords
 
 
-def get_cell_volumes(foam_case='.'):
+def get_cell_volumes(foam_case='.', timedir='0', keep_file=False):
     bash_command = "simpleFoam -postProcess -func writeCellVolumes " + \
-        "-case " + foam_case + " -time '0' " + "&> /dev/null"
+        "-case " + foam_case + f" -time '{timedir}' " + "&> /dev/null"
     subprocess.call(bash_command, shell=True)
-    vol = read_cell_volumes(ospt.join(foam_case, '0'))
-    os.remove(ospt.join(foam_case, '0', 'V'))
+    file = os.path.join(foam_case, timedir, 'V')
+    vol = read_cell_volumes(file)
+    if not keep_file:
+        os.remove(file)
     return vol
 
 
-def read_cell_coordinates(file_dir, group=None):
+# read fields
+def read_field(file, ndim, group='internalField'):
+    # read file
+    with open(file, 'r') as f:
+        content = f.read()
+    # keep file portion after specified group
+    content = content.partition(group)[2]
+    # data structure
+    whole_number = r"([+-]?[\d]+)"
+    decimal = r"([\.][\d]*)"
+    exponential = r"([Ee][+-]?[\d]+)"
+    floatn = f"{whole_number}{{1}}{decimal}?{exponential}?"
+    if ndim==1:
+        data_structure = f"({floatn}\\n)+"
+    else:
+        data_structure = r'(\(' + f"({floatn}" + r"(\ ))" + \
+                         f"{{{ndim-1}}}{floatn}" + r"\)\n)+"
+    # extract data
+    pattern = r'\(\n' + data_structure + r'\)'
+    data_str = re.compile(pattern).search(content).group()
+    # convert to numpy array
+    data_str = data_str.replace('(', '').replace(')', '').replace('\n', ' ')
+    data_str = data_str.strip()
+    data = np.fromstring(data_str, dtype=float, sep=' ')
+    if ndim > 1:
+        data.reshape([-1, ndim])
+    return data
+
+
+def read_scalar_field(file, group='internalField'):
+    return read_field(file, ndim=NSCALAR, group=group)
+
+
+def read_vector_field(file, group='internalField'):
+    return read_field(file, ndim=NVECTOR, group=group)
+
+
+def read_symmTensor_field(file, group='internalField'):
+    return read_field(file, ndim=NSYMMTENSOR, group=group)
+
+
+def read_tensor_field(file, group='internalField'):
+    return read_field(file, ndim=NTENSOR, group=group)
+
+
+def read_cell_coordinates(file='C', group='internalField'):
+    return read_field(file, ndim=NVECTOR, group=group)
+
+
+def read_cell_volumes(file='V'):
+    return read_field(file, ndim=NSCALAR, group='internalField')
+
+
+# TODO: Read properties (version, name, loc, boundary names and types, etc.)
+# i.e. everything needed to then write it again using write_field.
+# Use: to modify the file by rewritting with modified field values.
+def read_field_info(file):
+    # foam_version
+    # object_name
+    # foam_class
+    # location (optional)
+    # dimension
+    # internalField: uniform/nonuniform
+    # boundaries: type and value(optional): value can be uniform/nonuniform scalar/(multi)
+    raise NotImplementedError
+
+# write fields
+def write_p(foam_version, internal_field, boundaries, website, location=None, file=None):
+    name = 'p'
+    ofclass = 'scalar'
+    dimension = 'p'
+    write_field(foam_version, name, ofclass, location, dimension,
+            internal_field, boundaries, website, file=None)
+
+
+
+def get_info(fieldname):
+    def get_foam_class(fieldname):
+        scalarlist = ['p', 'k', 'epsilon', 'omega', 'nut', 'Cx', 'Cy',
+            'Cz', 'V']
+        if fieldname in scalarlist:
+            foam_class = 'scalar'
+        elif fieldname in ['U', 'C']:
+            foam_class = 'vector'
+        elif fieldname == 'Tau':
+            foam_class = 'symmTensor'
+        elif fieldname == 'grad(U)':
+            foam_class = 'tensor'
+        return foam_class
+
+    foam_class = get_foam_class(fieldname)
+
+
+def write_field(name, ofclass, dimension, internal_field,
+        boundaries, foam_version, website, location=None, file=None):
+    """ e.g.
+    write_field(foam_version='1912', name='p', ofclass='scalar', location='0',
+        dimension='p', internal_field={'uniform': True, 'value':0},
+        boundaries=[{'name': 'top', 'type': 'zeroGradient',
+                       'value': {'uniform':True, 'data': 0}},
+                    {'name': 'bottom', 'type': 'zeroGradient'},
+                    {'name': 'left', 'type': 'cyclic',
+                       'value': {'uniform': False, 'data': [1, 2, 3, 4, 5]}},
+                    {'name': 'right', 'type': 'cyclic']):
     """
-
-    Arg:
-    file_dir: The directory path of file of Cx, Cy, and Cz
-
-    Regurn:
-    coordinate: matrix of (x, y, z)
-    """
-    coorX = ospt.join(file_dir, "Cx")
-    coorY = ospt.join(file_dir, "Cy")
-    coorZ = ospt.join(file_dir, "Cz")
-    resMidx = extract_scalar(coorX, group)
-    resMidy = extract_scalar(coorY, group)
-    resMidz = extract_scalar(coorZ, group)
-
-    # write it in Tautemp
-    fout = open('xcoor.txt', 'w')
-    glob_patternx = resMidx.group()
-    glob_patternx = re.sub(r'\(', '', glob_patternx)
-    glob_patternx = re.sub(r'\)', '', glob_patternx)
-    fout.write(glob_patternx)
-    fout.close()
-    xVec = np.loadtxt('xcoor.txt')
-    os.remove('xcoor.txt')
-
-    fout = open('ycoor.txt', 'w')
-    glob_patterny = resMidy.group()
-    glob_patterny = re.sub(r'\(', '', glob_patterny)
-    glob_patterny = re.sub(r'\)', '', glob_patterny)
-    fout.write(glob_patterny)
-    fout.close()
-    yVec = np.loadtxt('ycoor.txt')
-    os.remove('ycoor.txt')
-
-    fout = open('zcoor.txt', 'w')
-    glob_patternz = resMidz.group()
-    glob_patternz = re.sub(r'\(', '', glob_patternz)
-    glob_patternz = re.sub(r'\)', '', glob_patternz)
-    fout.write(glob_patternz)
-    fout.close()
-    zVec = np.loadtxt('zcoor.txt')
-    os.remove('zcoor.txt')
-
-    coordinate = np.vstack((xVec, yVec, zVec))
-    coordinate = coordinate.T
-    return coordinate
-
-
-def read_cell_volumes(file_dir):
-    """
-
-    Arg:
-    file_dir: The directory path of file of V
-
-    Regurn:
-    coordinate: vector of cell area
-    """
-    cellVolume = ospt.join(file_dir, "V")
-    resMid = extract_scalar(cellVolume)
-
-    # write it in Tautemp
-    fout = open('cellVolume.txt', 'w')
-    glob_patternx = resMid.group()
-    glob_patternx = re.sub(r'\(', '', glob_patternx)
-    glob_patternx = re.sub(r'\)', '', glob_patternx)
-    fout.write(glob_patternx)
-    fout.close()
-    cellVolume = np.loadtxt('cellVolume.txt')
-    os.remove('cellVolume.txt')
-    return cellVolume
-
-
-# read and write fields
-def extract_scalar(scalar_file, group=None):
-    """ subFunction of readTurbStressFromFile
-        Using regular expression to select scalar value out
-
-    Args:
-    scalar_file: The directory path of file of scalar
-
-    Returns:
-    resMid: scalar selected;
-            you need use resMid.group() to see the content.
-    """
-    fin = open(scalar_file, 'r')  # need consider directory
-    line = fin.read()  # line is k file to read
-    fin.close()
-    if group is not None:
-        line = line.partition(group)[2]
-    # select k as ()pattern (Using regular expression)
-    patternMid = re.compile(r"""
-        \(                                                   # match"("
-        \n                                                   # match next line
-        (
-        [\+\-]?[\d]+([\.][\d]*)?([Ee][+-]?[\d]+)?            # match figures
-        \n                                                   # match next line
-        )+                                                   # search greedly
-        \)                                                   # match")"
-    """, re.DOTALL | re.VERBOSE)
-    resMid = patternMid.search(line)
-
-    return resMid
-
-
-def read_scalar_from_file(file_name):
-    """
-
-    Arg:
-    file_name: The file name of scalar file in OpenFOAM form
-
-    Regurn:
-    scalar file in vector form
-    """
-    resMid = extract_scalar(file_name)
-
-    # write it in Tautemp
-    fout = open('temp.txt', 'w')
-    glob_patternx = resMid.group()
-    glob_patternx = re.sub(r'\(', '', glob_patternx)
-    glob_patternx = re.sub(r'\)', '', glob_patternx)
-    fout.write(glob_patternx)
-    fout.close()
-    scalarVec = np.loadtxt('temp.txt')
-    os.remove('temp.txt')
-    return scalarVec
-
-
-def write_scalar_to_file(Scalar, ScalarFile):
-    """Write the modified scalar to the scalar the OpenFOAM file
-
-    Args:
-    Scalar: E.g. DeltaXi or DeltaEta
-    ScalarFile: path of the Scalar file in OpenFOAM
-
-    Returns:
-    None
-
-    """
-
-    # Find openFoam scalar file's pattern'
-    (resStart, resEnd) = extract_foam_pattern(ScalarFile)
-
-    tempFile = 'scalarTemp'
-    np.savetxt('scalarTemp', Scalar)
-
-    # read scalar field
-    fin = open(tempFile, 'r')
-    field = fin.read()
-    fin.close()
-
-    fout = open(ScalarFile, 'w')
-    fout.write(resStart.group())
-    fout.write("\n")
-    fout.write(field)
-    fout.write(resEnd.group())
-    fout.close()
-
-    os.remove('scalarTemp')
-
-
-def write_vector_to_file(Scalar, ScalarFile):
-    """Write the modified scalar to the scalar the OpenFOAM file
-
-    Args:
-    Scalar: E.g. DeltaXi or DeltaEta
-    ScalarFile: path of the Scalar file in OpenFOAM
-
-    Returns:
-    None
-
-    """
-
-    # Find openFoam scalar file's pattern'
-    (resStart, resEnd) = extract_foam_pattern(ScalarFile)
-
-    tempFile = 'scalarTemp'
-    np.savetxt('scalarTemp', Scalar)
-
-    # read scalar field
-    fin = open(tempFile, 'r')
-    field = fin.read()
-    fin.close()
-
-    fout = open(ScalarFile, 'w')
-    fout.write(resStart.group())
-    fout.write("\n(")
-    fout.write(field.replace("\n", ")\n(")[:-1])
-    fout.write(resEnd.group())
-    fout.close()
-
-    os.remove('scalarTemp')
-
-
-def read_vector_from_file(UFile):
-    """
-    """
-    resMid = extract_vector(UFile)
-    fout = open('Utemp', 'w')
-    glob_pattern = resMid.group()
-    glob_pattern = re.sub(r'\(', '', glob_pattern)
-    glob_pattern = re.sub(r'\)', '', glob_pattern)
-    fout.write(glob_pattern)
-    fout.close()
-    vector = np.loadtxt('Utemp')
-    os.remove('Utemp')
-    return vector
-
-
-def extract_vector(vectorFile):
-    """ Function is using regular expression select Vector value out
-
-    Args:
-    UFile: The directory path of file: U
-
-    Returns:
-    resMid: the U as (Ux1,Uy1,Uz1);(Ux2,Uy2,Uz2);........
-    """
-
-    fin = open(vectorFile, 'r')  # need consider directory
-    line = fin.read()  # line is U file to read
-    fin.close()
-    # select U as (X X X)pattern (Using regular expression)
-    patternMid = re.compile(r"""
-    (
-    \(                                                   # match(
-    [\+\-]?[\d]+([\.][\d]*)?([Ee][+-]?[\d]+)?            # match figures
-    (\ )                                                 # match space
-    [\+\-]?[\d]+([\.][\d]*)?([Ee][+-]?[\d]+)?            # match figures
-    (\ )                                                 # match space
-    [\+\-]?[\d]+([\.][\d]*)?([Ee][+-]?[\d]+)?            # match figures
-    \)                                                   # match )
-    \n                                                   # match next line
-    )+                                                   # search greedly
-    """, re.DOTALL | re.VERBOSE)
-    resMid = patternMid.search(line)
-    return resMid
-
-
-def read_tensor_from_file(tauFile):
-    """
-
-    Arg:
-    tauFile: The directory path of file of tau
-
-    Regurn:
-    tau: Matrix of Reynolds stress (sysmetric tensor)
-    """
-    resMid = extract_tensor(tauFile)
-
-    # write it in Tautemp
-    fout = open('tau.txt', 'w')
-    glob_pattern = resMid.group()
-    glob_pattern = re.sub(r'\(', '', glob_pattern)
-    glob_pattern = re.sub(r'\)', '', glob_pattern)
-
-    tau = glob_pattern
-    fout.write(tau)
-    fout.close()
-
-    tau = np.loadtxt('tau.txt')
-    return tau
-
-
-def extract_symm_tensor(tensorFile):
-    """ subFunction of readTurbStressFromFile
-        Using regular expression to select tau value out (sysmetric tensor)
-        Requiring the tensor to be 6-components tensor, and output is with
-        Parentheses.
-
-    Args:
-    tensorFile: The directory path of file of tensor
-
-    Returns:
-    resMid: the tau as (tau11, tau12, tau13, tau22, tau23, tau33);
-            you need use resMid.group() to see the content.
-    """
-
-    fin = open(tensorFile, 'r')  # need consider directory
-    line = fin.read()  # line is U file to read
-    fin.close()
-
-    # select U as (X X X)pattern (Using regular expression)
-    patternMid = re.compile(r"""
-    (
-    \(                                                   # match(
-    [\+\-]?[\d]+([\.][\d]*)?([Ee][+-]?[\d]+)?            # match figures
-    (\ )                                                 # match space
-    [\+\-]?[\d]+([\.][\d]*)?([Ee][+-]?[\d]+)?            # match figures
-    (\ )                                                 # match space
-    [\+\-]?[\d]+([\.][\d]*)?([Ee][+-]?[\d]+)?            # match figures
-    (\ )                                                 # match space
-    [\+\-]?[\d]+([\.][\d]*)?([Ee][+-]?[\d]+)?            # match figures
-    (\ )                                                 # match space
-    [\+\-]?[\d]+([\.][\d]*)?([Ee][+-]?[\d]+)?            # match figures
-    (\ )                                                 # match space
-    [\+\-]?[\d]+([\.][\d]*)?([Ee][+-]?[\d]+)?            # match figures
-    \)                                                   # match )
-    (\n|\ )                                              # match next line
-    )+                                                   # search greedly
-    """, re.DOTALL | re.VERBOSE)
-
-    resMid = patternMid.search(line)
-
-    return resMid
-
-
-def extract_tensor(tensorFile):
-    """ subFunction of readTurbStressFromFile
-        Using regular expression to select tau value out (general tensor)
-        Requiring the tensor to be 9-components tensor, and output is with
-        Parentheses.
-
-    Args:
-    tensorFile: The directory path of file of tensor
-
-    Returns:
-    resMid: the tau as (tau11, tau12, tau13, tau22, tau23, tau33);
-            you need use resMid.group() to see the content.
-    """
-
-    fin = open(tensorFile, 'r')  # need consider directory
-    line = fin.read()  # line is U file to read
-    fin.close()
-
-    # select U as (X X X)pattern (Using regular expression)
-    patternMid = re.compile(r"""
-    (
-    \(                                                   # match(
-    [\+\-]?[\d]+([\.][\d]*)?([Ee][+-]?[\d]+)?            # match figures
-    (\ )                                                 # match space
-    [\+\-]?[\d]+([\.][\d]*)?([Ee][+-]?[\d]+)?            # match figures
-    (\ )                                                 # match space
-    [\+\-]?[\d]+([\.][\d]*)?([Ee][+-]?[\d]+)?            # match figures
-    (\ )                                                 # match space
-    [\+\-]?[\d]+([\.][\d]*)?([Ee][+-]?[\d]+)?            # match figures
-    (\ )                                                 # match space
-    [\+\-]?[\d]+([\.][\d]*)?([Ee][+-]?[\d]+)?            # match figures
-    (\ )                                                 # match space
-    [\+\-]?[\d]+([\.][\d]*)?([Ee][+-]?[\d]+)?            # match figures
-    (\ )                                                 # match space
-    [\+\-]?[\d]+([\.][\d]*)?([Ee][+-]?[\d]+)?            # match figures
-    (\ )                                                 # match space
-    [\+\-]?[\d]+([\.][\d]*)?([Ee][+-]?[\d]+)?            # match figures
-    (\ )                                                 # match space
-    [\+\-]?[\d]+([\.][\d]*)?([Ee][+-]?[\d]+)?            # match figures
-    \)
-    (\n|\ )                                              # match next line
-    )+                                                   # search greedly
-    """, re.DOTALL | re.VERBOSE)
-
-    resMid = patternMid.search(line)
-
-    return resMid
-
-
-def extract_rectangular_faces(faceFile):
-    """ Function is using regular expression select faces value out
-
-    Args:
-    faceFile: The directory path of file: faces
-
-    Returns:
-    resMid: the faces as (p1_1, p2_1, p3_1, p4_1);(p1_2, p2_2, p3_2, p4_2);...
-    """
-
-    fin = open(faceFile, 'r')  # need consider directory
-    line = fin.read()  # line is U file to read
-    fin.close()
-    # select U as (X X X)pattern (Using regular expression)
-    patternMid = re.compile(r"""
-    (
-    4\(                                                  # match 4(
-    [\+\-]?[\d]+([\.][\d]*)?([Ee][+-]?[\d]+)?            # match figures
-    (\ )                                                 # match space
-    [\+\-]?[\d]+([\.][\d]*)?([Ee][+-]?[\d]+)?            # match figures
-    (\ )                                                 # match space
-    [\+\-]?[\d]+([\.][\d]*)?([Ee][+-]?[\d]+)?            # match figures
-    (\ )                                                 # match space
-    [\+\-]?[\d]+([\.][\d]*)?([Ee][+-]?[\d]+)?            # match figures
-    \)                                                   # match )
-    \n                                                   # match next line
-    )+                                                   # search greedly
-    """, re.DOTALL | re.VERBOSE)
-    resMid = patternMid.search(line)
-    return resMid
-
-
-def read_rectangular_faces_from_file(faceFile):
-    """
-    """
-    resMid = extract_rectangular_faces(faceFile)
-    fout = open('Ftemp', 'w')
-    glob_pattern = resMid.group()
-    glob_pattern = re.sub(r'4\(', '', glob_pattern)
-    glob_pattern = re.sub(r'\)', '', glob_pattern)
-    fout.write(glob_pattern)
-    fout.close()
-    faces = np.loadtxt('Ftemp', dtype='int')
-    os.remove('Ftemp')
-    return faces
-
-
-# file header/footer
-def extract_foam_pattern(tensorFile):
-    """ Function is using regular expression select OpenFOAM tensor files pattern
-
-    Args:
-    tensorFile: directory of file U in OpenFoam, which you want to change
-
-    Returns:
-    resStart: Upper Pattern
-    resEnd:  Lower Pattern
-    """
-    fin = open(tensorFile, 'r')
-    line = fin.read()
-    fin.close()
-    patternStart = re.compile(r"""
-        .                        # Whatever except next line
-        +?                       # Match 1 or more of preceding-Non-greedy
-        internalField            # match internalField
-        [a-zA-Z\ \n]+            # match class contained a-z A-Z space and \n
-        <((vector)|(symmTensor)|(scalar))>    # match '<vector>' or '<scalar>'
-        ((\ )|(\n))+?            # space or next line--non greedy
-        [0-9]+                   # match 0-9
-        ((\ )|(\n))+?            # match space or next line
-        \(                       # match (
-    """, re.DOTALL | re.VERBOSE)
-    resStart = patternStart.search(line)
-
-    patternEnd = re.compile(r"""
-        \)                       # match )
-        ((\ )|;|(\n))+?          # match space or nextline or ;
-        boundaryField            # match boundaryField
-        ((\ )|(\n))+?            # match space or nextline
-        \{                       # match {
-        .+                       # match whatever in {}
-        \}                       # match }
-    """, re.DOTALL | re.VERBOSE)
-    resEnd = patternEnd.search(line)
-    return resStart, resEnd
-
-
-def foam_header(name, location, foamclass, version, format='ascii',
-                website='www.OpenFOAM.org', input_version='2.0',
-                location_flag=False):
-    header = '/*--------------------------------*- C++ -*---------------' + \
-        '-------------------*\\\n'
-    header += '| =========                 |                            ' + \
-        '                     |\n'
-    header += '| \\\\      /  F ield         | OpenFOAM: The Open Source' + \
-        ' CFD Toolbox           |\n'
-    header += '|  \\\\    /   O peration     | Version:  ' + \
-        '{}.x                                 |\n'.format(version)
-    header += '|   \\\\  /    A nd           | Web:      ' + \
-        '{}                      |\n'.format(website)
-    header += '|    \\\\/     M anipulation  |                          ' + \
-        '                       |\n'
-    header += '\\*------------------------------------------------------' + \
-        '---------------------*/\n'
-    header += 'FoamFile\n{\n'
-    header += '    version     {};\n'.format(input_version)
-    header += '    format      {};\n'.format(format)
-    header += '    class       {};\n'.format(foamclass)
-    if location_flag:
-        header += '    location    "{}";\n'.format(location)
-    header += '    object      {};\n'.format(name) + '}\n'
-    header += '// * * * * * * * * * * * * * * * * * * * * * * * * * * * ' + \
-        '* * * * * * * * * * //\n'
-    return header
+    def _foam_sep():
+        return '\n// ' + '* '*37 + '//'
+
+    def _foam_header_logo(version):
+
+        def header_line(str1, str2):
+            return f'\n| {str1:<26}| {str2:<48}|'
+
+        # def get_website(website):
+        #     if website == 'org':
+        #         website = 'www.openfoam.org'
+        #     elif website == 'com':
+        #         website = 'www.openfoam.com'
+        #     return website
+        #
+        # website = get_website(website)
+
+        header_start = '/*' + '-'*32 + '*- C++ -*' + '-'*34 + '*\\'
+        header_end = '\n\\*' +'-'*75 + '*/'
+        logo = ['=========',
+                r'\\      /  F ield',
+                r' \\    /   O peration',
+                r'  \\  /    A nd',
+                r'   \\/     M anipulation',
+                ]
+        info = ['',
+                'OpenFOAM: The Open Source CFD Toolbox',
+                f'Version:  {version}',
+                f'Website:  {website}',
+                '',
+                ]
+        # create header
+        header = header_start
+        for l,i in zip(logo, info):
+            header += header_line(l,i)
+        header += header_end
+        return header
+
+    def _foam_header_info(object, foamclass, location=None):
+        def header_line(str1, str2):
+            return f'\n    {str1:<12}{str2};'
+
+        VERSION = '2.0'
+        FORMAT = 'ascii'
+        foamclass = 'vol' + foamclass[0].capitalize() + foamclass[1:] + 'Field'
+        # create header
+        header = 'FoamFile\n{'
+        header += header_line('version', VERSION)
+        header += header_line('format', FORMAT)
+        header += header_line('class', foamclass)
+        if location is not None:
+            header += header_line('location', f'"{location}"')
+        header += header_line('object', object)
+        header += '\n}'
+        return header
+
+    def _foam_dimensions(fieldname_or_foamdim):
+        #  1 - Mass (kg)
+        #  2 - Length (m)
+        #  3 - Time (s)
+        #  4 - Temperature (K)
+        #  5 - Quantity (mol)
+        #  6 - Current (A)
+        #  7 - Luminous intensity (cd)
+        err_msg = 'Input must be string or list of ints length 7.'
+        if isinstance(fieldname_or_foamdim, str):
+            if fieldname_or_foamdim == 'U':
+                dimensions = '[ 0 1 -1 0 0 0 0]'
+            elif fieldname_or_foamdim in ['p', 'k', 'Tau']:
+                dimensions = '[0 2 -2 0 0 0 0]'
+            elif fieldname_or_foamdim == 'phi':
+                dimensions = '[0 3 -1 0 0 0 0]'
+            elif fieldname_or_foamdim == 'epsilon':
+                dimensions = '[0 2 -3 0 0 0 0]'
+            elif fieldname_or_foamdim in ['omega', 'grad(U)']:
+                dimensions = '[0 0 -1 0 0 0 0]'
+            elif fieldname_or_foamdim == 'nut':
+                dimensions = '[0 2 -1 0 0 0 0]'
+            elif fieldname_or_foamdim in ['C', 'Cx', 'Cy', 'Cz']:
+                dimensions = '[0 1 0 0 0 0 0]'
+            elif fieldname_or_foamdim == 'V':
+                dimensions = '[0 3 0 0 0 0 0]'
+            else:
+                raise ValueError('Unkown field "{fieldname_or_foamdim}"')
+        elif isinstance(fieldname_or_foamdim, list):
+            if len(fieldname_or_foamdim) == 7:
+                dimensions = fieldname_or_foamdim
+            elif len(fieldname_or_foamdim) == 3:
+                dimensions = fieldname_or_foamdim.append([0, 0, 0, 0])
+            else:
+                raise ValueError(err_msg)
+        else:
+            raise ValueError(err_msg)
+        return f'dimensions      {dimensions};'
+
+    def _list_to_foamstr(inlist):
+        outstr = ''
+        for l in inlist:
+            outstr += f'{l} '
+        return outstr.strip()
+
+    def _foam_field(uniform, value, foamclass=None):
+        def _foam_nonuniform(data):
+            field = f'{len(data)}\n('
+            if data.ndim == 1:
+                for d in data:
+                    field += f'\n{d}'
+            elif data.ndim == 2:
+                for d in data:
+                    field += f'\n({_list_to_foamstr(d)})'
+            else:
+                raise ValueError('"data" cannot have more than 2 dimensions.')
+            field += '\n)'
+            return field
+
+        if uniform:
+            # scalar type
+            if np.issubdtype(type(value), np.number) :
+                data = str(value)
+            # list type
+            elif isinstance(value, (list, np.ndarray)):
+                if isinstance(value, np.ndarray):
+                    value = np.squeeze(value)
+                    if value.ndim != 1:
+                        raise ValueError('Uniform data should have one dimension.')
+                data = f'({_list_to_foamstr(value)})'
+            field = f'uniform {data}'
+        else:
+            if foamclass is None:
+                raise ValueError('foamclass required for nonuniform data.')
+            value = np.squeeze(value)
+            field = f'nonuniform List<{foamclass}>'
+            field += '\n' + _foam_nonuniform(value)
+        return field
+
+    # create string
+    file_str = _foam_header_logo(foam_version)
+    file_str += '\n' + _foam_header_info(name, ofclass, location)
+    file_str += '\n' + _foam_sep() + '\n'*2 + _foam_dimensions(dimension)
+    file_str += '\n'*2 + 'internalField   '
+    file_str += _foam_field(
+        internal_field['uniform'], internal_field['value'], ofclass) + ';'
+    file_str += '\n\nboundaryField\n{'
+    for bc in boundaries:
+        file_str += '\n' + ' '*4 + bc["name"] + '\n' + ' '*4 + '{'
+        file_str += '\n' + ' '*8 + 'type' + ' '*12 + bc["type"] + ';'
+        write_value = False
+        if 'value' in bc:
+            if bc['value'] is not None:
+                write_value = True
+        if write_value:
+            data = _foam_field(
+                bc['value']['uniform'], bc['value']['data'], ofclass)
+            file_str += '\n' + ' '*8 + 'value' + ' '*11 + data + ';'
+        file_str += '\n' + ' '*4 + '}'
+    file_str += '\n}\n' + _foam_sep()
+
+    # write to file
+    if file is None:
+        file = name
+    with open(file, 'w') as f:
+        f.write(file_str)
+    return os.path.abspath(file), file_str
