@@ -10,10 +10,10 @@ import subprocess
 
 
 # global variables
-NSCALAR = 1
-NVECTOR = 3
-NSYMMTENSOR = 6
-NTENSOR = 9
+NDIM = {'scalar': 1,
+        'vector': 3,
+        'symmTensor': 6,
+        'tensor': 9}
 
 
 # get mesh properties by running OpenFOAM shell utilities
@@ -75,79 +75,123 @@ def read_field(file, ndim, group='internalField'):
     data_str = data_str.strip()
     data = np.fromstring(data_str, dtype=float, sep=' ')
     if ndim > 1:
-        data.reshape([-1, ndim])
+        data = data.reshape([-1, ndim])
     return data
 
 
 def read_scalar_field(file, group='internalField'):
-    return read_field(file, ndim=NSCALAR, group=group)
+    return read_field(file, NDIM['scalar'], group=group)
 
 
 def read_vector_field(file, group='internalField'):
-    return read_field(file, ndim=NVECTOR, group=group)
+    return read_field(file, NDIM['vector'], group=group)
 
 
 def read_symmTensor_field(file, group='internalField'):
-    return read_field(file, ndim=NSYMMTENSOR, group=group)
+    return read_field(file, NDIM['symmTensor'], group=group)
 
 
 def read_tensor_field(file, group='internalField'):
-    return read_field(file, ndim=NTENSOR, group=group)
+    return read_field(file, NDIM['tensor'], group=group)
 
 
 def read_cell_coordinates(file='C', group='internalField'):
-    return read_field(file, ndim=NVECTOR, group=group)
+    return read_vector_field(file, group=group)
 
 
 def read_cell_volumes(file='V'):
-    return read_field(file, ndim=NSCALAR, group='internalField')
+    return read_scalar_field(file, group='internalField')
 
 
-# TODO: Read properties (version, name, loc, boundary names and types, etc.)
-# i.e. everything needed to then write it again using write_field.
-# Use: to modify the file by rewritting with modified field values.
-def read_field_info(file):
-    # foam_version
-    # object_name
-    # foam_class
-    # location (optional)
+
+# read entire field file
+def read_field_file(file):
+    with open(file, 'r') as f:
+        content = f.read()
+    info = {}
+    # read logo
+    def _read_logo(pat):
+        pattern = pat + r":\s+\S+"
+        data_str = re.compile(pattern).search(content).group()
+        return data_str.split(':')[1].strip()
+
+    info['foam_version'] = _read_logo('Version')
+    info['website'] = _read_logo('Website')
+
+    # read header
+    def _read_header(pat):
+        pattern = pat + r"\s+\S+;"
+        data_str = re.compile(pattern).search(content).group()
+        return data_str.split(pat)[1][:-1].strip()
+
+    foam_class = _read_header('class').split('Field')[0].split('vol')[1]
+    info['foam_class'] = foam_class[0].lower() + foam_class[1:]
+    info['name'] = _read_header('object')
+    try:
+        info['location'] = _read_header('location')
+    except AttributeError:
+        info['location'] = None
+
     # dimension
+    pattern = r"dimensions\s+.+"
+    data_str = re.compile(pattern).search(content).group()
+    info['dimensions'] = data_str.split('dimensions')[1][:-1].strip()
+
     # internalField: uniform/nonuniform
+    internal = {}
+    pattern = r'internalField\s+\S+\s+.+'
+    data_str = re.compile(pattern).search(content).group()
+    if data_str.split()[1] == 'uniform':
+        internal['uniform'] = True
+        internal['value'] = data_str.split('uniform')[1].strip()[:-1]
+    else:
+        internal['uniform'] = False
+        internal['value'] = read_field(file, NDIM[info['foam_class']])
+    info['internal_field'] = internal
+
     # boundaries: type and value(optional): value can be uniform/nonuniform scalar/(multi)
-    raise NotImplementedError
+    boundaries = []
+    bcontent = content.split('boundaryField')[1].strip()[1:].strip()
+    pattern = r'\w+' + r'[\s\n]*' + r'\{' + r'[\w\s\n\(\);\.\<\>\-+]+' + r'\}'
+    boundaries_raw = re.compile(pattern).findall(bcontent)
+    for bc in boundaries_raw:
+        ibc = {}
+        # name
+        pattern = r'[\w\s\n]+' + r'\{'
+        name = re.compile(pattern).search(bc).group()
+        name = name.replace('{','').strip()
+        ibc['name'] = name
+        # type
+        pattern = r'type\s+\w+;'
+        type = re.compile(pattern).search(bc).group()
+        type = type.split('type')[1].replace(';','').strip()
+        ibc['type'] = type
+        # value
+        if 'value' in bc:
+            value = {}
+            v = bc.split('value')[1]
+            if v.split()[0]=='uniform':
+                value['uniform'] = True
+                v = v.split('uniform')[1]
+                value['data'] = v.replace('}','').replace(';','').strip()
+            else:
+                value['uniform'] = False
+                value['data'] = read_field(
+                    file, NDIM[info['foam_class']], group=ibc['name'])
+        else:
+            value = None
+        ibc['value'] = value
+        boundaries.append(ibc)
+    info['boundaries'] = boundaries
+    return info
+
 
 # write fields
-def write_p(foam_version, internal_field, boundaries, website, location=None, file=None):
-    name = 'p'
-    ofclass = 'scalar'
-    dimension = 'p'
-    write_field(foam_version, name, ofclass, location, dimension,
-            internal_field, boundaries, website, file=None)
-
-
-
-def get_info(fieldname):
-    def get_foam_class(fieldname):
-        scalarlist = ['p', 'k', 'epsilon', 'omega', 'nut', 'Cx', 'Cy',
-            'Cz', 'V']
-        if fieldname in scalarlist:
-            foam_class = 'scalar'
-        elif fieldname in ['U', 'C']:
-            foam_class = 'vector'
-        elif fieldname == 'Tau':
-            foam_class = 'symmTensor'
-        elif fieldname == 'grad(U)':
-            foam_class = 'tensor'
-        return foam_class
-
-    foam_class = get_foam_class(fieldname)
-
-
-def write_field(name, ofclass, dimension, internal_field,
+def write_field_file(name, foam_class, dimensions, internal_field,
         boundaries, foam_version, website, location=None, file=None):
     """ e.g.
-    write_field(foam_version='1912', name='p', ofclass='scalar', location='0',
-        dimension='p', internal_field={'uniform': True, 'value':0},
+    write_field(foam_version='1912', name='p', foam_class='scalar', location='0',
+        dimensions='p', internal_field={'uniform': True, 'value':0},
         boundaries=[{'name': 'top', 'type': 'zeroGradient',
                        'value': {'uniform':True, 'data': 0}},
                     {'name': 'bottom', 'type': 'zeroGradient'},
@@ -162,15 +206,6 @@ def write_field(name, ofclass, dimension, internal_field,
 
         def header_line(str1, str2):
             return f'\n| {str1:<26}| {str2:<48}|'
-
-        # def get_website(website):
-        #     if website == 'org':
-        #         website = 'www.openfoam.org'
-        #     elif website == 'com':
-        #         website = 'www.openfoam.com'
-        #     return website
-        #
-        # website = get_website(website)
 
         header_start = '/*' + '-'*32 + '*- C++ -*' + '-'*34 + '*\\'
         header_end = '\n\\*' +'-'*75 + '*/'
@@ -211,52 +246,13 @@ def write_field(name, ofclass, dimension, internal_field,
         header += '\n}'
         return header
 
-    def _foam_dimensions(fieldname_or_foamdim):
-        #  1 - Mass (kg)
-        #  2 - Length (m)
-        #  3 - Time (s)
-        #  4 - Temperature (K)
-        #  5 - Quantity (mol)
-        #  6 - Current (A)
-        #  7 - Luminous intensity (cd)
-        err_msg = 'Input must be string or list of ints length 7.'
-        if isinstance(fieldname_or_foamdim, str):
-            if fieldname_or_foamdim == 'U':
-                dimensions = '[ 0 1 -1 0 0 0 0]'
-            elif fieldname_or_foamdim in ['p', 'k', 'Tau']:
-                dimensions = '[0 2 -2 0 0 0 0]'
-            elif fieldname_or_foamdim == 'phi':
-                dimensions = '[0 3 -1 0 0 0 0]'
-            elif fieldname_or_foamdim == 'epsilon':
-                dimensions = '[0 2 -3 0 0 0 0]'
-            elif fieldname_or_foamdim in ['omega', 'grad(U)']:
-                dimensions = '[0 0 -1 0 0 0 0]'
-            elif fieldname_or_foamdim == 'nut':
-                dimensions = '[0 2 -1 0 0 0 0]'
-            elif fieldname_or_foamdim in ['C', 'Cx', 'Cy', 'Cz']:
-                dimensions = '[0 1 0 0 0 0 0]'
-            elif fieldname_or_foamdim == 'V':
-                dimensions = '[0 3 0 0 0 0 0]'
-            else:
-                raise ValueError('Unkown field "{fieldname_or_foamdim}"')
-        elif isinstance(fieldname_or_foamdim, list):
-            if len(fieldname_or_foamdim) == 7:
-                dimensions = fieldname_or_foamdim
-            elif len(fieldname_or_foamdim) == 3:
-                dimensions = fieldname_or_foamdim.append([0, 0, 0, 0])
-            else:
-                raise ValueError(err_msg)
-        else:
-            raise ValueError(err_msg)
-        return f'dimensions      {dimensions};'
-
-    def _list_to_foamstr(inlist):
-        outstr = ''
-        for l in inlist:
-            outstr += f'{l} '
-        return outstr.strip()
-
     def _foam_field(uniform, value, foamclass=None):
+        def _list_to_foamstr(inlist):
+            outstr = ''
+            for l in inlist:
+                outstr += f'{l} '
+            return outstr.strip()
+
         def _foam_nonuniform(data):
             field = f'{len(data)}\n('
             if data.ndim == 1:
@@ -271,17 +267,15 @@ def write_field(name, ofclass, dimension, internal_field,
             return field
 
         if uniform:
-            # scalar type
-            if np.issubdtype(type(value), np.number) :
-                data = str(value)
             # list type
-            elif isinstance(value, (list, np.ndarray)):
+            if isinstance(value, (list, np.ndarray)):
                 if isinstance(value, np.ndarray):
                     value = np.squeeze(value)
                     if value.ndim != 1:
-                        raise ValueError('Uniform data should have one dimension.')
-                data = f'({_list_to_foamstr(value)})'
-            field = f'uniform {data}'
+                        err_msg = 'Uniform data should have one dimension.'
+                        raise ValueError(err_msg)
+                value = f'({_list_to_foamstr(value)})'
+            field = f'uniform {value}'
         else:
             if foamclass is None:
                 raise ValueError('foamclass required for nonuniform data.')
@@ -290,13 +284,25 @@ def write_field(name, ofclass, dimension, internal_field,
             field += '\n' + _foam_nonuniform(value)
         return field
 
+    def _foam_dimensions(dimensions):
+        if isinstance(dimensions, list):
+            if len(dimensions) == 3:
+                dimensions = dimensions.append([0, 0, 0, 0])
+            elif len(dimensions) != 7:
+                raise ValueError('Dimensions must be length 3 or 7.')
+            str = ''
+            for idim in dimensions:
+                str += f'{idim} '
+            return f'[{str.strip()}]'
+
     # create string
     file_str = _foam_header_logo(foam_version)
-    file_str += '\n' + _foam_header_info(name, ofclass, location)
-    file_str += '\n' + _foam_sep() + '\n'*2 + _foam_dimensions(dimension)
+    file_str += '\n' + _foam_header_info(name, foam_class, location)
+    file_str += '\n' + _foam_sep()
+    file_str += '\n'*2 + f'dimensions      {dimensions}'
     file_str += '\n'*2 + 'internalField   '
     file_str += _foam_field(
-        internal_field['uniform'], internal_field['value'], ofclass) + ';'
+        internal_field['uniform'], internal_field['value'], foam_class) + ';'
     file_str += '\n\nboundaryField\n{'
     for bc in boundaries:
         file_str += '\n' + ' '*4 + bc["name"] + '\n' + ' '*4 + '{'
@@ -307,7 +313,7 @@ def write_field(name, ofclass, dimension, internal_field,
                 write_value = True
         if write_value:
             data = _foam_field(
-                bc['value']['uniform'], bc['value']['data'], ofclass)
+                bc['value']['uniform'], bc['value']['data'], foam_class)
             file_str += '\n' + ' '*8 + 'value' + ' '*11 + data + ';'
         file_str += '\n' + ' '*4 + '}'
     file_str += '\n}\n' + _foam_sep()
@@ -318,3 +324,106 @@ def write_field(name, ofclass, dimension, internal_field,
     with open(file, 'w') as f:
         f.write(file_str)
     return os.path.abspath(file), file_str
+
+
+def write(version, fieldname, internal, boundaries, location=None, file=None):
+    def field_info(fieldname):
+        def get_foam_class(fieldname):
+            scalarlist = ['p', 'k', 'epsilon', 'omega', 'nut', 'Cx', 'Cy',
+                'Cz', 'V']
+            if fieldname in scalarlist:
+                foam_class = 'scalar'
+            elif fieldname in ['U', 'C']:
+                foam_class = 'vector'
+            elif fieldname == 'Tau':
+                foam_class = 'symmTensor'
+            elif fieldname == 'grad(U)':
+                foam_class = 'tensor'
+            return foam_class
+
+        def get_dimensions(fieldname):
+            #  1 - Mass (kg)
+            #  2 - Length (m)
+            #  3 - Time (s)
+            #  4 - Temperature (K)
+            #  5 - Quantity (mol)
+            #  6 - Current (A)
+            #  7 - Luminous intensity (cd)
+            if fieldname == 'U':
+                dimensions = '[ 0 1 -1 0 0 0 0]'
+            elif fieldname in ['p', 'k', 'Tau']:
+                dimensions = '[0 2 -2 0 0 0 0]'
+            elif fieldname == 'phi':
+                dimensions = '[0 3 -1 0 0 0 0]'
+            elif fieldname == 'epsilon':
+                dimensions = '[0 2 -3 0 0 0 0]'
+            elif fieldname in ['omega', 'grad(U)']:
+                dimensions = '[0 0 -1 0 0 0 0]'
+            elif fieldname == 'nut':
+                dimensions = '[0 2 -1 0 0 0 0]'
+            elif fieldname in ['C', 'Cx', 'Cy', 'Cz']:
+                dimensions = '[0 1 0 0 0 0 0]'
+            elif fieldname == 'V':
+                dimensions = '[0 3 0 0 0 0 0]'
+            return dimensions
+
+        field = {'name': fieldname,
+                 'class': get_foam_class(fieldname),
+                 'dimensions': get_dimensions(fieldname)}
+        return field
+
+    def version_info(version):
+        # string ('7' or '1912')
+        website = 'www.openfoam.'
+        if len(version)==1:
+            version += '.x'
+            website += 'org'
+        elif len(version)==4:
+            version = 'v' + version
+            website += 'com'
+        foam = {'version': version,
+                'website': website}
+        return foam
+
+    foam = version_info(version)
+    field = field_info(fieldname)
+
+    file_path, file_str = write_field_file(
+        foam_version=foam['version'],
+        website=foam['website'],
+        name=field['name'],
+        foam_class=field['class'],
+        dimensions=field['dimensions'],
+        internal_field=internal,
+        boundaries=boundaries,
+        location=location,
+        file=file)
+    return file_path, file_str
+
+
+def write_p(version, internal, boundaries, location=None, file=None):
+    write(version, 'p', internal, boundaries, location, file)
+
+
+def write_U(version, internal, boundaries, location=None, file=None):
+    write(version, 'U', internal, boundaries, location, file)
+
+
+def write_Tau(version, internal, boundaries, location=None, file=None):
+    write(version, 'Tau', internal, boundaries, location, file)
+
+
+def write_nut(version, internal, boundaries, location=None, file=None):
+    write(version, 'nut', internal, boundaries, location, file)
+
+
+def write_k(version, internal, boundaries, location=None, file=None):
+    write(version, 'k', internal, boundaries, location, file)
+
+
+def write_epsilon(version, internal, boundaries, location=None, file=None):
+    write(version, 'epsilon', internal, boundaries, location, file)
+
+
+def write_omega(version, internal, boundaries, location=None, file=None):
+    write(version, 'omega', internal, boundaries, location, file)
