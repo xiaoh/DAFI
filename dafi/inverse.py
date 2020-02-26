@@ -269,6 +269,7 @@ class InverseMethod(InverseMethodBase):
             # time-step
             # map xa to obs space
             if self._analysis_to_obs:
+                print("\n  Iteration: Final")
                 self.state_in_obsspace = self.model.state_to_observation(
                     self.state_forecast)
                 if save_iter:
