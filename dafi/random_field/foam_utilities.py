@@ -299,7 +299,7 @@ def write_field_file(name, foam_class, dimensions, internal_field,
     file_str = _foam_header_logo(foam_version)
     file_str += '\n' + _foam_header_info(name, foam_class, location)
     file_str += '\n' + _foam_sep()
-    file_str += '\n'*2 + f'dimensions      {dimensions}'
+    file_str += '\n'*2 + f'dimensions      {dimensions};'
     file_str += '\n'*2 + 'internalField   '
     file_str += _foam_field(
         internal_field['uniform'], internal_field['value'], foam_class) + ';'
@@ -326,7 +326,7 @@ def write_field_file(name, foam_class, dimensions, internal_field,
     return os.path.abspath(file), file_str
 
 
-def write(version, fieldname, internal, boundaries, location=None, file=None):
+def _write(version, fieldname, internal, boundaries, location=None, file=None):
     def field_info(fieldname):
         def get_foam_class(fieldname):
             scalarlist = ['p', 'k', 'epsilon', 'omega', 'nut', 'Cx', 'Cy',
@@ -402,28 +402,28 @@ def write(version, fieldname, internal, boundaries, location=None, file=None):
 
 
 def write_p(version, internal, boundaries, location=None, file=None):
-    write(version, 'p', internal, boundaries, location, file)
+    return _write(version, 'p', internal, boundaries, location, file)
 
 
 def write_U(version, internal, boundaries, location=None, file=None):
-    write(version, 'U', internal, boundaries, location, file)
+    return _write(version, 'U', internal, boundaries, location, file)
 
 
 def write_Tau(version, internal, boundaries, location=None, file=None):
-    write(version, 'Tau', internal, boundaries, location, file)
+    return _write(version, 'Tau', internal, boundaries, location, file)
 
 
 def write_nut(version, internal, boundaries, location=None, file=None):
-    write(version, 'nut', internal, boundaries, location, file)
+    return _write(version, 'nut', internal, boundaries, location, file)
 
 
 def write_k(version, internal, boundaries, location=None, file=None):
-    write(version, 'k', internal, boundaries, location, file)
+    return _write(version, 'k', internal, boundaries, location, file)
 
 
 def write_epsilon(version, internal, boundaries, location=None, file=None):
-    write(version, 'epsilon', internal, boundaries, location, file)
+    return _write(version, 'epsilon', internal, boundaries, location, file)
 
 
 def write_omega(version, internal, boundaries, location=None, file=None):
-    write(version, 'omega', internal, boundaries, location, file)
+    return _write(version, 'omega', internal, boundaries, location, file)
