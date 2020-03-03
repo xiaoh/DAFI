@@ -28,4 +28,5 @@ Release Plan (Python typical) (prefered):
 -----------------------------------------
 * PyPI (so that can do ``pip install dafi``). This is for stable releases. 
 * Documentation hosted online at readthedocs. This would be the main website for DAFI. 
+* In GitHub, tag the first version as release.
 
