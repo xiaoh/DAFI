@@ -15,18 +15,18 @@ Contributors:
 
 PLAN Before Release:
 --------------------
-* Update/write docstrings all files (Kris)
+* Update/write docstrings important files (Xinlei) 
 * Update/clean tutorials
+  * diffusion and lorenz (Xinlei)
   * nutFOAM (Carlos)
-  * rest (Kris)
-* Update documentation (Kris)
-* Unit testing (Kris)
-* Clean rest of code (OpenFOAM, Fields,) (Carlos)
+* Update documentation
+* Unit testing (later)
+* Clean rest of code (Fields) (Carlos)
 * Release files (e.g. setup.py) (Carlos)
 
 Release Plan (Python typical) (prefered):
 -----------------------------------------
-* New Git repo (name=DAFI, no history, tag release version). This will be development code.
 * PyPI (so that can do ``pip install dafi``). This is for stable releases. 
 * Documentation hosted online at readthedocs. This would be the main website for DAFI. 
+* In GitHub, tag the first version as release.
 
