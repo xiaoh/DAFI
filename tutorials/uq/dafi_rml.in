@@ -1,0 +1,19 @@
+
+dafi:
+    model_file: uq.py
+    inverse_method: EnRML
+    nsamples: 1000
+    max_iterations: 100
+    rand_seed: 1
+    verbosity: 2
+    convergence_option: discrepancy
+    convergence_factor: 1.2
+    save_dir: results_rml
+    analysis_to_obs: True
+    perturb_obs_option: time
+
+inverse:
+    step_length: 0.5
+
+model:
+    input_file: uq.in

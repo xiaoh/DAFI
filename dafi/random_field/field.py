@@ -1,276 +1,614 @@
 # Copyright 2020 Virginia Polytechnic Institute and State University.
-""" Random fields representation and manipulation. """
+""" Random fields representation and manipulation.
+
+These functions can be called directly from ``dafi.random_field``, e.g.
+``dafi.random_field.calc_kl_modes()``.
+"""
 
 # standard library imports
 import warnings
 
 # third party imports
 import numpy as np
-import scipy.sparse as sp
-import numpy.linalg as la
+from scipy import sparse as sp
+from scipy.sparse import linalg as splinalg
+from scipy import interpolate
 
 
-# KL decomposition functions
-def calc_kl_modes(nmodes, cov, weight_field, normalize=False):
+# KL decomposition
+def calc_kl_modes(cov, nmodes=None, weight_field=None, eps=1e-8,
+        normalize=True):
     """ Calculate the first N Karhunen-Loève modes for a covariance
     field.
+
+    Converts the covariance to a sparse matrix if it is not one yet.
+
+    Parameters
+    ----------
+    cov : ndarray
+        Covariance matrix. Can be ndarray, matrix, or scipy sparse
+        matrix. ``dtype=float``, ``ndim=2``, ``shape=(nstate, nstate)``
+    nmodes : int
+        Number of KL modes to obtain.
+    weight_field : ndarray
+        Weight (e.g. cell volume) associated with each state.
+        Default ones (1). ``dtype=float``, ``ndim=1``, ``shape=(nstate)``
+    eps : float
+        Small quantity to add to the diagonal of the covariance matrix
+        for numerical stability.
+    normalize : bool
+        Whether to normalize (norm = 1) the KL modes.
+
+    Returns
+    -------
+    eig_vals : ndarray
+        Eigenvalue associated with each mode.
+        ``dtype=float``, ``ndim=1``, ``shape=(nmodes)``
+    kl_modes : ndarray
+        KL modes (eigenvectors).
+        ``dtype=float``, ``ndim=2``, ``shape=(nstate, nmodes)``
     """
+    # convert to sparse matrix
+    cov = sp.csc_matrix(cov)
+
+    # default values
+    nstate = cov.shape[0]
+    if nmodes == None:
+        nmodes = nstate-1
+    if weight_field == None:
+        weight_field = np.ones(nstate)
+
+    # add small value to diagonal
+    cov = cov + sp.eye(cov.shape[0], format='csc')*eps
+
     weight_field = np.squeeze(weight_field)
     weight_vec = np.atleast_2d(weight_field)
     weight_mat = np.sqrt(np.dot(weight_vec.T, weight_vec))
     cov_weighted = cov.multiply(weight_mat)
+
     # perform the eig-decomposition
     eig_vals, eig_vecs = sp.linalg.eigsh(cov_weighted, k=nmodes, which='LA')
+
     # sort the eig-value and eig-vectors in a descending order
     ascending_order = eig_vals.argsort()
     descending_order = ascending_order[::-1]
     eig_vals = eig_vals[descending_order]
     eig_vecs = eig_vecs[:, descending_order]
-    # weighted eigVec
+
+    # normalized KL modes
     weight_diag = np.diag(np.sqrt(weight_field))
-    kl_modes = np.dot(la.inv(weight_diag), eig_vecs) # normalized
-    # KLModes is eigVecWeighted * sqrt(eig_val)
+    kl_modes = np.dot(np.linalg.inv(weight_diag), eig_vecs) # normalized
+
+    # check if negative eigenvalues
     for imode in np.arange(nmodes):
+        neg_eigv = False
         if eig_vals[imode] < 0:
-            warn_message = f'Negative eigenvalue detected at mode {imode}.'
-            warn_message += 'Number of KL modes might be too large.'
+            neg_eigv = True
+            warn_message = f'Negative eigenvalue for mode {imode}.'
             warnings.warn(warn_message)
             kl_modes[:, imode] *= 0.
-        if not normalize:
-            kl_modes[:, imode] *= np.sqrt(eig_vals[imode])
-    coverage = kl_coverage(cov, eig_vals, weight_field)
-    np.savetxt('kl_coverage', coverage)  # CM
+    if neg_eigv:
+        warn_message = 'Some modes have negative eigenvalues. ' + \
+        'The number of KL modes might be too large. ' + \
+        "Alternatively, use a larger value for 'eps'."
+
+    # weight by appropriate variance
+    if not normalize:
+        kl_modes = scale_kl_modes(eig_vals, kl_modes)
+
     return eig_vals, kl_modes
 
 
-def kl_coverage(cov, eig_vals, weight_field, sparse=False):
-    """ Calculate the percentage of the covariance covered by N KL
-    modes.
+def calc_kl_modes_coverage(cov, coverage, weight_field=None, eps=1e-8):
+    """ Calculate all KL modes and return only those required to achieve
+    a certain coverage of the variance.
+
+    Parameters
+    ----------
+    cov : ndarray
+        Covariance matrix. Can be ndarray, matrix, or scipy sparse
+        matrix. ``dtype=float``, ``ndim=2``, ``shape=(nstate, nstate)``
+    coverage : float
+        Desired percentage coverage of the variance. Value between 0-1.
+    weight_field : ndarray
+        Weight (e.g. cell volume) associated with each state.
+        Default ones (1). ``dtype=float``, ``ndim=1``, ``shape=(nstate)``
+    eps : float
+        Small quantity to add to the diagonal of the covariance matrix
+        for numerical stability.
+
+    Returns
+    -------
+    eig_vals : ndarray
+        Eigenvalue associated with each mode. For the first N modes such
+        that the desired coverage of the variance is achieved.
+        ``dtype=float``, ``ndim=1``, ``shape=(N)``
+    kl_modes : ndarray
+        first N  KL modes (eigenvectors)  such that the desired coverage
+        of the variance is achieved.
+        ``dtype=float``, ``ndim=2``, ``shape=(nstate, N)``
     """
+    # convert to sparse matrix
+    cov = sp.csc_matrix(cov)
+
+    # default values
+    nstate = cov.shape[0]
+    if weight_field == None:
+        weight_field = np.ones(nstate)
+
+    # get all KL modes
+    nmodes = nstate - 1
+    eig_vals, kl_modes = calc_kl_modes(cov, nmodes, weight_field, eps)
+
+    # return only those KL modes required for desired coverage
+    cummalative_variance = kl_coverage(cov, eig_vals, weight_field)
+    coverage_index = np.argmax(cummalative_variance >= coverage)
+    return eig_vals[:coverage_index], kl_modes[:, :coverage_index]
+
+
+def scale_kl_modes(eig_vals, kl_modes_norm):
+    """ Weight the KL modes by the appropriate variance.
+
+    Parameters
+    ----------
+    eig_vals : ndarray
+        Eigenvalue associated with each mode.
+        ``dtype=float``, ``ndim=1``, ``shape=(nmodes)``
+    kl_modes_norm : ndarray
+        Normalized (norm = 1) KL modes (eigenvectors).
+        ``dtype=float``, ``ndim=2``, ``shape=(nstate, nmodes)``
+
+    Returns
+    -------
+    kl_modes_weighted : ndarray
+        KL modes with correct magnitude.
+        ``dtype=float``, ``ndim=2``, ``shape=(nstate, nmodes)``
+    """
+    nmodes = len(eig_vals)
+    kl_modes_weighted = kl_modes_norm.copy()
+    for imode in np.arange(nmodes):
+        kl_modes_weighted[:, imode] *= np.sqrt(eig_vals[imode])
+    return kl_modes_weighted
+
+
+def kl_coverage(cov, eig_vals, weight_field=None):
+    """ Calculate the percentage of the covariance covered by the the
+    first N KL modes for N from 1-nmodes.
+
+    Parameters
+    ----------
+    cov : ndarray
+        Covariance matrix. Can be ndarray, matrix, or scipy sparse
+        matrix. ``dtype=float``, ``ndim=2``, ``shape=(nstate, nstate)``
+    eig_vals : ndarray
+        Eigenvalues associated with each mode.
+        ``dtype=float``, ``ndim=1``, ``shape=(nmodes)``
+    weight_field : ndarray
+        Weight (e.g. cell volume) associated with each state.
+        ``dtype=float``, ``ndim=1``, ``shape=(nstate)``
+
+    Returns
+    -------
+    coverage: ndarray
+        Cumulative variance coverage of the first N modes. Each value
+        is 0-1 and increasing.
+        ``dtype=float``, ``ndim=1``, ``shape=(nmodes)``
+    """
+    # make sparse if its not already
+    cov = sp.csc_matrix(cov)
+
+    # default values
+    nstate = cov.shape[0]
+    if weight_field == None:
+        weight_field = np.ones(nstate)
+
+    # calculate coverage
     weight_vec = np.atleast_2d(weight_field)
     weight_mat = np.sqrt(np.dot(weight_vec.T, weight_vec))
-    # import pdb; pdb.set_trace()
-    if sparse:
-        cov_weighted = cov.multiply(weight_mat)
-    else:
-        cov_weighted = cov * weight_mat
+    cov_weighted = cov.multiply(weight_mat)
     cov_trace = np.sum(cov_weighted.diagonal())
     return np.cumsum(eig_vals) / cov_trace
 
 
-# linear algebra functions
+def reconstruct_kl(modes, coeffs, mean=None):
+    """ Reconstruct a field using KL modes and given coefficients.
+
+    Can create multiple fields by providing two dimensional array of
+    coefficients.
+
+    Parameters
+    ----------
+    modes : ndarray
+        KL modes. ``dtype=float``, ``ndim=2``, ``shape=(nstate, nmodes)``
+    coeffs : ndarray
+        Array of coefficients.
+        ``dtype=float``, ``ndim=2``, ``shape=(nmodes, nsamples)``
+    mean : ndarray
+        Mean vector. ``dtype=float``, ``ndim=1``, ``shape=(nstate)``
+
+    Returns
+    -------
+    fields : ndarray
+        Reconstructed fields.
+        ``dtype=float``, ``ndim=2``, ``shape=(nstate, nsamples)``
+    """
+    # number of modes, samples, and states
+    if len(coeffs) == 1:
+        coeffs = np.expand_dims(coeffs, 1)
+    nmodes, nsamps = coeffs.shape
+    nstate = modes.shape[0]
+
+    # mean vector
+    if mean == None:
+        mean = np.zeros(nstate)
+    mean = np.expand_dims(np.squeeze(mean), axis=1)
+
+    # create samples
+    fields = np.tile(mean, [nsamps])
+    for imode in range(nmodes):
+        vec1 = np.atleast_2d(coeffs[imode, :])
+        vec2 = np.atleast_2d(modes[:, imode])
+        fields += np.dot(vec1.T, vec2).T
+    return fields
+
+
+def project_kl(field, modes, weight_field=None):
+    """ Project a field onto a set of modes.
+
+    Parameters
+    ----------
+    field : ndarray
+        Scalar field. ``dtype=float``, ``ndim=1``, ``shape=(ncells)``
+    modes : ndarray
+        KL modes. ``dtype=float``, ``ndim=2``, ``shape=(nstate, nmodes)``
+    weight_field : ndarray
+        Weight (e.g. cell volume) associated with each state.
+        ``dtype=float``, ``ndim=1``, ``shape=(nstate)``
+
+    Returns
+    -------
+    coeffs : ndarray
+        Projection magnitude.
+        ``dtype=float``, ``ndim=1``, ``shape=(nmodes)``
+    """
+    # default values
+    if weight_field == None:
+        weight_field = np.ones(nstate)
+
+    nstate, nmode = modes.shape
+
+    coeffs = []
+    for imode in range(nmode):
+        mode = modes[:, imode]
+        coeffs.append(projection_magnitude(field, mode, weight_field))
+    return np.array(coeffs)
+
+
+# linear algebra on scalar fields
 def integral(field, weight_field):
-    """ Calculate the integral of a field. """
+    """ Calculate the integral of a field.
+
+    Parameters
+    ----------
+    field : ndarray
+        Scalar field. ``dtype=float``, ``ndim=1``, ``shape=(ncells)``
+    weight_field : ndarray
+        Cell volumes. ``dtype=float``, ``ndim=1``, ``shape=(ncells)``
+
+    Returns
+    -------
+    field_integral : float
+        The integral of the field over the domain.
+    """
     return np.sum(field * weight_field)
 
 
 def inner_product(field_1, field_2, weight_field):
-    """ Calculate the inner product between two fields. """
+    """ Calculate the inner product between two fields.
+
+    The two fields share the same weights.
+
+    Parameters
+    ----------
+    field_1 : ndarray
+        One scalar field. ``dtype=float``, ``ndim=1``, ``shape=(ncells)``
+    field_2 : ndarray
+        Another scalar field.
+        ``dtype=float``, ``ndim=1``, ``shape=(ncells)``
+    weight_field : ndarray
+        Cell volumes. ``dtype=float``, ``ndim=1``, ``shape=(ncells)``
+
+    Returns
+    -------
+    product : float
+        The inner product between the two fields.
+    """
     return integral(field_1 * field_2, weight_field)
 
 
 def norm(field, weight_field):
-    """ Calculate the L2-norm of a field. """
+    """ Calculate the L2-norm of a field.
+
+    Parameters
+    ----------
+    field : ndarray
+        Scalar field. ``dtype=float``, ``ndim=1``, ``shape=(ncells)``
+    weight_field : ndarray
+        Cell volumes. ``dtype=float``, ``ndim=1``, ``shape=(ncells)``
+
+    Returns
+    -------
+    field_norm : float
+        The norm of the field.
+    """
     return np.sqrt(inner_product(field, field, weight_field))
 
 
-def unit(field, weight_field):
-    """ Calculate the unit field in same direction. """
+def unit_field(field, weight_field):
+    """ Calculate the unit field (norm = 1) in same direction.
+
+    Parameters
+    ----------
+    field : ndarray
+        Scalar field. ``dtype=float``, ``ndim=1``, ``shape=(ncells)``
+    weight_field : ndarray
+        Cell volumes. ``dtype=float``, ``ndim=1``, ``shape=(ncells)``
+
+    Returns
+    -------
+    field_normed : ndarray
+        Normalized (norm = 1) scalar field.
+        ``dtype=float``, ``ndim=1``, ``shape=(ncells)``
+    """
     return field / norm(field, weight_field)
 
 
 def projection_magnitude(field_1, field_2, weight_field):
-    """ Get magnitude of projection of field1 onto field2. """
+    """ Get magnitude of projection of field_1 onto field_2.
+
+    The two fields share the same weights.
+
+    Parameters
+    ----------
+    field_1 : ndarray
+        Scalar field being projected.
+        ``dtype=float``, ``ndim=1``, ``shape=(ncells)``
+    field_2 : ndarray
+        Scalar field used for projection direction.
+        ``dtype=float``, ``ndim=1``, ``shape=(ncells)``
+    weight_field : ndarray
+        Cell volumes. ``dtype=float``, ``ndim=1``, ``shape=(ncells)``
+
+    Returns
+    -------
+    magnitude : float
+        magnitude of the projected field.
+    """
     magnitude = inner_product(field_1, field_2, weight_field) \
         / norm(field_2, weight_field)
     return magnitude
 
 
 def projection(field_1, field_2, weight_field):
-    """ Project field_1 onto field_2. """
+    """ Project field_1 onto field_2.
+
+    The two fields share the same weights.
+
+    Parameters
+    ----------
+    field_1 : ndarray
+        Scalar field being projected.
+        ``dtype=float``, ``ndim=1``, ``shape=(ncells)``
+    field_2 : ndarray
+        Scalar field used for projection direction.
+        ``dtype=float``, ``ndim=1``, ``shape=(ncells)``
+    weight_field : ndarray
+        Cell volumes. ``dtype=float``, ``ndim=1``, ``shape=(ncells)``
+
+    Returns
+    -------
+    projected_field : ndarray
+        Projected field. ``dtype=float``, ``ndim=1``, ``shape=(ncells)``
+    """
     magnitude = projection_magnitude(field_1, field_2, weight_field)
-    direction = unit(field_2, weight_field)
+    direction = unit_field(field_2, weight_field)
     return magnitude*direction
 
 
-# interpolation functions
+# interpolation
 def interpolate_field_rbf(data, coords, kernel, length_scale):
-    """ Interpolate data using a radial basis function to create a
+    """ Interpolate data using a radial basis function (RBF) to create a
     field.
+
+    Parameters
+    ----------
+    data : ndarray
+        Sparse data to create interpolation from. For an NxM array, the
+        number of data points is N, the number of dimensions
+        (coordinates) is M-1, and the Mth column is the data value.
+        ``dtype=float``, ``ndim=2``, ``shape=(N, M)``
+    coords : ndarray
+        Coordinates of the cell centers of the full discretized field.
+        The RBF will be evaluated at these points.
+        ``dtype=float``, ``ndim=2``, ``shape=(ncells, M-1)``
+    kernel : str
+        Kernel (function) of the RBF. See ``function`` input of
+        ``scipy.interpolate.Rbf`` for list of options.
+    length_scale : float
+        Length scale parameter (epsilon in ``scipy.interpolate.Rbf``)
+        in the RBF kernel.
+
+    Returns
+    -------
+    field : ndarray
+        Full field. ``dtype=float``, ``ndim=1``, ``shape=(ncells)``
     """
     args1 = []
     args2 = []
-    ncoord = data.shape[1]
+    ncoord = coords.shape[1]
     for icoord in range(ncoord):
         args1.append(data[:, icoord])
         args2.append(coords[:, icoord])
     interp_func = interpolate.Rbf(*args1, function=kernel,
-                                  epsilon=length_scale)
+        epsilon=length_scale)
     return interp_func(*args2)
 
 
-# random field classes
-class RandomField(object):
-    """ Parent class (template). Need to overight some functions.
+# Gaussian process: generate samples
+def gp_samples_cholesky(cov, nsamples, mean=None, eps=1e-8):
+    """ Generate samples of a Gaussian Process using Cholesky
+    decomposition.
+
+    Note
+    ----
+    NOT IMPLEMENTED: need to figure out how to account for weights.
+
+    Parameters
+    ----------
+    cov : ndarray
+        Covariance matrix. Can be ndarray, matrix, or scipy sparse
+        matrix. ``dtype=float``, ``ndim=2``, ``shape=(nstate, nstate)``
+    nsamples : int
+        Number of samples to generate.
+    mean : ndarray
+        Mean vector. ``dtype=float``, ``ndim=1``, ``shape=(nstate)``
+    eps : float
+        Small quantity to add to the diagonal of the covariance matrix
+        for numerical stability.
+
+    Returns
+    -------
+    samples : ndarray
+        Matrix of samples.
+        ``dtype=float``, ``ndim=2``, ``shape=(nstate, nsamples)``
     """
+    # TODO: account for weight_field
+    raise NotImplementedError
+    # make sparse if its not already
+    cov = sp.csc_matrix(cov)
+    nstate = cov.shape[0]
 
-    def __init__(self, zero_mean=False, **kwargs):
-        """
-        cov is scipy.sparse.csc
-        """
-        # name
-        if 'name' in kwargs:
-            self.name = kwargs['name']
-        else:
-            self.name = None
-        # number of points
-        if 'npoints' in kwargs:
-            self.npoints = kwargs['npoints']
-        else:
-            self.npoints = None
-        # number of spatial coordinates (1-3)
-        if 'nspatial_dims' in kwargs:
-            self.nspatial_dims = kwargs['nspatial_dims']
-        else:
-            self.nspatial_dims = None
-        # coordinates
-        if 'coords' in kwargs:
-            self.coords = kwargs['coords']
-            self._set_attribute('npoints', self.coords.shape[0])
-            self._set_attribute('nspatial_dims', self.coords.shape[1])
-        else:
-            self.coords = None
-        # weights (cell length, area, or volume)
-        if 'weight_field' in kwargs:
-            self.weight_field = kwargs['weight_field']
-            self._set_attribute('npoints', self.weight_field.shape[0])
-        else:
-            self.weight_field = None
-        # covariance
-        if 'cov' in kwargs:
-            self.cov = kwargs['cov']
-            self._set_attribute('npoints', self.weight_field.shape[0])
-        else:
-            self.cov = None
-        # kl modes (decomposition of covariance)
-        if 'kl_modes' in kwargs:
-            self.kl_modes = kwargs['kl_modes']
-            self.nmodes = self.kl_modes.shape[1]
-            self._set_attribute('npoints', self.kl_modes.shape[0])
-        else:
-            self.kl_modes = None
-            self.nmodes = None
-        # mean field
-        if not zero_mean:
-            self.mean = kwargs['mean']
-        else:
-            self.mean = np.zeros(self.npoints)
-        self._set_attribute('npoints', self.mean.shape[0])
+    # add small value to diagonal
+    cov = cov + sp.eye(nstate, format='csc')*eps
 
-    def __str__(self):
-        str_info = "Scalar random field."
-        return str_info
+    # mean vector
+    if mean == None:
+        mean = np.zeros(cov.shape[0])
+    mean = np.expand_dims(np.squeeze(mean), axis=1)
 
-    def rand_coeff(self, nsamp):
-        """
-        """
-        raise NotImplementedError(
-            "Needs to be implemented in the child class!")
-        return np.random.normal(0, 1, nsamp)
+    # Create samples using Cholesky Decomposition
+    L = sparse_cholesky(cov)
+    a = np.random.normal(size=(nstate, nsamples))
+    perturb = L.dot(a)
 
-    def calc_kl_modes(self, nmodes, normalize=False):
-        """
-        """
-        self.nmodes = nmodes
-        self.kl_eig_vals, self.kl_modes = calc_kl_modes(
-            self.nmodes, self.cov, self.weight_field, normalize)
-
-    def sample_full(self, nsamp):
-        """
-        """
-        raise NotImplementedError(
-            "Needs to be implemented in the child class!")
-        samps = np.zeros([self.npoints, nsamps])
-        return samps
-
-    def sample_kl_reduced(self, nsamp, nmode, return_coeffs=False):
-        """
-        """
-        coeffs = self.rand_coeff([nmode, nsamp])
-        samples = self.reconstruct_kl_reduced(coeffs)
-        if return_coeffs:
-            out = (samples, coeffs)
-        else:
-            out = samples
-        return out
-
-    def reconstruct_kl_reduced(self, coeffs):
-        """
-        """
-        if len(coeffs.shape) == 1:
-            coeffs = np.expand_dims(coeffs, 1)
-        nmodes, nsamps = coeffs.shape
-        field = np.tile(self.mean, [nsamps, 1]).T
-        for imode in range(nmodes):
-            vec1 = np.atleast_2d(coeffs[imode, :])
-            vec2 = np.atleast_2d(self.kl_modes[:, imode])
-            field += np.dot(vec1.T, vec2).T
-        return field
-
-    def project_kl_reduced(self, nmode, field):
-        """
-        """
-        # TODO: handle matrices like other functions
-        coeffs = []
-        for imode in range(nmode):
-            mode = self.kl_modes[:, imode]
-            # TODO: why was JX using eigenvalues for the coefficients?
-            # eig = self.kl_eig_vals[imode]
-            # coeffs.append(np.sum(self.weight_field * field * mode) / eig)
-            coeffs.append(projection_magnitude(field, mode, self.weight_field))
-        return np.array(coeffs)
-
-    def _set_attribute(self, name, value):
-        """ """
-        current_val = getattr(self, name)
-        if current_val is None:
-            setattr(self, name, value)
-        else:
-            if current_val != value:
-                raise ValueError('Dimensions do not match.')
+    return mean + perturb.toarray()
 
 
-class GaussianProcess(RandomField):
+def sparse_cholesky(cov):
+    """ Compute the Cholesky decomposition for a sparse (scipy) matrix.
+
+    Adapted from ``https://gist.github.com/omitakahiro``:
+    ``SparseCholesky.md``.
+
+    Note
+    ----
+    NOT IMPLEMENTED: need to figure out how to account for weights.
+
+    Parameters
+    ----------
+    cov : ndarray
+      Covariance matrix. Can be ndarray, matrix, or scipy sparse
+      matrix. ``dtype=float``, ``ndim=2``, ``shape=(nstate, nstate)``
+
+    Returns
+    -------
+    lower: scipy.sparse.csc_matrix
+        Lower triangular Cholesky factor of the covariance matrix.
     """
+    # TODO: account for weight_field
+    raise NotImplementedError
+    # convert to sparse matrix
+    cov = sp.csc_matrix(cov)
+
+    # LU decomposition
+    LU = sparse.linalg.splu(A, diag_pivot_thresh=0)
+
+    # check the matrix A is positive definite.
+    n = cov.shape[0]
+    posd = (LU.perm_r == np.arange(n)).all() and (LU.U.diagonal() > 0).all()
+    if not posd:
+      raise ValueError('The matrix is not positive definite')
+
+    return LU.L.dot(sparse.diags(LU.U.diagonal()**0.5))
+
+
+def gp_samples_kl(cov, nsamples, nmodes=None, mean=None, eps=1e-8):
+    """ Generate samples of a Gaussian Process using KL decomposition.
+
+    Parameters
+    ----------
+    cov : ndarray
+        Covariance matrix. Can be ndarray, matrix, or scipy sparse
+        matrix. ``dtype=float``, ``ndim=2``, ``shape=(nstate, nstate)``
+    nsamples : int
+        Number of samples to generate.
+    nmodes : int
+        Number of modes to use when generating samples. ``None`` to use
+        all modes.
+    mean : ndarray
+        Mean vector. ``dtype=float``, ``ndim=1``, ``shape=(nstate)``
+    eps : float
+        Small quantity to add to the diagonal of the covariance matrix
+        for numerical stability.
+
+    Returns
+    -------
+    samples : ndarray
+        Matrix of samples.
+        ``dtype=float``, ``ndim=2``, ``shape=(nstate, nsamples)``
     """
+    # KL decomposition
+    eigv, klmodes = calc_kl_modes(cov, nmodes, weight_field, eps, False)
+    if nmodes == None:
+        nmodes = len(eigv)
 
-    def __init__(self, **kwargs):
-        """
-        """
-        super(self.__class__, self).__init__(**kwargs)
-        if 'cov_cholesky_l' in kwargs:
-            self.cov_cholesky_l = kwargs['cov_cholesky_l']
-            self._set_attribute('npoints', self.cov_cholesky_l.shape[0])
-        else:
-            self.cov_cholesky_l = None
+    # create samples
+    coeffs = np.random.normal(0, 1, [nmodes, nsamples])
+    return reconstruct_kl(modes, coeffs, mean)
 
-    def __str__(self):
-        str_info = "Gaussian process scalar random field."
-        return str_info
 
-    def sample_full(self, nsamps):
-        """
-        """
-        # TODO: Not sure working properly. See tutorial (cannot match)
-        if self.cov_cholesky_l is None:
-            # TODO: cholesky decomposition for sparse matrix
-            self.cov_cholesky_l = la.cholesky(self.cov.todense())
-        x_mat = np.random.normal(loc=0.0, scale=1.0,
-                                 size=(self.npoints, nsamps))
-        perturb = np.matmul(self.cov_cholesky_l, x_mat)
-        samples = np.tile(self.mean, (nsamps, 1)).T + perturb
-        return samples.A
+def gp_samples_kl_coverage(cov, nsamples, coverage=0.99, mean=None, eps=1e-8):
+    """ Generate samples of a Gaussian Process using KL decomposition.
 
-    def rand_coeff(self, nsamp):
-        """ """
-        return np.random.normal(0, 1, nsamp)
+    Only the firs N modes required to get the desired variance coverage
+    are used.
+
+    Parameters
+    ----------
+    cov : ndarray
+        Covariance matrix. Can be ndarray, matrix, or scipy sparse
+        matrix. ``dtype=float``, ``ndim=2``, ``shape=(nstate, nstate)``
+    nsamples : int
+        Number of samples to generate.
+    coverage : float
+        Desired percentage coverage of the variance. Value between 0-1.
+    mean : ndarray
+        Mean vector. ``dtype=float``, ``ndim=1``, ``shape=(nstate)``
+    eps : float
+        Small quantity to add to the diagonal of the covariance matrix
+        for numerical stability.
+
+    Returns
+    -------
+    samples : ndarray
+        Matrix of samples.
+        ``dtype=float``, ``ndim=2``, ``shape=(nstate, nsamples)``
+    """
+    # KL decomposition
+    eigv, klmodes = calc_kl_modes_coverage(
+        cov, nmodes, weight_field, eps, False)
+    nmodes = len(eigv)
+
+    # create samples
+    coeffs = np.random.normal(0, 1, [nmodes, nsamples])
+    return reconstruct_kl(modes, coeffs, mean)

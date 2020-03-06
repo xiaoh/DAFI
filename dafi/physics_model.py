@@ -8,39 +8,44 @@ import numpy as np
 class PhysicsModel(object):
     """ Parent class for physics models.
 
+    Accessible through ``dafi.PhysicsModel``. 
     Use this as a template to write new dynamic models.
     The required attributes and methods are summarized below.
 
     Attributes
     ----------
-        name: Name of the forward model for reporting. ``str``
-        nstate: Number of states in the state vector. ``int``
-        nobs: Number of observations in the observation vector. ``int``
-        init_state: Initial mean value of the state vector. ``ndarray``
+        * **name** - Name of the forward model for reporting. ``str``
+        * **nstate** - Number of states in the state vector. ``int``
+        * **nobs** - Number of observations in the observation vector.
+            ``int``
+        * **init_state** - Initial mean value of the state vector.
+            ``ndarray``, ``dtype=float``, ``ndim=1``, ``shape=(nstate)``
+
+    Methods
+    -------
+    See the method's docstring for information on each.
+        * **generate_ensemble**
+        * **forecast_to_time**
+        * **state_to_observation**
+        * **get_obs**
     """
 
-    def __init__(self, nsamples, t_interval, t_end, max_iterations,
-                 input_dict):
+    def __init__(self, inputs_dafi, inputs):
         """ Parse input file and assign values to class attributes.
 
         Parameters
         ----------
-        nsamples : int
-            Ensemble size.
-        t_interval : float
-            Time interval between data assimilation steps.
-        t_end : float
-            Final time.
-        max_iterations : int
-            Maximum number of iterations at a given time-step.
-        input_dict : dict
+        inputs_dafi : dict
+            Dictionary containing all the dafi inputs in case the model
+            requires access to this information.
+        inputs : dict
             Dictionary containing required model inputs.
         """
         self.name = 'Physics Model'
         self.nstate = 1
         self.nobs = 1
         self.init_state = np.zeros(self.nstate)
-        self._nsamples = nsamples
+        self._nsamples = inputs_dafi['nsamples']
 
     def __str__(self):
         str_info = 'An empty physics model.'
@@ -52,26 +57,23 @@ class PhysicsModel(object):
         Returns
         -------
         state : ndarray
-            Ensemble matrix of states (Xi).
+            Ensemble matrix of states (X0).
             ``dtype=float``, ``ndim=2``, ``shape=(nstate, nsamples)``
-        state_obs : ndarray
-            Ensemble matrix of states mapped to observation space (HXi).
-            ``dtype=float``, ``ndim=2``,
-            ``shape=(nobs, nsamples)``
         """
         state = np.zeros([self.nstate, self._nsamples])
-        state_obs = np.zeros([self.nobs, self._nsamples])
-        return state, state_obs
+        return state
 
-    def forecast_to_time(self, state, next_end_time):
+    def forecast_to_time(self, state, time):
         """ Return states at the next end time.
 
         Parameters
         ----------
         state : ndarray
-            Current ensemble matrix of states (Xa). [nstate x nsamples]
-        next_end_time : float
-            Next end time.
+            Current ensemble of states (Xa).
+            ``dtype=float``, ``ndim=2``, ``shape=(nstate, nsamples)``
+        time : int
+            Next end time index. Any concept of real time is implemented
+            the physics model (e.g. this file).
 
         Returns
         -------
@@ -87,15 +89,15 @@ class PhysicsModel(object):
 
         Parameters
         ----------
-        state: ndarray
-            Current state variables.
+        state : ndarray
+            Ensemble of states.
             ``dtype=float``, ``ndim=2``, ``shape=(nstate, nsamples)``
 
         Returns
         -------
-        state_obs: ndarray
-            Ensemble in observation space. ``dtype=float``, ``ndim=2``,
-            ``shape=(nobs, nsamples)``
+        state_obs : ndarray
+            Ensemble in observation space.
+            ``dtype=float``, ``ndim=2``, ``shape=(nobs, nsamples)``
         """
         state_obs = np.zeros([self.nobs, self._nsamples])
         return state_obs
@@ -105,24 +107,19 @@ class PhysicsModel(object):
 
         Parameters
         ----------
-        time : float
-            Time at which observation is requested.
+        time : int
+            Time index at which observation is requested. Any concept of
+            real time is implemented the physics model (e.g. this file).
 
         Returns
         -------
         obs : ndarray
             Observations.
-            ``dtype=float``, ``ndim=2``,
-            ``shape=(nobs, nsamples)``
+            ``dtype=float``, ``ndim=2``, ``shape=(nobs, nsamples)``
         obs_error : ndarray
-            Observation error.
-            ``dtype=float``, ``ndim=2``,
-            ``shape=(nobs, nobs)``
+            Observation error (covariance) matrix.
+            ``dtype=float``, ``ndim=2``, ``shape=(nobs, nobs)``
         """
         obs = np.zeros([self.nobs, self._nsamples])
         obs_error = np.zeros([nobs, nobs])
         return obs, obs_error
-
-    def clean(self):
-        """ Cleanup before exiting. """
-        pass

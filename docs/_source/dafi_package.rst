@@ -1,12 +1,15 @@
-dafi
-====
-.. automodule:: dafi
-    :noindex:
+dafi (Package)
+==============
 
 .. toctree::
     :maxdepth: 4
     :caption: Modules:
 
-    dafi_filters.rst
-    dafi_dyn_model.rst
-    dafi_utilities.rst
+    dafi_inverse.rst
+    dafi_fields.rst
+
+.. automodule:: dafi.main
+    :members:
+
+.. automodule:: dafi.physics_model
+    :members:

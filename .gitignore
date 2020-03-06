@@ -18,3 +18,4 @@ linux64GccDPOpt
 results*
 *.log
 .dafi_ver
+.time
