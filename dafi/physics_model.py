@@ -8,18 +8,18 @@ import numpy as np
 class PhysicsModel(object):
     """ Parent class for physics models.
 
-    Accessible through ``dafi.PhysicsModel``. 
+    Accessible through **dafi.PhysicsModel**.
     Use this as a template to write new dynamic models.
     The required attributes and methods are summarized below.
 
     Attributes
     ----------
-        * **name** - Name of the forward model for reporting. ``str``
-        * **nstate** - Number of states in the state vector. ``int``
+        * **name** - Name of the forward model for reporting. *str*
+        * **nstate** - Number of states in the state vector. *int*
         * **nobs** - Number of observations in the observation vector.
-            ``int``
+            *int*
         * **init_state** - Initial mean value of the state vector.
-            ``ndarray``, ``dtype=float``, ``ndim=1``, ``shape=(nstate)``
+            *ndarray*, *dtype=float*, *ndim=1*, *shape=(nstate)*
 
     Methods
     -------
@@ -58,7 +58,7 @@ class PhysicsModel(object):
         -------
         state : ndarray
             Ensemble matrix of states (X0).
-            ``dtype=float``, ``ndim=2``, ``shape=(nstate, nsamples)``
+            *dtype=float*, *ndim=2*, *shape=(nstate, nsamples)*
         """
         state = np.zeros([self.nstate, self._nsamples])
         return state
@@ -70,7 +70,7 @@ class PhysicsModel(object):
         ----------
         state : ndarray
             Current ensemble of states (Xa).
-            ``dtype=float``, ``ndim=2``, ``shape=(nstate, nsamples)``
+            *dtype=float*, *ndim=2*, *shape=(nstate, nsamples)*
         time : int
             Next end time index. Any concept of real time is implemented
             the physics model (e.g. this file).
@@ -79,7 +79,7 @@ class PhysicsModel(object):
         -------
         state : ndarray
             Updated ensemble matrix of states (Xf).
-            ``dtype=float``, ``ndim=2``, ``shape=(nstate, nsamples)``
+            *dtype=float*, *ndim=2*, *shape=(nstate, nsamples)*
         """
         state = np.zeros([self.nstate, self._nsamples])
         return state
@@ -91,13 +91,13 @@ class PhysicsModel(object):
         ----------
         state : ndarray
             Ensemble of states.
-            ``dtype=float``, ``ndim=2``, ``shape=(nstate, nsamples)``
+            *dtype=float*, *ndim=2*, *shape=(nstate, nsamples)*
 
         Returns
         -------
         state_obs : ndarray
             Ensemble in observation space.
-            ``dtype=float``, ``ndim=2``, ``shape=(nobs, nsamples)``
+            *dtype=float*, *ndim=2*, *shape=(nobs, nsamples)*
         """
         state_obs = np.zeros([self.nobs, self._nsamples])
         return state_obs
@@ -115,10 +115,10 @@ class PhysicsModel(object):
         -------
         obs : ndarray
             Observations.
-            ``dtype=float``, ``ndim=2``, ``shape=(nobs, nsamples)``
+            *dtype=float*, *ndim=2*, *shape=(nobs, nsamples)*
         obs_error : ndarray
             Observation error (covariance) matrix.
-            ``dtype=float``, ``ndim=2``, ``shape=(nobs, nobs)``
+            *dtype=float*, *ndim=2*, *shape=(nobs, nobs)*
         """
         obs = np.zeros([self.nobs, self._nsamples])
         obs_error = np.zeros([nobs, nobs])

@@ -19,7 +19,7 @@ class InverseMethod(object):
 
     Use this as a template to write new inversion classes.
     To implement a new inverse technique create a child class and
-    override the ``analysis`` method.
+    override the **analysis** method.
     """
 
     def __init__(self, inputs_dafi, inputs):
@@ -56,27 +56,27 @@ class InverseMethod(object):
         iteration : int
             Iteration number at current DA time step.
         state_forecast : ndarray
-            Ensemble of forecast states (Xf).
-            ``dtype=float``, ``ndim=2``, ``shape=(nstate, nsamples)``
+            Ensemble of forecast states (:math:`x_f`).
+            *dtype=float*, *ndim=2*, *shape=(nstate, nsamples)*
         state_in_obsspace : ndarray
             Ensemble forecast states mapped to observation space (Hx).
-            ``dtype=float``, ``ndim=2``, ``shape=(nobs, nsamples)``.
+            *dtype=float*, *ndim=2*, *shape=(nobs, nsamples)*.
         obs : ndarray
             Ensemble of (possibly perturbed) observations.
-            ``dtype=float``, ``ndim=2``, ``shape=(nobs, nsamples)``
+            *dtype=float*, *ndim=2*, *shape=(nobs, nsamples)*
         obs_error : ndarray
             Observation error (covariance) matrix.
-            ``dtype=float``, ``ndim=2``, ``shape=(nobs, nobs)``
+            *dtype=float*, *ndim=2*, *shape=(nobs, nobs)*
         obs_vec : ndarray
             Unperturbed observation vector. This is the actual
-            observation and is the mean of ``obs``.
-            ``dtype=float``, ``ndim=1``, ``shape=(nobs)``
+            observation and is the mean of *obs*.
+            *dtype=float*, *ndim=1*, *shape=(nobs)*
 
         Returns
         -------
         state_analysis : ndarray
-            Ensemble matrix of updated states (xa).
-            ``dtype=float``, ``ndim=2``, ``shape=(nstate, nsamples)``
+            Ensemble matrix of updated states (:math:`x_a`).
+            *dtype=float*, *ndim=2*, *shape=(nstate, nsamples)*
         """
         dx = np.zeros(state_forecast.shape)
         state_analysis = state_forecast + dx
@@ -96,10 +96,10 @@ class InverseMethod(object):
 class EnKF(InverseMethod):
     """ Implementation of the ensemble Kalman Filter (EnKF).
 
-    The EnKF is updated by: ``xa = xf + K*(obs - Hx)`` where *xf* is
-    the forecasted state vector (by the forward model), *xa* is the
-    updated vector after data-assimilation, *K* is the Kalman gain
-    matrix, *obs* is the observation vector, and *Hx* is the forecasted
+    The EnKF is updated by: :math:`x_a = x_f + K*(obs - Hx)` where :math:`x_f` is
+    the forecasted state vector (by the forward model), :math:`x_a` is the
+    updated vector after data-assimilation, :math:`K` is the Kalman gain
+    matrix, :math:`obs` is the observation vector, and :math:`Hx` is the forecasted
     state vector in observation space.
     """
 
@@ -112,8 +112,6 @@ class EnKF(InverseMethod):
             obs_error, obs_vec):
         """ Correct the forecast ensemble states using EnKF.
 
-        Note
-        ----
         See InverseMethod.analysis for I/O details.
         """
         # calculate the Kalman gain matrix
@@ -143,17 +141,15 @@ class EnRML(InverseMethod):
     """ Implementation of the ensemble Randomized Maximal Likelihood
     (EnRML).
 
-    The EnRML is updated by: ``xa = xf + GN*(obs - Hx)+P``
-    where *xf* is the forecasted state vector (by the forward model),
-    *xa* is the updated vector after data-assimilation, *GN* is the
-    Gauss-Newton matrix, *obs* is the observation vector, and *Hx* is
-    the forecasted state vector in observation space, *P* is Penalty
+    The EnRML is updated by: :math:`x_a = x_f + GN*(obs - Hx)+PN`
+    where :math:`x_f` is the forecasted state vector (by the forward model),
+    :math:`x_a` is the updated vector after data-assimilation, :math:`GN` is the
+    Gauss-Newton matrix, :math:`obs` is the observation vector, and :math:`Hx` is
+    the forecasted state vector in observation space, :math:`PN` is Penalty
     matrix.
 
-    Note
-    ----
-    Required inputs in ``inputs`` dictionary:
-        * **step_length** - ``float``
+    Required inputs in **inputs** dictionary:
+        * **step_length** - *float*
             EnRML step length parameter. has value between 0 and 1.
     """
 
@@ -176,8 +172,6 @@ class EnRML(InverseMethod):
             obs_error, obs_vec):
         """ Correct the forecast ensemble states using EnRML.
 
-        Note
-        ----
         See InverseMethod.analysis for I/O details.
         """
         # save the prior state
@@ -221,18 +215,15 @@ class EnKF_MDA(InverseMethod):
     assimilaton (EnKF-MDA).
 
     The EnKF-MDA is updated by:
-    ``xa = xf + K_mda*(obs - Hx - err_mda)`` where *xf* is the
+    :math:`x_a = x_f + K_{mda}*(obs - Hx - err_{mda})` where :math:`x_f` is the
     forecasted state vector (by the dynamic model),
-    *xa* is the updated vector after data-assimilation, *K_mda* is the
-    modified Kalman gain matrix, *obs* is the observation vector, and
-    *Hx* is the forwarded state vector in observation space, 'err_mda'
+    :math:`x_a` is the updated vector after data-assimilation, :math:`K_{mda}` is the
+    modified Kalman gain matrix, :math:`obs` is the observation vector, and
+    :math:`Hx` is the forwarded state vector in observation space, :math:`err_{mda}`
     is inflated error.
 
-
-    Note
-    ----
-    Required inputs in ``inputs`` dictionary:
-        * **nsteps** - ``int``
+    Required inputs in **inputs** dictionary:
+        * **nsteps** - *int*
             Number of steps used in the multiple data assimilation.
     """
 
@@ -258,8 +249,6 @@ class EnKF_MDA(InverseMethod):
             obs_error, obs_vec):
         """ Correct the forecast ensemble states using EnKF-MDA.
 
-        Note
-        ----
         See InverseMethod.analysis for I/O details.
         """
         # calculate the Kalman gain matrix
@@ -296,15 +285,13 @@ class REnKF(InverseMethod):
     """ Implementation of the regularized ensemble Kalman Filter
     (REnKF).
 
-    Note
-    ----
-    Required inputs in ``inputs`` dictionary:
-        * **penalties_python_file** (``string``) -
+    Required inputs in **inputs** dictionary:
+        * **penalties_python_file** (*string*) -
           Path to python file that contains function called
-          ``penalties`` that returns a list of dictionaries.
+          **penalties** that returns a list of dictionaries.
           Each dictionary represents one penalty and includes:
-          ``lambda`` (float), ``weight_matrix`` (ndarray),
-          ``penalty`` (function), and ``gradient`` (function).
+          **lambda** (float), **weight_matrix** (ndarray),
+          **penalty** (function), and **gradient** (function).
     """
 
     def __init__(self, inputs_dafi, inputs):
@@ -322,8 +309,6 @@ class REnKF(InverseMethod):
             obs_error, obs_vec):
         """ Correct the forecast ensemble states using REnKF.
 
-        Note
-        ----
         See InverseMethod.analysis for I/O details.
         """
         # calculate the Kalman gain matrix

@@ -1,8 +1,8 @@
 # Copyright 2020 Virginia Polytechnic Institute and State University.
 """ Random fields representation and manipulation.
 
-These functions can be called directly from ``dafi.random_field``, e.g.
-``dafi.random_field.calc_kl_modes()``.
+These functions can be called directly from **dafi.random_field**, e.g.
+**dafi.random_field.calc_kl_modes()**.
 """
 
 # standard library imports
@@ -27,12 +27,12 @@ def calc_kl_modes(cov, nmodes=None, weight_field=None, eps=1e-8,
     ----------
     cov : ndarray
         Covariance matrix. Can be ndarray, matrix, or scipy sparse
-        matrix. ``dtype=float``, ``ndim=2``, ``shape=(nstate, nstate)``
+        matrix. *dtype=float*, *ndim=2*, *shape=(nstate, nstate)*
     nmodes : int
         Number of KL modes to obtain.
     weight_field : ndarray
         Weight (e.g. cell volume) associated with each state.
-        Default ones (1). ``dtype=float``, ``ndim=1``, ``shape=(nstate)``
+        Default ones (1). *dtype=float*, *ndim=1*, *shape=(nstate)*
     eps : float
         Small quantity to add to the diagonal of the covariance matrix
         for numerical stability.
@@ -43,10 +43,10 @@ def calc_kl_modes(cov, nmodes=None, weight_field=None, eps=1e-8,
     -------
     eig_vals : ndarray
         Eigenvalue associated with each mode.
-        ``dtype=float``, ``ndim=1``, ``shape=(nmodes)``
+        *dtype=float*, *ndim=1*, *shape=(nmodes)*
     kl_modes : ndarray
         KL modes (eigenvectors).
-        ``dtype=float``, ``ndim=2``, ``shape=(nstate, nmodes)``
+        *dtype=float*, *ndim=2*, *shape=(nstate, nmodes)*
     """
     # convert to sparse matrix
     cov = sp.csc_matrix(cov)
@@ -107,12 +107,12 @@ def calc_kl_modes_coverage(cov, coverage, weight_field=None, eps=1e-8):
     ----------
     cov : ndarray
         Covariance matrix. Can be ndarray, matrix, or scipy sparse
-        matrix. ``dtype=float``, ``ndim=2``, ``shape=(nstate, nstate)``
+        matrix. *dtype=float*, *ndim=2*, *shape=(nstate, nstate)*
     coverage : float
         Desired percentage coverage of the variance. Value between 0-1.
     weight_field : ndarray
         Weight (e.g. cell volume) associated with each state.
-        Default ones (1). ``dtype=float``, ``ndim=1``, ``shape=(nstate)``
+        Default ones (1). *dtype=float*, *ndim=1*, *shape=(nstate)*
     eps : float
         Small quantity to add to the diagonal of the covariance matrix
         for numerical stability.
@@ -122,11 +122,11 @@ def calc_kl_modes_coverage(cov, coverage, weight_field=None, eps=1e-8):
     eig_vals : ndarray
         Eigenvalue associated with each mode. For the first N modes such
         that the desired coverage of the variance is achieved.
-        ``dtype=float``, ``ndim=1``, ``shape=(N)``
+        *dtype=float*, *ndim=1*, *shape=(N)*
     kl_modes : ndarray
         first N  KL modes (eigenvectors)  such that the desired coverage
         of the variance is achieved.
-        ``dtype=float``, ``ndim=2``, ``shape=(nstate, N)``
+        *dtype=float*, *ndim=2*, *shape=(nstate, N)*
     """
     # convert to sparse matrix
     cov = sp.csc_matrix(cov)
@@ -153,16 +153,16 @@ def scale_kl_modes(eig_vals, kl_modes_norm):
     ----------
     eig_vals : ndarray
         Eigenvalue associated with each mode.
-        ``dtype=float``, ``ndim=1``, ``shape=(nmodes)``
+        *dtype=float*, *ndim=1*, *shape=(nmodes)*
     kl_modes_norm : ndarray
         Normalized (norm = 1) KL modes (eigenvectors).
-        ``dtype=float``, ``ndim=2``, ``shape=(nstate, nmodes)``
+        *dtype=float*, *ndim=2*, *shape=(nstate, nmodes)*
 
     Returns
     -------
     kl_modes_weighted : ndarray
         KL modes with correct magnitude.
-        ``dtype=float``, ``ndim=2``, ``shape=(nstate, nmodes)``
+        *dtype=float*, *ndim=2*, *shape=(nstate, nmodes)*
     """
     nmodes = len(eig_vals)
     kl_modes_weighted = kl_modes_norm.copy()
@@ -179,20 +179,20 @@ def kl_coverage(cov, eig_vals, weight_field=None):
     ----------
     cov : ndarray
         Covariance matrix. Can be ndarray, matrix, or scipy sparse
-        matrix. ``dtype=float``, ``ndim=2``, ``shape=(nstate, nstate)``
+        matrix. *dtype=float*, *ndim=2*, *shape=(nstate, nstate)*
     eig_vals : ndarray
         Eigenvalues associated with each mode.
-        ``dtype=float``, ``ndim=1``, ``shape=(nmodes)``
+        *dtype=float*, *ndim=1*, *shape=(nmodes)*
     weight_field : ndarray
         Weight (e.g. cell volume) associated with each state.
-        ``dtype=float``, ``ndim=1``, ``shape=(nstate)``
+        *dtype=float*, *ndim=1*, *shape=(nstate)*
 
     Returns
     -------
     coverage: ndarray
         Cumulative variance coverage of the first N modes. Each value
         is 0-1 and increasing.
-        ``dtype=float``, ``ndim=1``, ``shape=(nmodes)``
+        *dtype=float*, *ndim=1*, *shape=(nmodes)*
     """
     # make sparse if its not already
     cov = sp.csc_matrix(cov)
@@ -219,18 +219,18 @@ def reconstruct_kl(modes, coeffs, mean=None):
     Parameters
     ----------
     modes : ndarray
-        KL modes. ``dtype=float``, ``ndim=2``, ``shape=(nstate, nmodes)``
+        KL modes. *dtype=float*, *ndim=2*, *shape=(nstate, nmodes)*
     coeffs : ndarray
         Array of coefficients.
-        ``dtype=float``, ``ndim=2``, ``shape=(nmodes, nsamples)``
+        *dtype=float*, *ndim=2*, *shape=(nmodes, nsamples)*
     mean : ndarray
-        Mean vector. ``dtype=float``, ``ndim=1``, ``shape=(nstate)``
+        Mean vector. *dtype=float*, *ndim=1*, *shape=(nstate)*
 
     Returns
     -------
     fields : ndarray
         Reconstructed fields.
-        ``dtype=float``, ``ndim=2``, ``shape=(nstate, nsamples)``
+        *dtype=float*, *ndim=2*, *shape=(nstate, nsamples)*
     """
     # number of modes, samples, and states
     if len(coeffs) == 1:
@@ -258,18 +258,18 @@ def project_kl(field, modes, weight_field=None):
     Parameters
     ----------
     field : ndarray
-        Scalar field. ``dtype=float``, ``ndim=1``, ``shape=(ncells)``
+        Scalar field. *dtype=float*, *ndim=1*, *shape=(ncells)*
     modes : ndarray
-        KL modes. ``dtype=float``, ``ndim=2``, ``shape=(nstate, nmodes)``
+        KL modes. *dtype=float*, *ndim=2*, *shape=(nstate, nmodes)*
     weight_field : ndarray
         Weight (e.g. cell volume) associated with each state.
-        ``dtype=float``, ``ndim=1``, ``shape=(nstate)``
+        *dtype=float*, *ndim=1*, *shape=(nstate)*
 
     Returns
     -------
     coeffs : ndarray
         Projection magnitude.
-        ``dtype=float``, ``ndim=1``, ``shape=(nmodes)``
+        *dtype=float*, *ndim=1*, *shape=(nmodes)*
     """
     # default values
     if weight_field == None:
@@ -291,9 +291,9 @@ def integral(field, weight_field):
     Parameters
     ----------
     field : ndarray
-        Scalar field. ``dtype=float``, ``ndim=1``, ``shape=(ncells)``
+        Scalar field. *dtype=float*, *ndim=1*, *shape=(ncells)*
     weight_field : ndarray
-        Cell volumes. ``dtype=float``, ``ndim=1``, ``shape=(ncells)``
+        Cell volumes. *dtype=float*, *ndim=1*, *shape=(ncells)*
 
     Returns
     -------
@@ -311,12 +311,12 @@ def inner_product(field_1, field_2, weight_field):
     Parameters
     ----------
     field_1 : ndarray
-        One scalar field. ``dtype=float``, ``ndim=1``, ``shape=(ncells)``
+        One scalar field. *dtype=float*, *ndim=1*, *shape=(ncells)*
     field_2 : ndarray
         Another scalar field.
-        ``dtype=float``, ``ndim=1``, ``shape=(ncells)``
+        *dtype=float*, *ndim=1*, *shape=(ncells)*
     weight_field : ndarray
-        Cell volumes. ``dtype=float``, ``ndim=1``, ``shape=(ncells)``
+        Cell volumes. *dtype=float*, *ndim=1*, *shape=(ncells)*
 
     Returns
     -------
@@ -332,9 +332,9 @@ def norm(field, weight_field):
     Parameters
     ----------
     field : ndarray
-        Scalar field. ``dtype=float``, ``ndim=1``, ``shape=(ncells)``
+        Scalar field. *dtype=float*, *ndim=1*, *shape=(ncells)*
     weight_field : ndarray
-        Cell volumes. ``dtype=float``, ``ndim=1``, ``shape=(ncells)``
+        Cell volumes. *dtype=float*, *ndim=1*, *shape=(ncells)*
 
     Returns
     -------
@@ -350,15 +350,15 @@ def unit_field(field, weight_field):
     Parameters
     ----------
     field : ndarray
-        Scalar field. ``dtype=float``, ``ndim=1``, ``shape=(ncells)``
+        Scalar field. *dtype=float*, *ndim=1*, *shape=(ncells)*
     weight_field : ndarray
-        Cell volumes. ``dtype=float``, ``ndim=1``, ``shape=(ncells)``
+        Cell volumes. *dtype=float*, *ndim=1*, *shape=(ncells)*
 
     Returns
     -------
     field_normed : ndarray
         Normalized (norm = 1) scalar field.
-        ``dtype=float``, ``ndim=1``, ``shape=(ncells)``
+        *dtype=float*, *ndim=1*, *shape=(ncells)*
     """
     return field / norm(field, weight_field)
 
@@ -372,12 +372,13 @@ def projection_magnitude(field_1, field_2, weight_field):
     ----------
     field_1 : ndarray
         Scalar field being projected.
-        ``dtype=float``, ``ndim=1``, ``shape=(ncells)``
+        *dtype=float*, *ndim=1*, *shape=(ncells)*
     field_2 : ndarray
         Scalar field used for projection direction.
-        ``dtype=float``, ``ndim=1``, ``shape=(ncells)``
+        *dtype=float*, *ndim=1*, *shape=(ncells)*
     weight_field : ndarray
-        Cell volumes. ``dtype=float``, ``ndim=1``, ``shape=(ncells)``
+        Cell volumes.
+        *dtype=float*, *ndim=1*, *shape=(ncells)*
 
     Returns
     -------
@@ -398,17 +399,19 @@ def projection(field_1, field_2, weight_field):
     ----------
     field_1 : ndarray
         Scalar field being projected.
-        ``dtype=float``, ``ndim=1``, ``shape=(ncells)``
+        *dtype=float*, *ndim=1*, *shape=(ncells)*
     field_2 : ndarray
         Scalar field used for projection direction.
-        ``dtype=float``, ``ndim=1``, ``shape=(ncells)``
+        *dtype=float*, *ndim=1*, *shape=(ncells)*
     weight_field : ndarray
-        Cell volumes. ``dtype=float``, ``ndim=1``, ``shape=(ncells)``
+        Cell volumes.
+        *dtype=float*, *ndim=1*, *shape=(ncells)*
 
     Returns
     -------
     projected_field : ndarray
-        Projected field. ``dtype=float``, ``ndim=1``, ``shape=(ncells)``
+        Projected field. 
+        *dtype=float*, *ndim=1*, *shape=(ncells)*
     """
     magnitude = projection_magnitude(field_1, field_2, weight_field)
     direction = unit_field(field_2, weight_field)
@@ -426,22 +429,22 @@ def interpolate_field_rbf(data, coords, kernel, length_scale):
         Sparse data to create interpolation from. For an NxM array, the
         number of data points is N, the number of dimensions
         (coordinates) is M-1, and the Mth column is the data value.
-        ``dtype=float``, ``ndim=2``, ``shape=(N, M)``
+        *dtype=float*, *ndim=2*, *shape=(N, M)*
     coords : ndarray
         Coordinates of the cell centers of the full discretized field.
         The RBF will be evaluated at these points.
-        ``dtype=float``, ``ndim=2``, ``shape=(ncells, M-1)``
+        *dtype=float*, *ndim=2*, *shape=(ncells, M-1)*
     kernel : str
-        Kernel (function) of the RBF. See ``function`` input of
-        ``scipy.interpolate.Rbf`` for list of options.
+        Kernel (function) of the RBF. See **function** input of
+        **scipy.interpolate.Rbf** for list of options.
     length_scale : float
-        Length scale parameter (epsilon in ``scipy.interpolate.Rbf``)
+        Length scale parameter (epsilon in **scipy.interpolate.Rbf**)
         in the RBF kernel.
 
     Returns
     -------
     field : ndarray
-        Full field. ``dtype=float``, ``ndim=1``, ``shape=(ncells)``
+        Full field. *dtype=float*, *ndim=1*, *shape=(ncells)*
     """
     args1 = []
     args2 = []
@@ -467,11 +470,11 @@ def gp_samples_cholesky(cov, nsamples, mean=None, eps=1e-8):
     ----------
     cov : ndarray
         Covariance matrix. Can be ndarray, matrix, or scipy sparse
-        matrix. ``dtype=float``, ``ndim=2``, ``shape=(nstate, nstate)``
+        matrix. *dtype=float*, *ndim=2*, *shape=(nstate, nstate)*
     nsamples : int
         Number of samples to generate.
     mean : ndarray
-        Mean vector. ``dtype=float``, ``ndim=1``, ``shape=(nstate)``
+        Mean vector. *dtype=float*, *ndim=1*, *shape=(nstate)*
     eps : float
         Small quantity to add to the diagonal of the covariance matrix
         for numerical stability.
@@ -480,7 +483,7 @@ def gp_samples_cholesky(cov, nsamples, mean=None, eps=1e-8):
     -------
     samples : ndarray
         Matrix of samples.
-        ``dtype=float``, ``ndim=2``, ``shape=(nstate, nsamples)``
+        *dtype=float*, *ndim=2*, *shape=(nstate, nsamples)*
     """
     # TODO: account for weight_field
     raise NotImplementedError
@@ -508,7 +511,7 @@ def sparse_cholesky(cov):
     """ Compute the Cholesky decomposition for a sparse (scipy) matrix.
 
     Adapted from ``https://gist.github.com/omitakahiro``:
-    ``SparseCholesky.md``.
+    SparseCholesky.md.
 
     Note
     ----
@@ -518,7 +521,7 @@ def sparse_cholesky(cov):
     ----------
     cov : ndarray
       Covariance matrix. Can be ndarray, matrix, or scipy sparse
-      matrix. ``dtype=float``, ``ndim=2``, ``shape=(nstate, nstate)``
+      matrix. *dtype=float*, *ndim=2*, *shape=(nstate, nstate)*
 
     Returns
     -------
@@ -549,14 +552,14 @@ def gp_samples_kl(cov, nsamples, nmodes=None, mean=None, eps=1e-8):
     ----------
     cov : ndarray
         Covariance matrix. Can be ndarray, matrix, or scipy sparse
-        matrix. ``dtype=float``, ``ndim=2``, ``shape=(nstate, nstate)``
+        matrix. *dtype=float*, *ndim=2*, *shape=(nstate, nstate)*
     nsamples : int
         Number of samples to generate.
     nmodes : int
-        Number of modes to use when generating samples. ``None`` to use
+        Number of modes to use when generating samples. **None** to use
         all modes.
     mean : ndarray
-        Mean vector. ``dtype=float``, ``ndim=1``, ``shape=(nstate)``
+        Mean vector. *dtype=float*, *ndim=1*, *shape=(nstate)*
     eps : float
         Small quantity to add to the diagonal of the covariance matrix
         for numerical stability.
@@ -565,7 +568,7 @@ def gp_samples_kl(cov, nsamples, nmodes=None, mean=None, eps=1e-8):
     -------
     samples : ndarray
         Matrix of samples.
-        ``dtype=float``, ``ndim=2``, ``shape=(nstate, nsamples)``
+        *dtype=float*, *ndim=2*, *shape=(nstate, nsamples)*
     """
     # KL decomposition
     eigv, klmodes = calc_kl_modes(cov, nmodes, weight_field, eps, False)
@@ -587,13 +590,13 @@ def gp_samples_kl_coverage(cov, nsamples, coverage=0.99, mean=None, eps=1e-8):
     ----------
     cov : ndarray
         Covariance matrix. Can be ndarray, matrix, or scipy sparse
-        matrix. ``dtype=float``, ``ndim=2``, ``shape=(nstate, nstate)``
+        matrix. *dtype=float*, *ndim=2*, *shape=(nstate, nstate)*
     nsamples : int
         Number of samples to generate.
     coverage : float
         Desired percentage coverage of the variance. Value between 0-1.
     mean : ndarray
-        Mean vector. ``dtype=float``, ``ndim=1``, ``shape=(nstate)``
+        Mean vector. *dtype=float*, *ndim=1*, *shape=(nstate)*
     eps : float
         Small quantity to add to the diagonal of the covariance matrix
         for numerical stability.
@@ -602,7 +605,7 @@ def gp_samples_kl_coverage(cov, nsamples, coverage=0.99, mean=None, eps=1e-8):
     -------
     samples : ndarray
         Matrix of samples.
-        ``dtype=float``, ``ndim=2``, ``shape=(nstate, nsamples)``
+        *dtype=float*, *ndim=2*, *shape=(nstate, nsamples)*
     """
     # KL decomposition
     eigv, klmodes = calc_kl_modes_coverage(
