@@ -7,10 +7,12 @@ import os
 import sys
 import importlib
 import logging
-logger = logging.getLogger(__name__)
 
 # third party imports
 import numpy as np
+
+
+logger = logging.getLogger(__name__)
 
 
 # template parent class
@@ -39,14 +41,12 @@ class InverseMethod(object):
         self.inputs_dafi = inputs_dafi
         self.time = 0
 
-
     def __str__(self):
         str_info = f'DAFI inverse method: \n    {self.name}'
         return str_info
 
-
     def analysis(self, iteration, state_forecast, state_in_obsspace, obs,
-            obs_error, obs_vec):
+                 obs_error, obs_vec):
         """ Correct the forecast ensemble states to analysis state.
 
         This is the data assimilation step.
@@ -110,7 +110,7 @@ class EnKF(InverseMethod):
         self.name = 'Ensemble Kalman Filter (EnKF)'
 
     def analysis(self, iteration, state_forecast, state_in_obsspace, obs,
-            obs_error, obs_vec):
+                 obs_error, obs_vec):
         """ Correct the forecast ensemble states using EnKF.
 
         See :py:meth:`InverseMethod.analysis` for I/O details.
@@ -173,7 +173,7 @@ class EnRML(InverseMethod):
         inputs_dafi['perturb_obs_option'] = 'time'
 
     def analysis(self, iteration, state_forecast, state_in_obsspace, obs,
-            obs_error, obs_vec):
+                 obs_error, obs_vec):
         """ Correct the forecast ensemble states using EnRML.
 
         See :py:meth:`InverseMethod.analysis` for I/O details.
@@ -203,7 +203,7 @@ class EnRML(InverseMethod):
         diff = obs - state_in_obsspace
         dx = np.dot(gauss_newton_matrix, diff) + penalty
         state_analysis = self.beta * self.state_prior + \
-                         (1.0 - self.beta) * x + self.beta * dx
+            (1.0 - self.beta) * x + self.beta * dx
 
         # debug
         if self._debug:
@@ -250,9 +250,8 @@ class EnKF_MDA(InverseMethod):
         inputs_dafi['convergence_option'] = 'max'
         inputs_dafi['max_iterations'] = self.alpha
 
-
     def analysis(self, iteration, state_forecast, state_in_obsspace, obs,
-            obs_error, obs_vec):
+                 obs_error, obs_vec):
         """ Correct the forecast ensemble states using EnKF-MDA.
 
         See :py:meth:`InverseMethod.analysis` for I/O details.
@@ -265,7 +264,7 @@ class EnKF_MDA(InverseMethod):
         pht = coeff * np.dot(xp, hxp.T)
         hpht = coeff * hxp.dot(hxp.T)
         hpht_ar = hpht + self.alpha * obs_error
-        conn =  _check_condition_number(hpht_ar, '(HPHT + aR)')
+        conn = _check_condition_number(hpht_ar, '(HPHT + aR)')
         inv = np.linalg.inv(hpht_ar)
         kalman_gain_matrix = pht.dot(inv)
 
@@ -313,7 +312,7 @@ class REnKF(InverseMethod):
         self.penalties = penalties(self)
 
     def analysis(self, iteration, state_forecast, state_in_obsspace, obs,
-            obs_error, obs_vec):
+                 obs_error, obs_vec):
         """ Correct the forecast ensemble states using REnKF.
 
         See :py:meth:`InverseMethod.analysis` for I/O details.
@@ -325,7 +324,7 @@ class REnKF(InverseMethod):
         pht = coeff * np.dot(xp, hxp.T)
         hpht = coeff * hxp.dot(hxp.T)
         hpht_R = hpht + obs_error
-        conn =  _check_condition_number(hpht_R, '(HPHT + R)')
+        conn = _check_condition_number(hpht_R, '(HPHT + R)')
         inv = np.linalg.inv(hpht_R)
         kalman_gain_matrix = pht.dot(inv)
 
@@ -362,7 +361,7 @@ class REnKF(InverseMethod):
                 'Hxp': hxp, 'xp': xp, 'lamda': lamda,
                 'dx1': dx1, 'dx2': dx2, 'k2': k2_gain_matrix,
                 'penalty': penalty_mat,
-                }
+            }
             self._save_debug(debug_dict, iteration)
         return state_analysis
 

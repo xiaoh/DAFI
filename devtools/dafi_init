@@ -1,9 +1,0 @@
-#!/usr/bin/env bash
-# Copyright 2018 Virginia Polytechnic Institute and State University.
-
-DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null && pwd )"
-
-export PYTHONPATH="$DIR:$PYTHONPATH"
-
-export PATH="$DIR:$PATH"
-export PATH="$DIR/bin:$PATH"

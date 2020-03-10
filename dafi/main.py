@@ -109,7 +109,7 @@ def run(model_file, inverse_method, nsamples, ntime=None,
         'save_dir': save_dir,
         'rand_seed': rand_seed,
         'verbosity': verbosity,
-        }
+    }
 
     # configure logger
     if verbosity == 'debug':
@@ -141,8 +141,8 @@ def run(model_file, inverse_method, nsamples, ntime=None,
 
     # log
     log_message = "Solving the inverse problem" + \
-              f"\nPhysics Model:  {model.name}" + \
-              f"\nInverse Method: {inverse.name}"
+        f"\nPhysics Model:  {model.name}" + \
+        f"\nInverse Method: {inverse.name}"
     logger.log(_log_level(0), log_message)
 
     # solve
@@ -225,7 +225,7 @@ def _solve(inputs_dafi, inverse, model):
                            'Hx': state_in_obsspace,
                            'xa': state_analysis,
                            'xf': state_forecast,
-                          }
+                           }
                 for key, val in results.items():
                     dir = os.path.join(tdir, key)
                     _create_dir(dir)
@@ -253,7 +253,7 @@ def _solve(inputs_dafi, inverse, model):
             convergence = {'misfit': misfit_list,
                            'min_discrepancy': noise_list,
                            'residual': residual_list,
-                          }
+                           }
             for key, val in convergence.items():
                 dir = os.path.join(tdir, key)
                 _create_dir(dir)
@@ -271,7 +271,7 @@ def _solve(inputs_dafi, inverse, model):
         # map analysis state to observation space and save
         if inputs_dafi['analysis_to_obs']:
             log_message = "\n  Mapping final analysis states " + \
-                  "to observation space."
+                "to observation space."
             logger.log(_log_level(2), log_message)
             state_in_obsspace = model.state_to_observation(state_analysis)
             if inputs_dafi['save_level'] in {'iter', 'debug'}:
@@ -286,7 +286,7 @@ def _solve(inputs_dafi, inverse, model):
                        'R': obs_error,
                        'xa': state_analysis,
                        'xf': state_prior
-                      }
+                       }
             if inputs_dafi['analysis_to_obs']:
                 results['Hxa'] = state_in_obsspace
             for key, val in results.items():

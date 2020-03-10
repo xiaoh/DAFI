@@ -69,8 +69,8 @@ def _get_code_version():
                    f'cd {cwd}; '
     success = False
     try:
-        subprocess.check_call(bash_command, stderr=subprocess.DEVNULL,
-            shell=True)
+        subprocess.check_call(
+            bash_command, stderr=subprocess.DEVNULL, shell=True)
         sucess = True
     except subprocess.CalledProcessError:
         # not a git directory
@@ -90,7 +90,7 @@ def _read_input(input_file):
     physics model input. Refer to the ``dafi.run`` method for details.
     """
     with open(input_file, 'r') as f:
-       input_dict = yaml.load(f, yaml.SafeLoader)
+        input_dict = yaml.load(f, yaml.SafeLoader)
     # dafi inputs
     inputs_dafi = input_dict['dafi']
     inputs_dafi['save_level'] = inputs_dafi.get('save_level', 'time')

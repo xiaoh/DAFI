@@ -20,7 +20,7 @@ from scipy import interpolate
 
 # KL decomposition
 def calc_kl_modes(cov, nmodes=None, weight_field=None, eps=1e-8,
-        normalize=True):
+                  normalize=True):
     """ Calculate the first N Karhunen-Loève modes for a covariance
     field.
 
@@ -80,7 +80,7 @@ def calc_kl_modes(cov, nmodes=None, weight_field=None, eps=1e-8,
 
     # normalized KL modes
     weight_diag = np.diag(np.sqrt(weight_field))
-    kl_modes = np.dot(np.linalg.inv(weight_diag), eig_vecs) # normalized
+    kl_modes = np.dot(np.linalg.inv(weight_diag), eig_vecs)  # normalized
 
     # check if negative eigenvalues
     for imode in np.arange(nmodes):
@@ -92,8 +92,8 @@ def calc_kl_modes(cov, nmodes=None, weight_field=None, eps=1e-8,
             kl_modes[:, imode] *= 0.
     if neg_eigv:
         warn_message = 'Some modes have negative eigenvalues. ' + \
-        'The number of KL modes might be too large. ' + \
-        "Alternatively, use a larger value for 'eps'."
+            'The number of KL modes might be too large. ' + \
+            "Alternatively, use a larger value for 'eps'."
 
     # weight by appropriate variance
     if not normalize:
@@ -455,8 +455,8 @@ def interpolate_field_rbf(data, coords, kernel, length_scale):
     for icoord in range(ncoord):
         args1.append(data[:, icoord])
         args2.append(coords[:, icoord])
-    interp_func = interpolate.Rbf(*args1, function=kernel,
-        epsilon=length_scale)
+    interp_func = interpolate.Rbf(
+        *args1, function=kernel, epsilon=length_scale)
     return interp_func(*args2)
 
 
@@ -542,7 +542,7 @@ def sparse_cholesky(cov):
     n = cov.shape[0]
     posd = (LU.perm_r == np.arange(n)).all() and (LU.U.diagonal() > 0).all()
     if not posd:
-      raise ValueError('The matrix is not positive definite')
+        raise ValueError('The matrix is not positive definite')
 
     return LU.L.dot(sparse.diags(LU.U.diagonal()**0.5))
 

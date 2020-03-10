@@ -98,7 +98,6 @@ def check_mat(mat, type='cov', tol=1e-08):
         """ """
         return np.allclose(mat.diagonal(), 1.0, rtol=0.0, atol=tol)
 
-
     def check_corr_offdiag(mat, atol, rtol=0.0):
         tmp = np.abs(mat)
         tmp = tmp[tmp > 1.0]
@@ -108,13 +107,11 @@ def check_mat(mat, type='cov', tol=1e-08):
             tmp = 1.0
         return np.isclose(tmp, 1.0, atol)
 
-
     def check_symmetric(mat, rtol, atol=0.0):
         """ """
         mat_2 = mat.T
         tmp = np.abs(mat - mat_2) - rtol * np.abs(mat_2)
         return (tmp.max() - atol <= 0)
-
 
     def check_positive_definite(mat, tol=1e-05, eps=1e-8):
         """ Checks if a symmetric matrix is positive-definite.
@@ -324,7 +321,7 @@ def kernel_input_file(filename, Type='corr'):
 
 
 def kernel_mixed_periodic_sqrexp(coords, length_scales, factor=6.0,
-        period=None):
+                                 period=None):
     """ Create a correlation matrix using the square exponential
     function in some directions and the periodic kernel in others.
 

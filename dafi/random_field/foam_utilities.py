@@ -114,7 +114,7 @@ def get_cell_coordinates(foam_case='.', keep_file=False):
         Cell center coordinates (x, y, z).
         *dtype=float*, *ndim=2*, *shape=(ncells, 3)*
     """
-    timedir='0'
+    timedir = '0'
     del0 = _check0(foam_case)
     delMesh = _checkMesh(foam_case)
     bash_command = "simpleFoam -postProcess -func writeCellCentres " + \
@@ -154,7 +154,7 @@ def get_cell_volumes(foam_case='.', keep_file=False):
         Cell volumes.
         *dtype=float*, *ndim=1*, *shape=(ncells)*
     """
-    timedir='0'
+    timedir = '0'
     del0 = _check0(foam_case)
     delMesh = _checkMesh(foam_case)
     bash_command = "simpleFoam -postProcess -func writeCellVolumes " + \
@@ -203,7 +203,7 @@ def read_field(file, ndim, group='internalField'):
     decimal = r"([\.][\d]*)"
     exponential = r"([Ee][+-]?[\d]+)"
     floatn = f"{whole_number}{{1}}{decimal}?{exponential}?"
-    if ndim==1:
+    if ndim == 1:
         data_structure = f"({floatn}\\n)+"
     else:
         data_structure = r'(\(' + f"({floatn}" + r"(\ ))" + \
@@ -296,6 +296,7 @@ def read_field_file(file):
         content = f.read()
     info = {}
     info['file'] = file
+
     # read logo
     def _read_logo(pat):
         pattern = pat + r":\s+\S+"
@@ -347,21 +348,21 @@ def read_field_file(file):
         # name
         pattern = r'[\w\s\n]+' + r'\{'
         name = re.compile(pattern).search(bc).group()
-        name = name.replace('{','').strip()
+        name = name.replace('{', '').strip()
         ibc['name'] = name
         # type
         pattern = r'type\s+\w+;'
         type = re.compile(pattern).search(bc).group()
-        type = type.split('type')[1].replace(';','').strip()
+        type = type.split('type')[1].replace(';', '').strip()
         ibc['type'] = type
         # value
         if 'value' in bc:
             value = {}
             v = bc.split('value')[1]
-            if v.split()[0]=='uniform':
+            if v.split()[0] == 'uniform':
                 value['uniform'] = True
                 v = v.split('uniform')[1]
-                value['data'] = v.replace('}','').replace(';','').strip()
+                value['data'] = v.replace('}', '').replace(';', '').strip()
             else:
                 value['uniform'] = False
                 value['data'] = read_field(
@@ -376,7 +377,8 @@ def read_field_file(file):
 
 # write fields
 def write_field_file(name, foam_class, dimensions, internal_field,
-        boundaries, foam_version, website, location=None, file=None):
+                     boundaries, foam_version, website, location=None,
+                     file=None):
     """ Write an OpenFOAM field file.
 
     Parameters
@@ -419,7 +421,7 @@ def write_field_file(name, foam_class, dimensions, internal_field,
     **internal_field**
         The ``internal_field`` dictionary must have the following
         entries:
-        
+
             * **uniform** - *bool*
                 Whether the internal field has uniform or nonuniform
                 value.
@@ -447,7 +449,7 @@ def write_field_file(name, foam_class, dimensions, internal_field,
             return f'\n| {str1:<26}| {str2:<48}|'
 
         header_start = '/*' + '-'*32 + '*- C++ -*' + '-'*34 + '*\\'
-        header_end = '\n\\*' +'-'*75 + '*/'
+        header_end = '\n\\*' + '-'*75 + '*/'
         logo = ['=========',
                 r'\\      /  F ield',
                 r' \\    /   O peration',
@@ -462,8 +464,8 @@ def write_field_file(name, foam_class, dimensions, internal_field,
                 ]
         # create header
         header = header_start
-        for l,i in zip(logo, info):
-            header += header_line(l,i)
+        for l, i in zip(logo, info):
+            header += header_line(l, i)
         header += header_end
         return header
 
@@ -567,7 +569,7 @@ def write_field_file(name, foam_class, dimensions, internal_field,
 
 
 def write(version, fieldname, internal_field, boundaries, location=None,
-        file=None):
+          file=None):
     """ Write an OpenFOAM field file for one of the pre-specified fields.
 
     The implemented fields are: 'p', 'k', 'epsilon', 'omega', 'nut',
@@ -592,7 +594,7 @@ def write(version, fieldname, internal_field, boundaries, location=None,
     def field_info(fieldname):
         def get_foam_class(fieldname):
             scalarlist = ['p', 'k', 'epsilon', 'omega', 'nut', 'Cx', 'Cy',
-                'Cz', 'V']
+                          'Cz', 'V']
             if fieldname in scalarlist:
                 foam_class = 'scalar'
             elif fieldname in ['U', 'C']:
@@ -637,10 +639,10 @@ def write(version, fieldname, internal_field, boundaries, location=None,
     def version_info(version):
         # string ('7' or '1912')
         website = 'www.openfoam.'
-        if len(version)==1:
+        if len(version) == 1:
             version += '.x'
             website += 'org'
-        elif len(version)==4:
+        elif len(version) == 4:
             version = 'v' + version
             website += 'com'
         foam = {'version': version,
