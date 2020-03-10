@@ -1,9 +1,9 @@
 
 dafi:
-    model_file: ../_dynamic_models/lorenz.py
+    model_file: lorenz.py
     inverse_method: EnKF
     nsamples: 100
-    t_end: 10.0
+    ntime: 100.0
 
 inverse:
 

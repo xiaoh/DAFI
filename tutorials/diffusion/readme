@@ -1,0 +1,1 @@
+the diffusion test case runs perfectly as is. You need to run the case to populate results (obviously) and then just run the plot file. Running the plot file will populate all the necessary plots for the DAFI paper *for one filter case*. Switching the filter is required for additional cases. 

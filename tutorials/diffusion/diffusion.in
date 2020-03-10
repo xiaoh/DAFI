@@ -1,18 +1,21 @@
 
 # set how many modes to be used
-nmodes 3
+nmodes: 15
 
 # prior diffusivity
-mu_init 0.8
+mu_init: 0.8
 
 # constant sigma
-sigma 5
+sigma: 5
+length_scale:  0.02
 
 # relative and absolute standard deviation for coefficient of KL expansion
-x_rel_std  0.1
-x_abs_std 0.8
-std_coef 2
+x_rel_std:  0.1
+x_abs_std: 0.8
+std_coef: 2
 
 # relative and absolute standard deviation for observation
-obs_rel_std      0.1
-obs_abs_std	 0.0001
+obs_rel_std: 0.1
+obs_abs_std: 0.0001
+
+calculate_kl_flag: 1

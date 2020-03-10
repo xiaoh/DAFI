@@ -12,17 +12,12 @@ import matplotlib.pyplot as plt
 import yaml
 
 # local import
-# lorenz model imported later with importlib
+from lorenz import lorenz #TODO: import lorenz model with importlib
 
 
 input_file = 'dafi.in'
 with open(input_file, 'r') as f:
-   input_dict = yaml.load(f, yaml.SafeLoader)
-dyn_model = input_dict['dafi']['dyn_model']
-spec = importlib.util.spec_from_file_location("dyn_model", dyn_model)
-dyn_model = importlib.util.module_from_spec(spec)
-spec.loader.exec_module(dyn_model)
-lorenz = getattr(dyn_model, 'lorenz')
+   input_dafi = yaml.load(f, yaml.SafeLoader)
 
 # what to plot
 plot_truth = True
@@ -57,8 +52,9 @@ da_time = obs[:, 0]
 
 # get initial states (Xi)
 if plot_samps or plot_sampmean or plot_baseline:
-    X0 = np.loadtxt(da_dir + os.sep + 'X_0')
-    X0m = np.loadtxt(da_dir + os.sep + 'X_0_mean')
+    X0 = np.loadtxt(da_dir + os.sep + '/xf/xf_0')
+    # X0m = np.loadtxt(da_dir + os.sep + 'X_0_mean')
+    X0m = np.array([-8.5, -7, 27.0, 28.0]) #TODO
     nsamples = X0.shape[1]
 
 if plot_samps or plot_sampmean:
@@ -66,11 +62,11 @@ if plot_samps or plot_sampmean:
 
     def read_dasteps(name, nstep=ndastep):
         prefix = da_dir + os.sep + name + os.sep + name
-        filenames = [prefix + '_' + str(istep+1) for istep in range(nstep)]
+        filenames = [prefix + '_' + str(istep) for istep in range(nstep)]
         return np.stack([np.loadtxt(f) for f in filenames])
 
-    Xa = read_dasteps('Xa')
-    Xf = read_dasteps('Xf')
+    Xa = read_dasteps('xa')
+    Xf = read_dasteps('xf')
     Xam = np.mean(Xa, axis=2)
     Xfm = np.mean(Xf, axis=2)
     t_matrix = np.tile(da_time, (nsamples, 1)).T
@@ -78,7 +74,7 @@ if plot_samps or plot_sampmean:
     # get in-between values for X
 
     prefix = lorenz_dir + os.sep + 'states' + os.sep + 'time'
-    filenames = [prefix + '_' + str(istep+1) for istep in range(ndastep)]
+    filenames = [prefix + '_' + str(istep+1) for istep in range(ndastep-1)]
     time_all = np.concatenate([np.loadtxt(f) for f in filenames])
     time_all = np.concatenate([time_all, [da_time[-1]]])
 
@@ -86,7 +82,7 @@ if plot_samps or plot_sampmean:
     Xall = []
     for isamp in range(nsamples):
         post = '_samp_{}'.format(isamp)
-        filenames = [prefix + str(istep+1) + post for istep in range(ndastep)]
+        filenames = [prefix + str(istep+1) + post for istep in range(ndastep-1)]
         Xall += [np.concatenate([np.loadtxt(f) for f in filenames], axis=0)]
     Xall = np.stack(Xall, axis=2)
     Xall = np.concatenate([Xall, Xa[-1:, :3, :]], axis=0)

@@ -1,0 +1,18 @@
+text.usetex: True
+image.origin: lower
+image.interpolation: nearest
+figure.autolayout: True
+axes.grid: False
+image.cmap: magma
+figure.figsize: 3.0, 2.0
+axes.labelsize: 10
+axes.titlesize: 12
+font.size: 10
+legend.fontsize: 10
+xtick.labelsize: 8
+ytick.labelsize: 8
+font.family: serif
+mathtext.fontset: stix
+savefig.dpi: 500
+lines.linewidth : 2
+lines.markersize : 3
