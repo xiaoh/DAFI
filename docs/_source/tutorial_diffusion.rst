@@ -204,7 +204,7 @@ Running the code
 As in the lorenz tutorial, to run the code first we need source ``init_da`` file if it has not been done yet. Then we can run the code by following the instruction below.
 
 Step 1 : Write main input file
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 Specify self-defined parameters in the 'dafi.in' file. The 'dafi.in' file is provided in the diffusion tutorial directory and shown below.
 
@@ -214,7 +214,7 @@ Specify self-defined parameters in the 'dafi.in' file. The 'dafi.in' file is pro
 In this file, we need to specify the number of samples (nsamples) and the maximum data assimilation iteration(max_da_iteration). This case is stationary case, and thus the end time and the data assimilation interval is 1.
 
 Step 2 : Write forward model input file
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 Specify self-defined parameters in the 'diffusion.in' file. The 'diffusion.in' file is provided in the diffusion tutorial directory and shown below.
 
@@ -224,7 +224,7 @@ Specify self-defined parameters in the 'diffusion.in' file. The 'diffusion.in' f
 In this file, we mainly need to specify the number of modes (nmodes), the synthetic true value for each mode coefficent (true_omega) and the relative standard deviation for observation (obs_rel_std)
 
 Step 3 : Execute
-~~~~~~~~~~~~~~~~
+^^^^^^^^^^^^^^^^
 
 To execute the data assimilation for diffusion system, move to the directory of '$source'
 
@@ -234,7 +234,7 @@ Then move to the diffusion tutorial directory($tutorials/diffusion), and type co
 or the user can also simply type './run.sh' to run the tutorial. The process information will be saved in 'log.enkf' file at diffusion tutorial directory.
 
 Step 4 : Postprocessing
-~~~~~~~~~~~~~~~~~~~~~~~
+^^^^^^^^^^^^^^^^^^^^^^^
 
 'diffusion_plot.py' (located in '$tutorials/diffusion') is the postprocessing file to plot the inferred and observed field.
 

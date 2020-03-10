@@ -5,13 +5,13 @@
 #   * all Python files pass pep8, and
 #   * the unit tests pass.
 # Copy to: .git/hooks
-#
 
 # documentation
+# adapted from gist.github.com/magopian/4086323
 echo "Checking documentation build..."
-res=$(DJANGO_SETTINGS_MODULE=###PROJECT###.settings bin/sphinx-build -q -E -w errors.log -b html -d build/doctrees source build/html 2> /dev/null)
+res=$(DJANGO_SETTINGS_MODULE=dafi.settings sphinx-build -q -E -w errors.log -b html -d docs/_build/doctrees docs/_source docs/_build/html 2> /dev/null)
 if test -s errors.log; then  # if errors.log exists and isn't empty, then there's some errors
-    echo "[error]  Blocking commit, found errors while building documentation:"
+    echo "[error]  Errors while building documentation:"
     cat errors.log
     rm -f errors.log
     exit 1
@@ -19,7 +19,6 @@ else
     echo "[success]  Documentation built without error."
 fi
 rm -f errors.log
-
 
 # pep8
 files=`git diff --name-only --cached --diff-filter=AMRd -- *.py`
@@ -32,11 +31,9 @@ do
     else
         echo "[error] PEP8 did not pass."
         echo "        File: $file"
-        #echo "$autopep" | colordiff
         exit 1
     fi
 done
-
 
 # unittest
 `python -m unittest discover -p "test_*.py"`

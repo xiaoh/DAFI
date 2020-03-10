@@ -1,5 +1,6 @@
 # Copyright 2020 Virginia Polytechnic Institute and State University.
-""" Dynamic model for solving the uncertainty quantification model system. """
+""" Dynamic model for solving the model used for uncertainty
+quantification. """
 
 # standard library imports
 import os

@@ -19,3 +19,6 @@ results*
 *.log
 .dafi_ver
 .time
+
+# documnentation
+_build
