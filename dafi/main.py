@@ -24,6 +24,8 @@ def run(model_file, inverse_method, nsamples, ntime=None,
         inputs_inverse={}, inputs_model={}):
     """ Run DAFI.
 
+    Accesible through ``dafi.run()``.
+
     Parameters
     ----------
     model_file: str
@@ -33,51 +35,52 @@ def run(model_file, inverse_method, nsamples, ntime=None,
     nsamples : int
         Number of samples in ensemble.
     ntime : int
-        Number of data assimilation times. For stationary use **1** or
-        **None**. Default **None**.
+        Number of data assimilation times. For stationary use *'1'* or
+        *'None'*. Default *'None'*.
     perturb_obs_option: str
       Option on when to perturb observations:
-      **iter** to perturb at each iteration (inner loop), (outer loop),
-      **time** to perturb only once each data assimilaton time
-      **None** to not perturb observations. Default **iter**.
+      *'iter'* to perturb at each iteration (inner loop),
+      *'time'* to perturb only once each data assimilaton time
+      (outer loop),
+      *'None'* to not perturb observations. Default *'iter'*.
     obs_err_multiplier: float
       Factor by which to multiply the observation error matrix.
-      This is done by some authors in the literature. Default **1.0**.
+      This is done by some authors in the literature. Default *'1.0'*.
     analysis_to_obs: bool
-      Map analysis state to observation space. Default **False**.
+      Map analysis state to observation space. Default *'False'*.
     convergence_option: str
-      Convergence criteria to use: **discrepancy** to use the
-      discrepancy principle,  **residual** to use the iterative
-      residual, **max** to reach the maximum iterations. Default **max**.
+      Convergence criteria to use: *'discrepancy'* to use the
+      discrepancy principle,  *'residual'* to use the iterative
+      residual, *'max'* to reach the maximum iterations. Default *'max'*.
     max_iterations: int
-      Maximum number of iterations at a given time-step. Default **1**.
+      Maximum number of iterations at a given time-step. Default *'1'*.
     convergence_residual: float
-      Residual value for convergence if **reach_max** is **False** and
-      **convergence_option** is **residual**. Default **None**.
+      Residual value for convergence if *reach_max* is *'False'* and
+      *convergence_option* is *'residual'*. Default *'None'*.
     convergence_factor: float
       Factor used in the discrepancy principle convergence option.
-      Default **1.0**.
+      Default *'1.0'*.
     save_level : str
-        Level of results to save: **None** to not save results,
-        **time** to save results at each data assimilation time step,
-        **iter** to save results at each iteration,
-        **debug** to save additional intermediate quantities.
-        Default **None**.
+        Level of results to save: *'None'* to not save results,
+        *'time'* to save results at each data assimilation time step,
+        *'iter'* to save results at each iteration,
+        *'debug'* to save additional intermediate quantities.
+        Default *'None'*.
     save_dir: str
-      Folder where to save results. Default **./results_dafi**.
+      Folder where to save results. Default *'./results_dafi'*.
     rand_seed : float
         Seed for numpy.random. If None random seed not set.
-        Default **None**.
+        Default *'None'*.
     verbosity: int
         Logging verbosity level, between -1 and 9 (currently -1-3 used).
-        For no logging use **-1**. For debug-level logging use
-        **'debug'**. Default **0**.
+        For no logging use *'-1'*. For debug-level logging use
+        *'debug'*. Default *'0'*.
     inputs_inverse : dict
         Inverse method specific inputs.
-        Default empty dictionary **{}**.
+        Default empty dictionary *'{}'*.
     inputs_model : dict
         Physics model specific inputs.
-        Default empty dictionary **{}**.
+        Default empty dictionary *'{}'*.
 
     Returns
     -------

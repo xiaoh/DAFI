@@ -18,14 +18,14 @@ def generate_cov(kernel, stddev, sp_tol=1e-8, **kwargs):
     ----------
     kernel : function
         Function that returns a correlation matrix. All additional
-        arguments in **kwargs** are passed to this function.
+        arguments are passed to this function.
     stddev : ndarray
         Standard deviation of each state. Alternatively, provide a float
         for a constant standard deviation.
         *dtype=float*, *ndim=1*, *shape=(nstate)*
     sp_tol : float
         Tolerance for sparse matrix. Any entry with correlation less
-        than **sp_tol** will be set to zero.
+        than ``sp_tol`` will be set to zero.
 
     Returns
     -------
@@ -53,7 +53,7 @@ def array_to_sparse(mat, tol):
     mat : ndarray
         Numpy array.
     tol : float
-        Tolerance for sparse matrix. Any entry less than **tol** will
+        Tolerance for sparse matrix. Any entry less than ``tol`` will
         be set to zero.
 
     Returns
@@ -217,13 +217,16 @@ def source_cov_to_output_corr(cov, weights, mat):
     correlation.
 
     The input and output field are related by a PDE described by the
-    matrix **mat**.
+    matrix ``mat``.
     This is used to create PDE-informed covariance matrices. See:
 
-    Wu, Jin-Long, et al. “Physics-Informed Covariance Kernel for
-    Model-Form Uncertainty Quantification with Application to Turbulent
-    Flows.” Computers & Fluids, vol. 193, Oct. 2019, p. 104292. DOI.org
-    (Crossref), doi:10.1016/j.compfluid.2019.104292.
+        Wu, Jin-Long, et al. *“Physics-Informed Covariance Kernel for
+        Model-Form Uncertainty Quantification with Application to
+        Turbulent Flows.”* Computers & Fluids, vol. 193, Oct. 2019,
+        p. 104292. `doi:10.1016/j.compfluid.2019.104292`_.
+
+    .. _doi:10.1016/j.compfluid.2019.104292:
+       doi:10.1016/j.compfluid.2019.104292
 
     Parameters
     ----------
@@ -336,17 +339,17 @@ def kernel_mixed_periodic_sqrexp(coords, length_scales, factor=6.0,
         Length scale for each physical dimensions. List length is ndims.
         Each entry is either a one dimensional ndarray of length nstate
         (length scale field) or a float (constant length scale).
-        For periodic directions the **factor** argument is used (see
-        **factor**).
+        For periodic directions the ``factor`` argument is used (see
+        ``factor``).
     factor : float
         Factor used in the physical interpretation of the periodic
         length scale. The provided lengthscale (:math:`l`) is modified as
-        :math:`l = l * factor / p` where :math:`p` is the periodicity. A factor
-        of about 6 results in similar physical interpretation of the
-        provided length scale as for the non-periodic directions.
+        :math:`l = l * factor / p` where :math:`p` is the periodicity.
+        A factor of about 6 results in similar physical interpretation
+        of the provided length scale as for the non-periodic directions.
     period : list
         List of periodicity for each physical dimension (length ndims).
-        Each entry is either a float (periodicity) or **None** for
+        Each entry is either a float (periodicity) or *'None'* for
         non-periodic directions.
 
     Returns

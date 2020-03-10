@@ -1,8 +1,11 @@
 # Copyright 2020 Virginia Polytechnic Institute and State University.
 """ Random fields representation and manipulation.
 
-These functions can be called directly from **dafi.random_field**, e.g.
-**dafi.random_field.calc_kl_modes()**.
+These functions can be called directly from ``dafi.random_field``, e.g.
+
+.. code-block:: python
+
+   >>> dafi.random_field.calc_kl_modes(*args)
 """
 
 # standard library imports
@@ -410,7 +413,7 @@ def projection(field_1, field_2, weight_field):
     Returns
     -------
     projected_field : ndarray
-        Projected field. 
+        Projected field.
         *dtype=float*, *ndim=1*, *shape=(ncells)*
     """
     magnitude = projection_magnitude(field_1, field_2, weight_field)
@@ -435,10 +438,10 @@ def interpolate_field_rbf(data, coords, kernel, length_scale):
         The RBF will be evaluated at these points.
         *dtype=float*, *ndim=2*, *shape=(ncells, M-1)*
     kernel : str
-        Kernel (function) of the RBF. See **function** input of
-        **scipy.interpolate.Rbf** for list of options.
+        Kernel (function) of the RBF. See *'function'* input of
+        `scipy.interpolate.Rbf`_ for list of options.
     length_scale : float
-        Length scale parameter (epsilon in **scipy.interpolate.Rbf**)
+        Length scale parameter (epsilon in `scipy.interpolate.Rbf`_)
         in the RBF kernel.
 
     Returns
@@ -462,8 +465,8 @@ def gp_samples_cholesky(cov, nsamples, mean=None, eps=1e-8):
     """ Generate samples of a Gaussian Process using Cholesky
     decomposition.
 
-    Note
-    ----
+    Error
+    -----
     NOT IMPLEMENTED: need to figure out how to account for weights.
 
     Parameters
@@ -510,10 +513,9 @@ def gp_samples_cholesky(cov, nsamples, mean=None, eps=1e-8):
 def sparse_cholesky(cov):
     """ Compute the Cholesky decomposition for a sparse (scipy) matrix.
 
-    Adapted from ``https://gist.github.com/omitakahiro``:
-    SparseCholesky.md.
+    Adapted from `gist.github.com/omitakahiro`_.
 
-    Note
+    Error
     ----
     NOT IMPLEMENTED: need to figure out how to account for weights.
 
@@ -556,7 +558,7 @@ def gp_samples_kl(cov, nsamples, nmodes=None, mean=None, eps=1e-8):
     nsamples : int
         Number of samples to generate.
     nmodes : int
-        Number of modes to use when generating samples. **None** to use
+        Number of modes to use when generating samples. *'None'* to use
         all modes.
     mean : ndarray
         Mean vector. *dtype=float*, *ndim=1*, *shape=(nstate)*

@@ -1,26 +1,30 @@
 #!/usr/bin/env python3
 # Copyright 2020 Virginia Polytechnic Institute and State University.
 
+# NOTE: Manually make changes in docs/_source/safi_exec.rst
 """ DAFI main executable.
 
 Parses the input file and runs ``dafi.run()``.
 Saves the DAFI version (Git commit hash) and the run time to hidden
-files (``.dafi_ver`` and ``.time``, respectively).
+files (*'.dafi_ver'* and *'.time'*, respectively).
 
-Example
--------
+**Example**
+
+.. code-block:: python
+
     >>> dafi <input_file>
 
-Note
-----
-The input file is written using yaml syntax.
-The input file contains the following three dictionaries:
-    * **dafi** (required) - see ``dafi.run()`` for inputs.
+**Input File**
+    The input file is written using yaml syntax.
+    The input file contains the following three dictionaries:
+
+    * **dafi** (required) - see :py:func:`dafi.main.run` for inputs.
     * **inverse** - see inputs in chosen inverse method in
-        ``dafi.inverse``. This corresponds to the ``inputs_inverse``
-        input to ``dafi.run()``.
+      :py:mod:`dafi.inverse`. This corresponds to the *'inputs_inverse'*
+      input to :py:func:`dafi.main.run`.
     * **model** - inputs as required by user-provided physics model.
-        This corresponds to the ``inputs_model`` input to ``dafi.run()``.
+      This corresponds to the *'inputs_model'* input to
+      :py:func:`dafi.main.run`.
 """
 
 # standard library imports

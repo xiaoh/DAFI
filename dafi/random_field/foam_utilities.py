@@ -1,7 +1,7 @@
 # Copyright 2020 Virginia Polytechnic Institute and State University.
 """ OpenFOAM I/O.
 
-These functions are available from **dafi.random_field.foam**.
+These functions are accesible from ``dafi.random_field.foam``.
 """
 
 # standard library imports
@@ -24,7 +24,7 @@ NDIM = {'scalar': 1,
 def get_number_cells(foam_case='.'):
     """ Get the number of cells in an OpenFOAM case.
 
-    Requires OpenFOAM to be sourced, since it calls the **checkMesh**
+    Requires OpenFOAM to be sourced, since it calls the ``checkMesh``
     utility.
 
     Parameters
@@ -57,8 +57,8 @@ def _check0(foam_case):
     Returns
     -------
     dirCreated : bool
-        Whether the 0 directory was created. If it existed already
-        returns **False**.
+        Whether the 0 directory was created. If it exists already
+        returns *'False'*.
     """
     dst = os.path.join(foam_case, '0')
     dirCreated = False
@@ -72,7 +72,7 @@ def _check0(foam_case):
 def _checkMesh(foam_case):
     """ Create OpenFOAM mesh if it does not exist.
 
-    Requires OpenFOAM to be sourced. Calls **blockMesh** utility.
+    Requires OpenFOAM to be sourced. Calls ``blockMesh`` utility.
 
     Parameters
     ----------
@@ -83,7 +83,7 @@ def _checkMesh(foam_case):
     -------
     meshCreated : bool
         Whether the mesh was created. If mesh existed already returns
-        **False**.
+        *`False`*.
     """
     meshdir = os.path.join(foam_case, 'constant', 'polyMesh')
     meshCreated = False
@@ -184,7 +184,7 @@ def read_field(file, ndim, group='internalField'):
     ndim : int
         Field dimension (e.g. 1 for scalar field).
     group : str
-        Name of the group to read: **internalField** or name of specific
+        Name of the group to read: *'internalField'* or name of specific
         boundary.
 
     Returns
@@ -274,7 +274,11 @@ def read_field_file(file):
 
     This includes header information not just the field values.
     The output can be directly used to write the file again, e.g.
-    **content = read_field_file(file); write_field_file(**content)**.
+
+    .. code-block:: python
+
+        >>> content = read_field_file(file)
+        >>> write_field_file(**content).
 
     Parameters
     ----------
@@ -332,7 +336,8 @@ def read_field_file(file):
         internal['value'] = read_field(file, NDIM[info['foam_class']])
     info['internal_field'] = internal
 
-    # boundaries: type and value(optional): value can be uniform/nonuniform scalar/(multi)
+    # boundaries: type and value(optional)
+    #   value can be uniform/nonuniform scalar/(multi)
     boundaries = []
     bcontent = content.split('boundaryField')[1].strip()[1:].strip()
     pattern = r'\w+' + r'[\s\n]*' + r'\{' + r'[\w\s\n\(\);\.\<\>\-+]+' + r'\}'
@@ -399,7 +404,7 @@ def write_field_file(name, foam_class, dimensions, internal_field,
     location : str
         File location (optional).
     file : str
-        File name (path) where to write field. If **None** will write in
+        File name (path) where to write field. If *'None'* will write in
         current directory using the field name as the file name.
 
     Returns
@@ -411,23 +416,27 @@ def write_field_file(name, foam_class, dimensions, internal_field,
 
     Note
     ----
+    **internal_field**
+        The ``internal_field`` dictionary must have the following
+        entries:
+        
+            * **uniform** - *bool*
+                Whether the internal field has uniform or nonuniform
+                value.
+            * **value** - *float* or *ndarray*
+                The uniform or nonuniform values of the internal field.
 
-    The **internal_field** dictionary must have the following entries:
-        * **uniform** - *bool*
-            Whether the internal field has uniform or nonuniform value.
-        * **value** - *float* or *ndarray*
-            The uniform or nonuniform values of the internal field.
+    **boundaries**
+        Each boundary dictionary in the ``boundaries`` list must have
+        the following entries:
 
-    Each boundary dictionary in the **boundaries** list must have the
-    following entries:
-
-        * **name** - *str*
-            Boundary name.
-        * **type** - *str*
-            Boundary type.
-        * **value** - *dict* (optional)
-            Dictionary with same entries as the **internal_field**
-            dictionary.
+            * **name** - *str*
+                Boundary name.
+            * **type** - *str*
+                Boundary type.
+            * **value** - *dict* (optional)
+                Dictionary with same entries as the *'internal_field'*
+                dictionary.
     """
     def _foam_sep():
         return '\n// ' + '* '*37 + '//'
@@ -657,7 +666,8 @@ def write(version, fieldname, internal_field, boundaries, location=None,
 def write_p(version, internal, boundaries, location=None, file=None):
     """ Write a pressure field file.
 
-    See :func:`~dafi.random_field.foam_utilities.write` for more information.
+    See :func:`~dafi.random_field.foam_utilities.write` for more
+    information.
     """
     return write(version, 'p', internal, boundaries, location, file)
 
@@ -665,7 +675,8 @@ def write_p(version, internal, boundaries, location=None, file=None):
 def write_U(version, internal, boundaries, location=None, file=None):
     """ Write a velocity field file.
 
-    See :func:`~dafi.random_field.foam_utilities.write` for more information.
+    See :func:`~dafi.random_field.foam_utilities.write` for more
+    information.
     """
     return write(version, 'U', internal, boundaries, location, file)
 
@@ -673,7 +684,8 @@ def write_U(version, internal, boundaries, location=None, file=None):
 def write_Tau(version, internal, boundaries, location=None, file=None):
     """ Write a Reynolds stress field file.
 
-    See  :func:`~dafi.random_field.foam_utilities.write` for more information.
+    See  :func:`~dafi.random_field.foam_utilities.write` for more
+    information.
     """
     return write(version, 'Tau', internal, boundaries, location, file)
 
@@ -681,7 +693,8 @@ def write_Tau(version, internal, boundaries, location=None, file=None):
 def write_nut(version, internal, boundaries, location=None, file=None):
     """ Write an eddy viscosity field file.
 
-    See  :func:`~dafi.random_field.foam_utilities.write` for more information.
+    See  :func:`~dafi.random_field.foam_utilities.write` for more
+    information.
     """
     return write(version, 'nut', internal, boundaries, location, file)
 
@@ -689,7 +702,8 @@ def write_nut(version, internal, boundaries, location=None, file=None):
 def write_k(version, internal, boundaries, location=None, file=None):
     """ Write a turbulent kinetic energy (TKE) field file.
 
-    See :func:`~dafi.random_field.foam_utilities.write` for more information.
+    See :func:`~dafi.random_field.foam_utilities.write` for more
+    information.
     """
     return write(version, 'k', internal, boundaries, location, file)
 
@@ -697,7 +711,8 @@ def write_k(version, internal, boundaries, location=None, file=None):
 def write_epsilon(version, internal, boundaries, location=None, file=None):
     """ Write a TKE dissipation rate field file.
 
-    See :func:`~dafi.random_field.foam_utilities.write` for more information.
+    See :func:`~dafi.random_field.foam_utilities.write` for more
+    information.
     """
     return write(version, 'epsilon', internal, boundaries, location, file)
 
@@ -705,6 +720,7 @@ def write_epsilon(version, internal, boundaries, location=None, file=None):
 def write_omega(version, internal, boundaries, location=None, file=None):
     """ Write a TKE specific dissipation rate field file.
 
-    See :func:`~dafi.random_field.foam_utilities.write` for more information.
+    See :func:`~dafi.random_field.foam_utilities.write` for more
+    information.
     """
     return write(version, 'omega', internal, boundaries, location, file)

@@ -8,26 +8,27 @@ import numpy as np
 class PhysicsModel(object):
     """ Parent class for physics models.
 
-    Accessible through **dafi.PhysicsModel**.
+    Accessible through ``dafi.PhysicsModel``.
     Use this as a template to write new dynamic models.
     The required attributes and methods are summarized below.
 
-    Attributes
-    ----------
-        * **name** - Name of the forward model for reporting. *str*
-        * **nstate** - Number of states in the state vector. *int*
-        * **nobs** - Number of observations in the observation vector.
-            *int*
-        * **init_state** - Initial mean value of the state vector.
-            *ndarray*, *dtype=float*, *ndim=1*, *shape=(nstate)*
+    **Attributes**
 
-    Methods
-    -------
+    * **name** - Name of the forward model for reporting. *str*
+    * **nstate** - Number of states in the state vector. *int*
+    * **nobs** - Number of observations in the observation vector.
+      *int*
+    * **init_state** - Initial mean value of the state vector.
+      *ndarray*, *dtype=float*, *ndim=1*, *shape=(nstate)*
+
+    **Methods**
+
     See the method's docstring for information on each.
-        * **generate_ensemble**
-        * **forecast_to_time**
-        * **state_to_observation**
-        * **get_obs**
+
+    * **generate_ensemble**
+    * **forecast_to_time**
+    * **state_to_observation**
+    * **get_obs**
     """
 
     def __init__(self, inputs_dafi, inputs):

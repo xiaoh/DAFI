@@ -19,7 +19,7 @@ class InverseMethod(object):
 
     Use this as a template to write new inversion classes.
     To implement a new inverse technique create a child class and
-    override the **analysis** method.
+    override the ``analysis`` method.
     """
 
     def __init__(self, inputs_dafi, inputs):
@@ -96,15 +96,16 @@ class InverseMethod(object):
 class EnKF(InverseMethod):
     """ Implementation of the ensemble Kalman Filter (EnKF).
 
-    The EnKF is updated by: :math:`x_a = x_f + K*(obs - Hx)` where :math:`x_f` is
-    the forecasted state vector (by the forward model), :math:`x_a` is the
-    updated vector after data-assimilation, :math:`K` is the Kalman gain
-    matrix, :math:`obs` is the observation vector, and :math:`Hx` is the forecasted
-    state vector in observation space.
+    The EnKF is updated by: :math:`x_a = x_f + K*(obs - Hx)` where
+    :math:`x_f` is the forecasted state vector (by the forward model),
+    :math:`x_a` is the updated vector after data-assimilation,
+    :math:`K` is the Kalman gain matrix, :math:`obs` is the observation
+    vector, and
+    :math:`Hx` is the forecasted state vector in observation space.
     """
 
     def __init__(self, inputs_dafi, inputs):
-        """ See InverseMethod.__init__ for details. """
+        """ See  :py:meth:`InverseMethod.__init__` for details. """
         super(self.__class__, self).__init__(inputs_dafi, inputs)
         self.name = 'Ensemble Kalman Filter (EnKF)'
 
@@ -112,7 +113,7 @@ class EnKF(InverseMethod):
             obs_error, obs_vec):
         """ Correct the forecast ensemble states using EnKF.
 
-        See InverseMethod.analysis for I/O details.
+        See :py:meth:`InverseMethod.analysis` for I/O details.
         """
         # calculate the Kalman gain matrix
         xp = _mean_subtracted_matrix(state_forecast)
@@ -142,19 +143,22 @@ class EnRML(InverseMethod):
     (EnRML).
 
     The EnRML is updated by: :math:`x_a = x_f + GN*(obs - Hx)+PN`
-    where :math:`x_f` is the forecasted state vector (by the forward model),
-    :math:`x_a` is the updated vector after data-assimilation, :math:`GN` is the
-    Gauss-Newton matrix, :math:`obs` is the observation vector, and :math:`Hx` is
-    the forecasted state vector in observation space, :math:`PN` is Penalty
-    matrix.
+    where :math:`x_f` is the forecasted state vector
+    (by the forward model),
+    :math:`x_a` is the updated vector after data-assimilation,
+    :math:`GN` is the Gauss-Newton matrix,
+    :math:`obs` is the observation vector,
+    :math:`Hx` is the forecasted state vector in observation space, and
+    :math:`PN` is the penalty matrix.
 
-    Required inputs in **inputs** dictionary:
-        * **step_length** - *float*
-            EnRML step length parameter. has value between 0 and 1.
+    Required inputs in ``inputs`` dictionary:
+
+    * **step_length** - *float*
+      EnRML step length parameter. has value between 0 and 1.
     """
 
     def __init__(self, inputs_dafi, inputs):
-        """ See InverseMethod.__init__ for details. """
+        """ See :py:meth:`InverseMethod.__init__` for details. """
         super(self.__class__, self).__init__(inputs_dafi, inputs)
         self.name = 'Ensemble Randomized Maximal Likelihood (EnRML)'
         self.beta = inputs['step_length']
@@ -172,7 +176,7 @@ class EnRML(InverseMethod):
             obs_error, obs_vec):
         """ Correct the forecast ensemble states using EnRML.
 
-        See InverseMethod.analysis for I/O details.
+        See :py:meth:`InverseMethod.analysis` for I/O details.
         """
         # save the prior state
         if iteration == 0:
@@ -215,20 +219,22 @@ class EnKF_MDA(InverseMethod):
     assimilaton (EnKF-MDA).
 
     The EnKF-MDA is updated by:
-    :math:`x_a = x_f + K_{mda}*(obs - Hx - err_{mda})` where :math:`x_f` is the
-    forecasted state vector (by the dynamic model),
-    :math:`x_a` is the updated vector after data-assimilation, :math:`K_{mda}` is the
-    modified Kalman gain matrix, :math:`obs` is the observation vector, and
-    :math:`Hx` is the forwarded state vector in observation space, :math:`err_{mda}`
-    is inflated error.
+    :math:`x_a = x_f + K_{mda}*(obs - Hx - err_{mda})` where
+    :math:`x_f` is the forecasted state vector (by the dynamic model),
+    :math:`x_a` is the updated vector after data-assimilation,
+    :math:`K_{mda}` is the modified Kalman gain matrix,
+    :math:`obs` is the observation vector,
+    :math:`Hx` is the forwarded state vector in observation space, and
+    :math:`err_{mda}` is the inflated error.
 
-    Required inputs in **inputs** dictionary:
-        * **nsteps** - *int*
-            Number of steps used in the multiple data assimilation.
+    Required inputs in ``inputs`` dictionary:
+
+    * **nsteps** - *int*
+      Number of steps used in the multiple data assimilation.
     """
 
     def __init__(self, inputs_dafi, inputs):
-        """ See InverseMethod.__init__ for details. """
+        """ See :py:meth:`InverseMethod.__init__` for details. """
         super(self.__class__, self).__init__(inputs_dafi, inputs)
         self.name = 'Ensemble Kalman Filter-Multi Data Assimilation (EnKF-MDA)'
         self.alpha = inputs['nsteps']
@@ -249,7 +255,7 @@ class EnKF_MDA(InverseMethod):
             obs_error, obs_vec):
         """ Correct the forecast ensemble states using EnKF-MDA.
 
-        See InverseMethod.analysis for I/O details.
+        See :py:meth:`InverseMethod.analysis` for I/O details.
         """
         # calculate the Kalman gain matrix
         x = state_forecast
@@ -285,17 +291,18 @@ class REnKF(InverseMethod):
     """ Implementation of the regularized ensemble Kalman Filter
     (REnKF).
 
-    Required inputs in **inputs** dictionary:
-        * **penalties_python_file** (*string*) -
-          Path to python file that contains function called
-          **penalties** that returns a list of dictionaries.
-          Each dictionary represents one penalty and includes:
-          **lambda** (float), **weight_matrix** (ndarray),
-          **penalty** (function), and **gradient** (function).
+    Required inputs in ``inputs`` dictionary:
+
+    * **penalties_python_file** (*string*) -
+      Path to python file that contains ``penalties`` (*function*) that
+      returns a list of dictionaries.
+      Each dictionary represents one penalty and includes:
+      ``lambda`` (*float*), ``weight_matrix`` (*ndarray*),
+      ``penalty`` (*function*), and ``gradient`` (*function*).
     """
 
     def __init__(self, inputs_dafi, inputs):
-        """ See InverseMethod.__init__ for details. """
+        """ See :py:meth:`InverseMethod.__init__` for details. """
         super(self.__class__, self).__init__(inputs_dafi, inputs)
         self.name = 'Regularized Ensemble Kalman Filter (REnKF)'
         # load penalties
@@ -309,7 +316,7 @@ class REnKF(InverseMethod):
             obs_error, obs_vec):
         """ Correct the forecast ensemble states using REnKF.
 
-        See InverseMethod.analysis for I/O details.
+        See :py:meth:`InverseMethod.analysis` for I/O details.
         """
         # calculate the Kalman gain matrix
         xp = _mean_subtracted_matrix(state_forecast)
