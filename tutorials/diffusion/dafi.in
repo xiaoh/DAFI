@@ -6,7 +6,7 @@ dafi:
     max_iterations: 100
     rand_seed: 1
     verbosity: 2
-    convergence_option: max
+    convergence_option: discrepancy
     convergence_factor: 1.2
     save_level: iter
     save_dir: results

@@ -58,8 +58,7 @@ def calc_kl_modes(cov, nmodes=None, weight_field=None, eps=1e-8,
     nstate = cov.shape[0]
     if nmodes == None:
         nmodes = nstate-1
-    if weight_field == None:
-        weight_field = np.ones(nstate)
+    weight_field = _get_weight_field(weight_field, nstate)
 
     # add small value to diagonal
     cov = cov + sp.eye(cov.shape[0], format='csc')*eps
@@ -70,7 +69,7 @@ def calc_kl_modes(cov, nmodes=None, weight_field=None, eps=1e-8,
     cov_weighted = cov.multiply(weight_mat)
 
     # perform the eig-decomposition
-    eig_vals, eig_vecs = sp.linalg.eigsh(cov_weighted, k=nmodes, which='LA')
+    eig_vals, eig_vecs = sp.linalg.eigsh(cov_weighted, k=nmodes)
 
     # sort the eig-value and eig-vectors in a descending order
     ascending_order = eig_vals.argsort()
@@ -136,8 +135,7 @@ def calc_kl_modes_coverage(cov, coverage, weight_field=None, eps=1e-8):
 
     # default values
     nstate = cov.shape[0]
-    if weight_field == None:
-        weight_field = np.ones(nstate)
+    weight_field = _get_weight_field(weight_field, nstate)
 
     # get all KL modes
     nmodes = nstate - 1
@@ -202,8 +200,7 @@ def kl_coverage(cov, eig_vals, weight_field=None):
 
     # default values
     nstate = cov.shape[0]
-    if weight_field == None:
-        weight_field = np.ones(nstate)
+    weight_field = _get_weight_field(weight_field, nstate)
 
     # calculate coverage
     weight_vec = np.atleast_2d(weight_field)
@@ -275,8 +272,8 @@ def project_kl(field, modes, weight_field=None):
         *dtype=float*, *ndim=1*, *shape=(nmodes)*
     """
     # default values
-    if weight_field == None:
-        weight_field = np.ones(nstate)
+    nstate = len(field)
+    weight_field = _get_weight_field(weight_field, nstate)
 
     nstate, nmode = modes.shape
 
@@ -285,6 +282,17 @@ def project_kl(field, modes, weight_field=None):
         mode = modes[:, imode]
         coeffs.append(projection_magnitude(field, mode, weight_field))
     return np.array(coeffs)
+
+
+def _get_weight_field(weight_field, nstate):
+    """Pre-process provided weight field. """
+    # default value
+    if weight_field is None:
+        weight_field = np.ones(nstate)
+    # constant value
+    if len(np.atleast_1d(np.squeeze(np.array(weight_field)))) == 1:
+        weight_field = np.ones(nstate)*weight_field
+    return weight_field
 
 
 # linear algebra on scalar fields
@@ -303,6 +311,8 @@ def integral(field, weight_field):
     field_integral : float
         The integral of the field over the domain.
     """
+    nstate = len(field)
+    weight_field = _get_weight_field(weight_field, nstate)
     return np.sum(field * weight_field)
 
 

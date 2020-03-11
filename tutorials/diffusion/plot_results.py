@@ -25,8 +25,8 @@ if not os.path.exists('figures/'):
 
 def plot_KLmodes(nmodes):
     """ Plot KL modes. """
-    x_coor = np.loadtxt('x_coor.dat')
-    KLmodes = np.loadtxt('KLmodes.dat')
+    x_coor = np.loadtxt('./results_diffusion/x_coor.dat')
+    KLmodes = np.loadtxt('./results_diffusion/KLmodes.dat')
     m1 = plt.plot(x_coor, KLmodes[:, 0], 'g-', label='mode 1')
     m2 = plt.plot(x_coor, KLmodes[:, 1], 'r-', label='mode 2')
     m3 = plt.plot(x_coor, KLmodes[:, 2], 'b-', label='mode 3')
@@ -63,7 +63,7 @@ def plot_omega_samples(ind, step, nmodes):
 
 
 def plot_omega_truth(ind, step):
-    omega_truth = np.loadtxt('omega_truth.dat')
+    omega_truth = np.loadtxt('./results_diffusion/omega_truth.dat')
     truth = omega_truth[ind]
     x = np.arange(step)
     y = truth*np.ones(len(x))
@@ -73,10 +73,10 @@ def plot_omega_truth(ind, step):
 
 def get_obs_coor():
     # x_coor_obs = np.zeros(10)
-    x_coor = np.loadtxt('x_coor.dat')
+    # x_coor = np.loadtxt('./results_diffusion/x_coor.dat')
     # for j in range(1, 11):
         # x_coor_obs[j-1] = x_coor[5*j]
-    return x_coor[[25,50,75]]
+    return [0.25, 0.5, 0.75]# x_coor[[25,50,75]] #CM
 
 
 def plot_samples(step):
@@ -106,8 +106,8 @@ def plot_samples(step):
 def plot_truth():
     """ Plot truth. """
     # read truth file
-    x_coor = np.loadtxt('x_coor.dat')
-    truth = np.loadtxt('u_truth.dat')
+    x_coor = np.loadtxt('./results_diffusion/x_coor.dat')
+    truth = np.loadtxt('./results_diffusion/u_truth.dat')
     # plot truth
     p3 = plt.plot(x_coor, truth, 'k-', label='Truth')
     return p3
@@ -128,15 +128,15 @@ def plot_obs():
 
 def plot_force():
     """ Plot force source"""
-    x_coor = np.loadtxt('x_coor.dat')
+    x_coor = np.loadtxt('./results_diffusion/x_coor.dat')
     fx = plt.plot(x_coor, np.sin(2*np.pi*x_coor/5), 'r-', label='heat source')
     return fx
 
 
 def plot_inferred_mu(step, nmodes, mu_o):
     """Plot inferred diffusivity field"""
-    x_coor = np.loadtxt('x_coor.dat')
-    KLmodes = np.loadtxt('KLmodes.dat')
+    x_coor = np.loadtxt('./results_diffusion/x_coor.dat')
+    KLmodes = np.loadtxt('./results_diffusion/KLmodes.dat')
     omega_all = np.loadtxt('./results/t_0/xa/xa_'+str(step))#[-nmodes:, :]
     vx = np.zeros((len(x_coor), len(omega_all[0, :])))
     for i in range(len(omega_all[0, :])):
@@ -153,15 +153,15 @@ def plot_inferred_mu(step, nmodes, mu_o):
 def plot_mu_truth(nmodes, mu_o):
     """ Plot observations. """
     # read x coordinate
-    x_coor = np.loadtxt('x_coor.dat')
+    x_coor = np.loadtxt('./results_diffusion/x_coor.dat')
     # read truth
-    truth = np.loadtxt('./mu_truth.dat') / mu_o
+    truth = np.loadtxt('./results_diffusion/mu_truth.dat') / mu_o
     # plot truth
-    v2 = plt.plot(x_coor[1:-1], truth, 'k-', label='Truth')
+    v2 = plt.plot(x_coor[1:-1], truth[:-1], 'k-', label='Truth')
     # read truth of KL expansion coefficient
-    omega_truth = np.loadtxt('omega_truth.dat')
+    omega_truth = np.loadtxt('./results_diffusion/omega_truth.dat')
     # read modes
-    KLmodes = np.loadtxt('KLmodes.dat')
+    KLmodes = np.loadtxt('./results_diffusion/KLmodes.dat')
     # obtain projected truth
     v_truth = np.zeros((len(x_coor)))
     for i in range(nmodes):
@@ -180,9 +180,9 @@ def main():
     nmodes =  int(model_dict['nmodes'])
 
     # velocity
-    mu_o = float(model_dict['mu_init'])
-    x_coor = np.loadtxt('x_coor.dat')
-    truth = np.loadtxt('u_truth.dat')
+    mu_o = float(model_dict['prior_mean'])
+    x_coor = np.loadtxt('./results_diffusion/x_coor.dat')
+    truth = np.loadtxt('./results_diffusion/u_truth.dat')
     x_coor_obs = get_obs_coor()
     obs = np.mean(np.loadtxt('./results/y/y_0'), 1)
 

@@ -10,7 +10,7 @@ import scipy.sparse as sp
 import scipy.sparse.linalg as splinalg
 
 
-def generate_cov(kernel, stddev, sp_tol=1e-8, **kwargs):
+def generate_cov(kernel='sqrexp', stddev=1.0, sp_tol=1e-8, **kwargs):
     """ Generate a covariance matrix using the specified correlatiion
     kernel and standard deviation.
 
@@ -18,7 +18,8 @@ def generate_cov(kernel, stddev, sp_tol=1e-8, **kwargs):
     ----------
     kernel : function
         Function that returns a correlation matrix. All additional
-        arguments are passed to this function.
+        arguments are passed to this function. Alternatively, a string
+        with the name of one of the implemented kernels.
     stddev : ndarray
         Standard deviation of each state. Alternatively, provide a float
         for a constant standard deviation.
@@ -34,6 +35,8 @@ def generate_cov(kernel, stddev, sp_tol=1e-8, **kwargs):
         *dtype=float*, *ndim=2*, *shape=(nstate, nstate)*
     """
     # correlation matrix
+    if isinstance(kernel, str):
+        kernel = _get_kernel(kernel)
     corr = kernel(**kwargs)
     corr = array_to_sparse(corr, sp_tol)
 
@@ -184,7 +187,7 @@ def corr_to_cov(corr, stddev):
         cov = stddev**2 * corr
     else:
         stddev = np.atleast_2d(stddev)
-        cov = corr * np.dot(stddev.T, stddev)
+        cov = corr.multiply(np.dot(stddev.T, stddev))
     return cov
 
 
@@ -254,6 +257,11 @@ def source_cov_to_output_corr(cov, weights, mat):
 
 
 # kernels
+def _get_kernel(kernel):
+    """Return the requested kernel function. """
+    return globals()['kernel_' + kernel]
+
+
 def kernel_sqrexp(coords, length_scales):
     """ Create a correlation matrix using the square exponential
     function.
@@ -276,6 +284,8 @@ def kernel_sqrexp(coords, length_scales):
         Correlation matrix.
         *dtype=float*, *ndim=2*, *shape=(nstate, nstate)*
     """
+    if len(coords.shape)==1:
+        coords = np.expand_dims(coords, 1)
     npoints = coords.shape[0]
     nphys_dims = coords.shape[1]
     alpha = 2.0
@@ -290,7 +300,7 @@ def kernel_sqrexp(coords, length_scales):
         pos_1, pos_2 = np.meshgrid(coords[:, ipdim], coords[:, ipdim])
         lensc = length_scales[ipdim]
         constant_lscale = len(np.atleast_1d(np.squeeze(np.array(lensc)))) == 1
-        if not constant_length_scale:
+        if not constant_lscale:
             lensc = vec_to_mat(lensc)
         exp += ((pos_1 - pos_2) / (lensc))**alpha
     return np.exp(-0.5*exp)
@@ -355,6 +365,8 @@ def kernel_mixed_periodic_sqrexp(coords, length_scales, factor=6.0,
         Correlation matrix.
         *dtype=float*, *ndim=2*, *shape=(nstate, nstate)*
     """
+    if len(coords.shape)==1:
+        coords = np.expand_dims(coords, 1)
     npoints = coords.shape[0]
     nphys_dims = coords.shape[1]
     alpha = 2.0
