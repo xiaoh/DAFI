@@ -3,7 +3,8 @@ dafi:
     model_file: lorenz.py
     inverse_method: EnKF
     nsamples: 100
-    ntime: 100.0
+    ntime: 200
+    verbosity: 1
 
 inverse:
 

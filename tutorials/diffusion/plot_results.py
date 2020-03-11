@@ -12,8 +12,8 @@ from matplotlib.lines import Line2D
 import matplotlib as mpl
 import yaml
 
-mpl.rcParams.update({'text.latex.preamble': ['\\usepackage{gensymb}'], })
-plt.style.use('./style.mplstyle')
+mpl.rcParams.update({'text.usetex': True, 'text.latex.preamble': ['\\usepackage{gensymb}'], })
+# plt.style.use('./style.mplstyle')
 # import pylab
 # fig = pylab.figure()
 # figlegend = pylab.figure(figsize=(3,2))

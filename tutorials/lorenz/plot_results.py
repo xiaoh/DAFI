@@ -12,12 +12,14 @@ import matplotlib.pyplot as plt
 import yaml
 
 # local import
-from lorenz import lorenz #TODO: import lorenz model with importlib
+# TODO: import lorenz model with importlib
+from lorenz import lorenz, NSTATE, OBSERVE_STATE
 
 
+# read input file
 input_file = 'dafi.in'
 with open(input_file, 'r') as f:
-   input_dafi = yaml.load(f, yaml.SafeLoader)
+    input_dafi = yaml.load(f, yaml.SafeLoader)
 
 # what to plot
 plot_truth = True
@@ -25,12 +27,6 @@ plot_obs = True
 plot_sampmean = True
 plot_samps = True
 plot_baseline = True
-
-# constants
-nstate = 4
-nstateorg = 3
-nparams = 1
-observe_state = [True, False, True]
 
 # create directory
 savedir = 'results_postprocess'
@@ -53,13 +49,11 @@ da_time = obs[:, 0]
 # get initial states (Xi)
 if plot_samps or plot_sampmean or plot_baseline:
     X0 = np.loadtxt(da_dir + os.sep + '/xf/xf_0')
-    # X0m = np.loadtxt(da_dir + os.sep + 'X_0_mean')
-    X0m = np.array([-8.5, -7, 27.0, 28.0]) #TODO
+    X0m = np.array([-8.5, -7, 27.0, 28.0])  # TODO get from input
     nsamples = X0.shape[1]
 
 if plot_samps or plot_sampmean:
     # get forecast and analysis states (Xf, Xa)
-
     def read_dasteps(name, nstep=ndastep):
         prefix = da_dir + os.sep + name + os.sep + name
         filenames = [prefix + '_' + str(istep) for istep in range(nstep)]
@@ -72,7 +66,6 @@ if plot_samps or plot_sampmean:
     t_matrix = np.tile(da_time, (nsamples, 1)).T
 
     # get in-between values for X
-
     prefix = lorenz_dir + os.sep + 'states' + os.sep + 'time'
     filenames = [prefix + '_' + str(istep+1) for istep in range(ndastep-1)]
     time_all = np.concatenate([np.loadtxt(f) for f in filenames])
@@ -82,7 +75,8 @@ if plot_samps or plot_sampmean:
     Xall = []
     for isamp in range(nsamples):
         post = '_samp_{}'.format(isamp)
-        filenames = [prefix + str(istep+1) + post for istep in range(ndastep-1)]
+        filenames = [prefix + str(istep+1) + post
+                     for istep in range(ndastep-1)]
         Xall += [np.concatenate([np.loadtxt(f) for f in filenames], axis=0)]
     Xall = np.stack(Xall, axis=2)
     Xall = np.concatenate([Xall, Xa[-1:, :3, :]], axis=0)
@@ -109,15 +103,15 @@ if plot_samps or plot_sampmean:
 rho_true = np.loadtxt(lorenz_dir + os.sep + 'rho.dat')
 
 # plot states
-fig1, axarr1 = plt.subplots(nstateorg, 1, sharex=True)
+fig1, axarr1 = plt.subplots(NSTATE, 1, sharex=True)
 state_ind = 0
 lines1 = []
 for istate, ax in enumerate(axarr1):
     if plot_samps:
         plot = ax.plot(t_all_mat, Xall[:, istate, :], 'g--', alpha=0.25,
                        label='Samples')
-        ax.plot([0]*nsamples, X0[istate, :], 'g*', alpha=0.25, fillstyle='full',
-                markersize=5)
+        ax.plot([0]*nsamples, X0[istate, :], 'g*', alpha=0.25,
+                fillstyle='full', markersize=5)
         ax.plot(t_matrix, Xa[:, istate, :], 'g.', alpha=0.25, fillstyle='full',
                 markersize=5)
         ax.plot(t_matrix, Xf[:, istate, :], 'g.', alpha=0.25, fillstyle='none',
@@ -141,7 +135,7 @@ for istate, ax in enumerate(axarr1):
         ax.plot(da_time, Xfm[:, istate], 'b.', fillstyle='none', markersize=5)
         if istate == 0:
             lines1.append(plot[0])
-    if plot_obs and observe_state[istate]:
+    if plot_obs and OBSERVE_STATE[istate]:
         plot = ax.plot(obs[:, 0], obs[:, state_ind + 1], 'r.', markersize=5,
                        label='Observations')
         if state_ind == 0:
