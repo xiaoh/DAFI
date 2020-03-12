@@ -96,7 +96,6 @@ def check_mat(mat, type='cov', tol=1e-08):
     message : str
         Information on which tests did not pass.
     """
-
     def check_corr_diag(mat, tol):
         """ """
         return np.allclose(mat.diagonal(), 1.0, rtol=0.0, atol=tol)
@@ -122,7 +121,7 @@ def check_mat(mat, type='cov', tol=1e-08):
         Not very stable for very small eigenvalues.
         """
         min_eig = splinalg.eigsh(
-            mat, k=1, which='SA', return_eigenvectors=False)
+            mat, k=1, which='LA', sigma=0, return_eigenvectors=False)
         min_eig = min_eig[0]
         return (min_eig + tol >= 0)
 
@@ -284,6 +283,9 @@ def kernel_sqrexp(coords, length_scales):
         Correlation matrix.
         *dtype=float*, *ndim=2*, *shape=(nstate, nstate)*
     """
+    if len(np.atleast_1d(np.squeeze(np.array(length_scales)))) == 1:
+        length_scales = [length_scales]
+
     if len(coords.shape)==1:
         coords = np.expand_dims(coords, 1)
     npoints = coords.shape[0]
