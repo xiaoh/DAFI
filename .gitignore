@@ -9,6 +9,9 @@ MANIFEST
 # compiled Python
 *.pyc
 __pycache_
+
+# jupyter notebooks
+.ipynb_checkpoints
 _
 # OpenFOAM
 *.dep

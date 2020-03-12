@@ -88,7 +88,8 @@ def run(model_file, inverse_method, nsamples, ntime=None,
         List of analysis states at each DA time. Length is number of
         DA time steps. Each entry is an nd.array containing the ensemble
         analysis states (:math:`x_a`) at that time step.
-        Each entry is: *dtype=float*, *ndim=2*,
+        If only one DA time (e.g. stationary, inversion problem) is the
+        single ndarray. Each entry is: *dtype=float*, *ndim=2*,
         *shape=(nstate, nsamples)*.
     """
     # collect inputs
@@ -123,6 +124,10 @@ def run(model_file, inverse_method, nsamples, ntime=None,
     if rand_seed is not None:
         np.random.seed(rand_seed)
 
+    # stationary problem
+    if inputs_dafi['ntime'] == None:
+        inputs_dafi['ntime'] = 1
+
     # create save directory
     if save_level != None:
         _create_dir(save_dir)
@@ -151,6 +156,8 @@ def run(model_file, inverse_method, nsamples, ntime=None,
     # log
     logger.log(_log_level(0), 'Done.')
 
+    if inputs_dafi['ntime'] == 1:
+        state_analysis_list = state_analysis_list[0]
     return state_analysis_list
 
 
@@ -162,8 +169,6 @@ def _solve(inputs_dafi, inverse, model):
     """
     logger = logging.getLogger(__name__ + '._solve')
     # time and iteration arrays
-    if inputs_dafi['ntime'] == None:
-        inputs_dafi['ntime'] = 1
     time_array = np.arange(inputs_dafi['ntime'], dtype=int)
     iteration_array = np.arange(inputs_dafi['max_iterations'], dtype=int)
 
