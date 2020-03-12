@@ -1,0 +1,20 @@
+version: 2
+
+conda:
+    environment: conda/environment.yml
+
+sphinx:
+    configuration: docs/conf.py
+
+build:
+    image: latest
+
+formats:
+  - html
+
+python:
+    install:
+      - method: pip
+        path: .
+        extra_requirements:
+         - docs
