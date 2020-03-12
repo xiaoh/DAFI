@@ -1,4 +1,4 @@
-#!/usr/bin/env python3
+#!/usr/bin/env python
 # Copyright 2018 Virginia Polytechnic Insampletitute and State University.
 """ This module is to postprocess the data for the heat diffusion model. """
 
@@ -43,8 +43,7 @@ def main():
     with open('dafi.in', 'r') as f:
        input_dict = yaml.load(f, yaml.SafeLoader)['dafi']
     path, dirs, files = os.walk('./results/t_0/xa').__next__()
-    import pdb; pdb.set_trace()
-    final_step = len(files) - 1 # int(input_dict['max_iterations']) -1
+    final_step = len(files) - 1
     with open('diffusion.in', 'r') as f:
        model_dict = yaml.load(f, yaml.SafeLoader)
     nmodes =  int(model_dict['nmodes'])
@@ -80,7 +79,7 @@ def main():
             [u1[0], u2[0], u3[0], u4[0]],
             ['samples', u2[0].get_label(), u3[0].get_label(), u4[0].get_label()],
             loc='best')
-        figure_name = './figures/DA_u_' + case + '.pdf'
+        figure_name = './figures/DA_u_' + case + '.png'
         plt.savefig(figure_name)
 
         fig2, ax2 = plt.subplots()
@@ -94,7 +93,7 @@ def main():
             ['samples', v2[0].get_label(), v3[0].get_label(), v4[0].get_label()],
             loc='best')
         # save figure
-        figure_name = './figures/DA_mu_'+case+'.pdf'
+        figure_name = './figures/DA_mu_'+case+'.png'
         plt.savefig(figure_name)
 
 
