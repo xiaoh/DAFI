@@ -9,9 +9,6 @@ sphinx:
 build:
     image: latest
 
-formats:
-  - html
-
 python:
     install:
       - method: pip
