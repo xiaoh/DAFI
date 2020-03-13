@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 # Copyright 2018 Virginia Polytechnic Insampletitute and State University.
 """ This module is to postprocess the data for the heat diffusion model. """
 
@@ -20,7 +20,7 @@ if not os.path.exists('figures/'):
     os.mkdir('figures/')
 
 
-def plot_inferred_mu(step, nmodes, mu_o):
+def plot_inferred_mu(step, nmodes):
     """Plot inferred diffusivity field"""
     x_coor = np.loadtxt('./results_diffusion/x_coor.dat')
     KLmodes = np.loadtxt('./results_diffusion/KLmodes.dat')
@@ -29,7 +29,7 @@ def plot_inferred_mu(step, nmodes, mu_o):
     for i in range(len(omega_all[0, :])):
         for j in range(len(omega_all[:, 0])):
             vx[:, i] += omega_all[j, i] * KLmodes[:, j]
-        vx[:, i] = np.exp(vx[:, i]) / mu_o
+        vx[:, i] = np.exp(vx[:, i])
     samp_mean = np.sum(vx, 1)/vx.shape[1]
     xcoor_matrix = np.tile(x_coor, (len(omega_all[0, :]), 1))
     v1 = plt.plot(x_coor, vx, '-', color='0.7', lw=0.2)
@@ -84,7 +84,7 @@ def main():
 
         fig2, ax2 = plt.subplots()
         ax2 = plt.subplot(111)
-        v1, v2, v3 = plot_inferred_mu(step, nmodes, mu_o)
+        v1, v2, v3 = plot_inferred_mu(step, nmodes)
         v4 = plt.plot(x_coor[1:-1], mu_truth[:-1], 'k-', label='truth')
         plt.xlabel(r'position $\xi_1/L$')
         plt.ylabel(r'diffusivity $\mu/\mu_0$')

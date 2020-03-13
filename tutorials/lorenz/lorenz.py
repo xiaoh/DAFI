@@ -200,7 +200,7 @@ class Model(PhysicsModel):
         """
         # create time series
         end_ptime = end_time * self.da * self.dt
-        start_time = end_ptime - self.dt
+        start_time = end_ptime - self.da * self.dt
         time_series = np.arange(start_time, end_ptime + self.dt/2.0, self.dt)
         # initialize variables
         state_vec_forecast = np.empty([NSTATEAUG, self.nsamples])

@@ -1,6 +1,6 @@
 
 # prior distribution (diffusivity)
-prior_mean: 1.0
+prior_mean: 0.8
 stddev: 0.5
 length_scale:  0.02
 
