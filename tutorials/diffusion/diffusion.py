@@ -213,7 +213,8 @@ class Model(PhysicsModel):
         mu_dot = np.zeros(self.ncells-1)
         # obtain diffusivity based on KL coefficient and KL mode
         for imode in range(self.nmodes):
-            mode_dot = np.gradient(self.kl_modes[:-1, imode], self.space_interval)
+            mode_dot = np.gradient(
+                self.kl_modes[:-1, imode], self.space_interval)
             mu_dot += state[imode] * mode_dot
         # for imode in range(self.nmodes):
             mu += state[imode] * self.kl_modes[:-1, imode]

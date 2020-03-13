@@ -12,12 +12,12 @@ from matplotlib.lines import Line2D
 import matplotlib as mpl
 import yaml
 
-mpl.rcParams.update({'text.usetex': True, 
-    'text.latex.preamble': ['\\usepackage{gensymb}'], })
+mpl.rcParams.update({'text.usetex': True,
+                     'text.latex.preamble': ['\\usepackage{gensymb}'], })
 
 
-if not os.path.exists('figures/'):
-    os.mkdir('figures/')
+if not os.path.exists('results_figures/'):
+    os.mkdir('results_figures/')
 
 
 def plot_inferred_mu(step, nmodes):
@@ -41,12 +41,12 @@ def plot_inferred_mu(step, nmodes):
 def main():
     # read required parameters
     with open('dafi.in', 'r') as f:
-       input_dict = yaml.load(f, yaml.SafeLoader)['dafi']
+        input_dict = yaml.load(f, yaml.SafeLoader)['dafi']
     path, dirs, files = os.walk('./results/t_0/xa').__next__()
     final_step = len(files) - 1
     with open('diffusion.in', 'r') as f:
-       model_dict = yaml.load(f, yaml.SafeLoader)
-    nmodes =  int(model_dict['nmodes'])
+        model_dict = yaml.load(f, yaml.SafeLoader)
+    nmodes = int(model_dict['nmodes'])
     mu_o = float(model_dict['prior_mean'])
     x_coor_obs = model_dict['obs_locations']
     x_coor = np.loadtxt('./results_diffusion/x_coor.dat')
