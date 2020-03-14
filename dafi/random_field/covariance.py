@@ -286,7 +286,7 @@ def kernel_sqrexp(coords, length_scales):
     if len(np.atleast_1d(np.squeeze(np.array(length_scales)))) == 1:
         length_scales = [length_scales]
 
-    if len(coords.shape)==1:
+    if len(coords.shape) == 1:
         coords = np.expand_dims(coords, 1)
     npoints = coords.shape[0]
     nphys_dims = coords.shape[1]
@@ -367,7 +367,9 @@ def kernel_mixed_periodic_sqrexp(coords, length_scales, factor=6.0,
         Correlation matrix.
         *dtype=float*, *ndim=2*, *shape=(nstate, nstate)*
     """
-    if len(coords.shape)==1:
+    if len(np.atleast_1d(np.squeeze(np.array(length_scales)))) == 1:
+        length_scales = [length_scales]
+    if len(coords.shape) == 1:
         coords = np.expand_dims(coords, 1)
     npoints = coords.shape[0]
     nphys_dims = coords.shape[1]

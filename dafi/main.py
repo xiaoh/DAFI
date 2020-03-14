@@ -125,7 +125,7 @@ def run(model_file, inverse_method, nsamples, ntime=None,
         np.random.seed(rand_seed)
 
     # stationary problem
-    if inputs_dafi['ntime'] == None:
+    if inputs_dafi['ntime'] is None:
         inputs_dafi['ntime'] = 1
 
     # create save directory
