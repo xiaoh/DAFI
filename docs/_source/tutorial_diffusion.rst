@@ -31,34 +31,41 @@ with
 The difference scheme can be expressed as below:
 
 .. math::
+
    (\frac{1}{2\Delta x}\frac{\mu_{i+1}-\mu_{i}}{\Delta x} + \frac{\mu_i}{\Delta x^2})u_{i+1} + (-\frac{2\mu_i}{\Delta x^2})\mu_i+(-\frac{1}{2\Delta x}\frac{\mu_{i+1}-\mu_{i}}{\Delta x} + \frac{\mu_i}{\Delta x^2}) u_{i-1} = f(x_i)
 
 Further this can be simplified to be written as
 
 .. math::
+
   A_i u_{i+1} + B_i u_i + C_i u_{i-1} = f(x_i)
 
 where
 
 .. math::
-  A_i = \frac{1}{2 \Delta x} \frac{d \mu_i}{d x} + \frac{\mu_i}{\Delta x^2}; \\
-  B_i = -\frac{2\mu_i}{\Delta x^2}; \\
+
+  A_i = \frac{1}{2 \Delta x} \frac{d \mu_i}{d x} + \frac{\mu_i}{\Delta x^2};
+
+  B_i = -\frac{2\mu_i}{\Delta x^2};
+
   C_i = -\frac{1}{2\Delta x} \frac{d \mu_i}{d x} + \frac{\mu_i}{\Delta x^2}
 
 The first derivative of the diffusivity :math:`\frac{d \mu}{dx}` is calculated using central difference.
 Finally, the scheme can be formulated in the matrix form as
 
 .. math::
-  Du = E, and \\
+
+  Du = E, \text{and further}
+
   u = D^{-1} E
 
 where :math:`D` is a tridiagonal matrix and E is a vector.
-The space in this case is evenly devided into 100 mesh cells and the spatial interval is 0.01.
+The space in this case is evenly devided into 100 mesh cells, and accordingly, the spatial interval is 0.01.
 
 Field Representation
 --------------------
 
-Field inversion problem is of great interest in reality, however to infer a field based on sparse observation also increases the ill-poseness of the problem. The high dimensionalty comparing to the limited number of samples will lead to the ununiqueness of the solution.
+Field inversion problem is of great interest in reality, however to infer a field based on sparse observation also increases the ill-posedness of the problem. The high dimensionalty comparing to the limited number of samples will lead to the ununiqueness of the solution.
 
 Therefore it is necessary to reduce the dimensionality to indirectly characterize the field. To represent the field, the most widely used method is Karhunen-Loeve expansion which is commonly used to represent the stochatic process through a combination of a set of orthogonal functions. In this case, the method is leveraged to reduce the dimension of state varibles.
 
@@ -66,32 +73,32 @@ The field of diffusivity is reconstructed by a set of deterministic functions wi
 
 .. math::
 
-   log(\mu(x)) = \sum_{i=1}^m \omega_i \phi_i(x)
+   log(\hat{\mu}(x)) = \sum_{i=1}^m \omega_i \phi_i(x)
 
-where the subscript indicates the :math:`i` th mode :math:`\omega_i`, is a random variable and :math:`\phi_i(x)` is the deterministic basis set and the logarithm is to ensure the non-negativity of diffusivity.
-Accordingly, the first derivative of the :math:`\mu` can be written as
+where the subscript indicates the :math:`i` th mode :math:`\omega_i`, is a random variable, :math:`\phi_i(x)` is the deterministic basis set, the :math:`\hat{\mu}` is the diffusivity normed by the prior, and the logarithm is to ensure the non-negativity of diffusivity.
+Accordingly, the first derivative of the :math:`\hat{\mu}` can be written as
 
 .. math::
 
-    \frac{d \mu}{d x} = \mu(x) * \sum_{i=1}^m \omega_i \frac{d \phi_i(x)}{dx}
+    \frac{d \hat{\mu}}{d x} = \hat{\mu}(x) * \sum_{i=1}^m \omega_i \frac{d \phi_i(x)}{dx}
 
 The prior of :math:`\mu(x)` is regarded as Gaussian random fields, where the covariance of two different location (kernel function) is described as:
 
 .. math::
 
-   K(x,x')=\sigma(x)\sigma(x')exp(-\frac{|x-x'|^2}{l^2})
+   K(x,x')=\sigma(x)\sigma(x')\text{exp}\left(-\frac{|x-x'|^2}{l^2}\right)
 
 The prior variance :math:`\sigma(x)` is a constant or a spatially varying field. In this tutorial, it is chosen as 0.5.
 
 The correction length scale :math:`l` is simplified as 0.02 in this tutorial.
 
-The orthogonal basis function :math:`\phi_i(x)` take the form :math:`\phi_i(x)=\sqrt{\hat{\lambda}_i}\hat{\phi_i}(x)`, where :math:`\hat{\lambda}_i` and :math:`\hat{\phi}_i(x)` are the eigenvalues and eigenvectors, respectively, of the kernel :math: `K` computed from the Fredholm integral equation:
+The orthogonal basis function :math:`\phi_i(x)` take the form :math:`\phi_i(x)=\sqrt{\hat{\lambda}_i}\hat{\phi_i}(x)`, where :math:`\hat{\lambda}_i` and :math:`\hat{\phi}_i(x)` are the eigenvalues and eigenvectors, respectively, of the kernel :math:`K` computed from the Fredholm integral equation:
 
 .. math::
 
    \int K(x,x')\hat{\phi}(x')dx' = \hat{\lambda}\hat{\phi}(x)
 
-Thus we can obtain the diffusivity field through infering the randomized value :math:\omega_i based on the observation on temperature.
+Thus we can obtain the diffusivity field through infering the randomized value :math:`\omega_i` based on the observation on temperature.
 
 
 Building the Dynamic Model
@@ -102,7 +109,7 @@ To create a new dynamic model you need to create a python file in the folder "tu
 Diffusion Model Files
 ^^^^^^^^^^^^^^^^^^^^^
 
-Below is an overview of the files required to run the data assimilation for diffusion model in DA-Inv. The required files are listed below.
+Below is an overview of the files required to run the data assimilation for diffusion model in DAFI. The required files are listed below.
 
 ==================   =============================  =============================
 **File Type**        **File Name**                  **Directory**
@@ -115,7 +122,6 @@ We start by importing all necessary packages. Note that we are importing some th
 
 * *PhysicsModel* class
 * *random field* class
-* the ``yaml`` package, which will help us read input files.
 
 .. code-block:: python
 
@@ -159,7 +165,7 @@ The ``init`` function is\:
         input_file = inputs_model['input_file']
         with open(input_file, 'r') as f:
             inputs_model = yaml.load(f, yaml.SafeLoader)
-        mu_init = inputs_model['prior_mean']
+        self.mu_init = inputs_model['prior_mean']
         self.stddev = inputs_model['stddev']
         self.length_scale = inputs_model['length_scale']
         self.obs_loc = inputs_model['obs_locations']
@@ -213,13 +219,15 @@ The ``init`` function is\:
         self.obs = np.random.multivariate_normal(true_obs, self.obs_error)
         self.nobs = len(self.obs)
 
-The inputs to the ``__init__ method`` is same as for Lorenz tutorial. In this method, we read the input file and get the input file for the diffusion model.
+These inputs to the ``__init__ method`` are the list in the dafi input file (*inputs_dafi*) and the name for the dynamic model input file (*inputs_model*).
 
-The input file is created as ``diffusion.in``. In the input file, we define the required parameters\:
+The model input file is created as ``diffusion.in``. In the input file, we define the required parameters\:
 
 .. literalinclude:: ../../tutorials/diffusion/diffusion.in
 
-In the input file, we specify the number of modes and the field variance to represent the field. Then we specify the first guessed constant diffusivity, and the relative and absolute standard deviation to construct a random field. Also, we define the relative and absolute standard deviation for the observation.
+In the input file, we specify the first guessed constant diffusivity, the field variance and the characteristic length scale to construct a random field.
+Then we define the observation locations and the relative and absolute standard deviation for the observation.
+Also, we specify the number of modes to represent the field. 
 
 .. note::
     With more modes, we can represent the field more flexiblely. However if the field is a low order curve, the results will lead to worse when introducing too many modes.
@@ -229,7 +237,7 @@ synthetic observations
 We give a synthetic truth on the KL coefficient as:
 
 .. math::
-    \mu = \sum_{i=1}^3 \omega_i \phi_i(x)
+    \hat{\mu} = \sum_{i=1}^3 \omega_i \phi_i(x)
 
 where :math:`\mathbf{\omega}=[1,1,1]`
 The synthetic observation on the temperature is obtained by soliving the diffusion equation with the synthectic :math:`\mu`.
@@ -241,7 +249,7 @@ Now we start coding the required methods, starting with generate_ensemble.
 This method is responsible for creating the initial distribution of states.
 In this case, the state is the KL coefficient.
 We are going to do this by assuming independent zero-mean uni-variance Gaussian distributions.
-We generate the specified number of samples. The generated prior samples are shown in figures belows.
+We generate the specified number of samples. The generated prior samples are shown in figures below.
 
 .. code-block:: python
 
@@ -256,7 +264,7 @@ We generate the specified number of samples. The generated prior samples are sho
 state_to_observation
 ^^^^^^^^^^^^^^^^^^^^
 
-This method is to map the state to observation (i.e., heat). The heat is obtained by calling a private function ``_solve_diffusion_equation`` to solve the diffusion problem with given diffusivity. Further, The temperature value at the observation locations specified in the input file can be interpolated and taken as the model output to be analyzed with observations.
+This method is to map the state to observation (i.e., temperature). The temperature is obtained by calling a private function ``_solve_diffusion_equation`` to solve the diffusion problem with given diffusivity. Further, The temperature value at the observation locations specified in the input file can be interpolated and taken as the model output to be analyzed with observations.
 
 .. code-block:: python
 
@@ -287,53 +295,38 @@ in the termperature is obtained by calling a private function "_truth()". Furthe
 Running the code
 ----------------
 
-As in the lorenz tutorial, to run the code first we need source ``init_da`` file if it has not been done yet. Then we can run the code by following the instruction below.
+Now that we have created our own dynamic model, and an input file for our specific case, we can run the ``/bin/dafi`` data assimilation code.
+In order to run the code you will need to export the path of dafi files if you haven't already.
+This is done as follows::
 
-Step 1 : Write main input file
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    export PYTHONPATH="<DAFI_DIR>:$PYTHONPATH"
+    export PATH="<DAFI_DIR>/bin:$PATH"
 
-Specify self-defined parameters in the 'dafi.in' file. The 'dafi.in' file is provided in the diffusion tutorial directory and shown below.
+where ``<DAFI_DIR>`` is replaced with the correct path to the DAFI directory.
+
+Then we can create the dafi input file 'dafi.in' to specify self-defined parameters. The 'dafi.in' file is provided in the diffusion tutorial directory and shown below.
 
 .. literalinclude:: ../../tutorials/diffusion/dafi.in
 
 In this file, we need to specify the number of samples (nsamples), the maximum data assimilation iteration(max_iteration) and so on.
 
-Step 2 : Write forward model input file
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+Finally, we can execute the data assimilation for diffusion system by typing code::
 
-Specify self-defined parameters in the 'diffusion.in' file. The 'diffusion.in' file is provided in the diffusion tutorial directory and shown below.
-
-.. literalinclude::../../tutorials/diffusion/diffusion.in
-
-
-In this file, we mainly need to specify the number of modes (nmodes), the observation locations (obs_locations) and the relative standard deviation for observation (obs_rel_std)
-
-Step 3 : Execute
-^^^^^^^^^^^^^^^^
-
-To execute the data assimilation for diffusion system, move to the diffusion tutorial directory($tutorials/diffusion), and type code::
    dafi.py dafi.in
 
-or the user can also simply type './run.sh' to run the tutorial. The process information will be saved in 'log.enkf' file at diffusion tutorial directory.
-
-Step 4 : Postprocessing
-^^^^^^^^^^^^^^^^^^^^^^^
+Information on the progress will be printed to the screen. The results are saved to the results_dafi directory, and we had our dynamic model save some results to results_diffusion as well.
 
 'diffusion_plot.py' (located in '$tutorials/diffusion') is the postprocessing file to plot the inferred and observed field.
 
+The data assimilation is complete! We have provided a post-processing script to visualize these results.
 To execute the postprocessing, type code::
+
    ./plot_results.py
 
-to plot figures as shown below. Users can modify the 'diffusion_plot.py' for their own post-processing.
+The plotted results are shown as below. Users can modify the 'diffusion_plot.py' for their own post-processing.
 
 .. figure:: _static/DA_u_posterior.png
    :width: 400pt
 
 .. figure:: _static/DA_mu_posterior.png
    :width: 400pt
-
-References
-----------
-.. bibliography:: tutorial.bib
-   :style: unsrt
-   :labelprefix: B
