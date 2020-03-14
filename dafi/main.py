@@ -7,6 +7,7 @@ import importlib
 import logging
 import warnings
 import os
+import sys
 
 # third party imports
 import numpy as np
@@ -138,6 +139,7 @@ def run(model_file, inverse_method, nsamples, ntime=None,
     spec.loader.exec_module(model_module)
     Model = getattr(model_module, 'Model')
     model = Model(inputs_dafi, inputs_model)
+    sys.modules['model'] = model_module
 
     # initialize inverse method
     Inverse = getattr(

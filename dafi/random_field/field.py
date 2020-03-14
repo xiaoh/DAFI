@@ -548,7 +548,8 @@ def sparse_cholesky(cov):
     return LU.L.dot(sp.diags(LU.U.diagonal()**0.5))
 
 
-def gp_samples_kl(cov, nsamples, nmodes=None, mean=None, eps=1e-8):
+def gp_samples_kl(cov, nsamples, weight_field, nmodes=None, mean=None,
+                  eps=1e-8):
     """ Generate samples of a Gaussian Process using KL decomposition.
 
     Parameters
@@ -558,6 +559,9 @@ def gp_samples_kl(cov, nsamples, nmodes=None, mean=None, eps=1e-8):
         matrix. *dtype=float*, *ndim=2*, *shape=(nstate, nstate)*
     nsamples : int
         Number of samples to generate.
+    weight_field : ndarray
+        Weight (e.g. cell volume) associated with each state.
+        *dtype=float*, *ndim=1*, *shape=(nstate)*
     nmodes : int
         Number of modes to use when generating samples. *'None'* to use
         all modes.
@@ -622,6 +626,9 @@ def gp_samples_kl_coverage(cov, nsamples, weight_field, coverage=0.99,
         matrix. *dtype=float*, *ndim=2*, *shape=(nstate, nstate)*
     nsamples : int
         Number of samples to generate.
+    weight_field : ndarray
+        Weight (e.g. cell volume) associated with each state.
+        *dtype=float*, *ndim=1*, *shape=(nstate)*
     coverage : float
         Desired percentage coverage of the variance. Value between 0-1.
     max_modes : int
@@ -653,7 +660,7 @@ def gp_samples_kl_coverage(cov, nsamples, weight_field, coverage=0.99,
 
 
 def gp_sqrexp_samples(nsamples, coords, stddev, length_scales, mean=None,
-                      max_modes=None):
+                      weight_field=None, max_modes=None):
     """ Generate samples from a Gaussian Process with square exponential
     correlation kernel.
 
@@ -680,6 +687,9 @@ def gp_sqrexp_samples(nsamples, coords, stddev, length_scales, mean=None,
         (length scale field) or a float (constant length scale).
     mean : ndarray
         Mean vector. *dtype=float*, *ndim=1*, *shape=(nstate)*
+    weight_field : ndarray
+        Weight (e.g. cell volume) associated with each state.
+        *dtype=float*, *ndim=1*, *shape=(nstate)*
     max_modes : int
         Maximum number of modes used. This is the number of modes that
         is calculated. If less are needed to achieve 99% coverage the
