@@ -106,7 +106,6 @@ Methods\:
 * **forecast_to_time**
 * **state_to_observation**
 * **get_obs**
-* **clean**
 
 For all methods, look at the parent class (under ``dafi/physics_model.py``) for the appropriate inputs and outputs.
 
