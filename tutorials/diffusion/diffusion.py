@@ -40,7 +40,7 @@ class Model(PhysicsModel):
         input_file = inputs_model['input_file']
         with open(input_file, 'r') as f:
             inputs_model = yaml.load(f, yaml.SafeLoader)
-        mu_init = inputs_model['prior_mean']
+        self.mu_init = inputs_model['prior_mean']
         self.stddev = inputs_model['stddev']
         self.length_scale = inputs_model['length_scale']
         self.obs_loc = inputs_model['obs_locations']
@@ -147,7 +147,7 @@ class Model(PhysicsModel):
         np.savetxt(os.path.join(self.savedir, 'omega_truth.dat'), omega)
         for i in range(self.nmodes):
             synthetic_mu += omega[i] * self.kl_modes[:, i]
-        mu = np.exp(synthetic_mu[:-1])
+        mu = self.mu_init * np.exp(synthetic_mu[:-1])
         mu_dot = np.gradient(mu, self.space_interval)
         np.savetxt(os.path.join(self.savedir, 'mu_truth.dat'), mu)
 
@@ -213,10 +213,11 @@ class Model(PhysicsModel):
         mu_dot = np.zeros(self.ncells-1)
         # obtain diffusivity based on KL coefficient and KL mode
         for imode in range(self.nmodes):
-            mode_dot = np.gradient(self.kl_modes[:-1, imode], self.space_interval)
+            mode_dot = np.gradient(
+                self.kl_modes[:-1, imode], self.space_interval)
             mu_dot += state[imode] * mode_dot
         # for imode in range(self.nmodes):
             mu += state[imode] * self.kl_modes[:-1, imode]
-        mu = np.exp(mu)
+        mu = self.mu_init * np.exp(mu)
         mu_dot *= mu
         return mu, mu_dot
