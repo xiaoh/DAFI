@@ -258,7 +258,7 @@ def reconstruct_kl(modes, coeffs, mean=None):
     return fields
 
 
-def project_kl(field, modes, weight_field=None):
+def project_kl(field, modes, weight_field=None, mean=None):
     """ Project a field onto a set of modes.
 
     Parameters
@@ -270,6 +270,8 @@ def project_kl(field, modes, weight_field=None):
     weight_field : ndarray
         Weight (e.g. cell volume) associated with each state.
         *dtype=float*, *ndim=1*, *shape=(nstate)*
+    mean : ndarray
+        Mean vector. *dtype=float*, *ndim=1*, *shape=(nstate)*
 
     Returns
     -------
@@ -278,11 +280,12 @@ def project_kl(field, modes, weight_field=None):
         *dtype=float*, *ndim=1*, *shape=(nmodes)*
     """
     nstate, nmode = modes.shape
+    mean = _preprocess_field(mean, nstate, 0.0)
 
     coeffs = []
     for imode in range(nmode):
         mode = modes[:, imode]
-        coeffs.append(projection_magnitude(field, mode, weight_field))
+        coeffs.append(projection_magnitude(field-mean, mode, weight_field))
     return np.array(coeffs)
 
 
@@ -701,3 +704,85 @@ def gp_sqrexp_samples(nsamples, coords, stddev, length_scales, mean=None,
     samples, _ = gp_samples_kl_coverage(
         cov, nsamples, weight_field, 0.99, max_modes, mean)
     return samples
+
+
+# Random field class
+class GaussianProcess(object):
+    # TODO: Docstrings
+
+    def __init__(self, klmodes, mean=None, weights=None, func=None,
+                 funcinv=None):
+        self.klmodes = klmodes
+        self.ncell, self.nmodes = self.klmodes.shape
+        self.mean = _preprocess_field(mean, self.ncell, 0.0)
+        self.weights = _preprocess_field(mean, self.weights, 1.0)
+
+        def func_identity(x):
+            return x
+
+        if func is None:
+            func = func_identity
+        if funcinv is None:
+            funcinv = func_identity
+        self.func = func
+        self.funcinv = funcinv
+
+    def sample_coeffs(self, nsamples):
+        """ """
+        return np.random.normal(0, 1, [self.nmodes, nsamples])
+
+    def sample_gp(self, nsamples, mean=self.mean):
+        """ """
+        coeffs = self.sample_coeffs(nsamples)
+        return reconstruct_kl(self.klmodes, coeffs, mean), coeffs
+
+    def sample_func(self, nsamples, mean=self.mean):
+        """ """
+        coeffs = self.sample_coeffs(nsamples)
+        samps_gp = reconstruct_kl(self.klmodes, coeffs, mean)
+        return self.func(samps_gp), coeffs
+
+    def reconstruct_gp(self, coeffs, mean=self.mean):
+        return reconstruct_kl(self.klmodes, coeffs, mean)
+
+    def reconstruct_func(self, coeffs, mean=self.mean):
+        val_gp = reconstruct_kl(self.klmodes, coeffs, mean)
+        return self.func(val_gp)
+
+    def pdf(self, coeffs):
+        return np.exp(logpdf(coeffs))
+
+    def logpdf(self, coeffs):
+        if len(coeffs.shape) == 1:
+            coeffs = np.expand_dims(coeffs, 1)
+        norm_coeff = np.linalg.norm(coeffs, axis=0)
+        const = np.log((2*np.pi)**(-self.ncell/2))
+        return const + -0.5*norm_coeff**2
+
+    def project_gp_field(self, field, mean=None):
+        return project_kl(field, self.klmodes, self.weights, mean)
+
+    def project_func_field(self, field, mean=None):
+        field = self.funcinv(field)
+        mean = _preprocess_field(mean)
+        mean = self.funcinv(mean)
+        return project_kl(field, self.klmodes, self.weights, mean)
+
+
+class LogNormal(object):
+    # TODO: Docstrings
+
+    def __init__(self, klmodes_gp, median=1.0, weights=None):
+        """
+        """
+        median = _preprocess_field(median)
+        self.median_func = np.expand_dims(np.squeeze(median), 1)
+
+        def func(x):
+            return self.median_func * np.exp(x)
+
+        def funcinv(y):
+            return np.log(y / self.median_func)
+
+        super(self.__class__, self).__init__(
+            klmodes_gp, mean=0.0, weights, func, funcinv)

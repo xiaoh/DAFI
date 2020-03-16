@@ -10,12 +10,14 @@ import multiprocessing
 # third party imports
 import numpy as np
 import scipy.sparse as sp
+import yaml
 
 # local imports
-import dafi
+from dafi import PhysicsModel
+from dafi import random_field as rf
+from dafi.random_field import foam
 
-
-class Model(dafi.PhysicsModel):
+class Model(PhysicsModel):
     """ Dynamic model for OpenFoam Reynolds stress nutFoam solver.
 
     The eddy viscosity field (nu_t) is infered by observing the
@@ -26,11 +28,6 @@ class Model(dafi.PhysicsModel):
 
     def __init__(self, inputs_dafi, inputs_model):
         """ Initialize the nutFOAM solver.
-
-        Note
-        ----
-        See documentation for ``DynModel`` (parent class) for
-        information on inputs.
 
         Note
         ----
@@ -63,50 +60,69 @@ class Model(dafi.PhysicsModel):
               Tranformation option for nut s.t. T(nut)~GP(0,K). Options:
               linear, log.
         """
-        # save the main inputs.
-        self.nsamples = nsamples
-        self.max_da_iteration = max_da_iteration
+        # get required DAFI inputs.
+        self.nsamples = inputs_dafi['nsamples']
+        max_iterations = inputs_dafi['max_iterations']
 
-        # read input file and set defaults
-        param_dict = util.read_input_data(model_input)
-        self.forward_interval = int(param_dict['forward_interval'])
-        self.dir_foam_base = param_dict['foam_base_dir']
-        dir_mesh = param_dict['mesh_dir']
+        # read input file
+        with open(inputs_model['input_file'], 'r') as file:
+            input_dict = yaml.load(file, yaml.SafeLoader)
+        self.foam_case = input_dict['foam_case']
+        iteration_step_length = input_dict.get('iteration_step_length', 1.0)
+        iteration_nstep = input_dict['iteration_nstep']
+        klmodes_file = input_dict['klmodes_file']
+        nut_base_foamfile = input_dict['nut_baseline_foamfile']
+        nklmodes = input_dict.get('nklmodes', None)
+        self.ncpu = input_dict.get('ncpu', 1)
+
+        # required attributes
+        self.name = 'nutFoam Eddy viscosity RANS model'
+
+        # results directory
+        self.results_dir = 'results_nutFoam'
+
+        # counter
+        self.da_iteration = 0
+
+        # control dictionary
+        endTime = max_iterations * iteration_nstep * iteration_step_length
+        self.control_list = {
+            'application': 'nutFoam',
+            'startFrom': 'latestTime',
+            'startTime': '0',
+            'stopAt': 'nextWrite',
+            'endTime': f'{endTime}',
+            'deltaT': f'{iteration_step_length}',
+            'writeControl': 'runTime',
+            'writeInterval': f'{iteration_nstep}',
+            'purgeWrite': '2',
+            'writeFormat': 'ascii',
+            'writePrecision': '6',
+            'writeCompression': 'off',
+            'timeFormat': 'fixed',
+            'timePrecision': '6',
+            'runTimeModifiable': 'true',
+        }  # TODO: foam.read_controlDict()
+        self.foam_info = foam.read_header(os.path.join(
+            self.foam_case, 'system', 'controlDict'))
+
+        # initialize the random process
+        klmodes = np.readtxt(klmodes_file)
+        if nklmodes is not None:
+            klmodes = klmodes[:, :nklmodes]
+        weights = foam.get_cell_volumes(self.foam_case)
+        self.nut_base_data = foam.read_field_file(self.nut_base_foamfile)
+        nut_base = self.nut_base_data['internal_field']['value']
+        self.rf_nut = rf.LogNormal(self.klmodes, nut_base, weights)
+
+        # observations
+
+        #######################################################################
+        ########################### OLD #######################################
+        #######################################################################
         obs_file = param_dict['obs_file']
         obs_err_file = param_dict['obs_err_file']
-        kl_modes_file = param_dict['kl_modes_file']
         obs_mat_file = param_dict['obs_mat_file']
-        if 'nkl_modes' in param_dict:
-            nkl_modes = int(param_dict['nkl_modes'])
-        else:
-            nkl_modes = None  # set later to max
-        if 'enable_parallel' in param_dict:
-            enable_parallel = util.str2bool(param_dict['enable_parallel'])
-        else:
-            enable_parallel = False
-        if enable_parallel:
-            if not has_parallel:
-                err_message = 'Parallel Python (pp) not loaded succesfully.'
-                raise RuntimeError(err_message)
-            if 'ncpu' in param_dict:
-                self.ncpu = int(param_dict['ncpu'])
-            else:
-                self.ncpu = 0
-        else:
-            self.ncpu = 1
-        if 'transform' in param_dict:
-            transform = param_dict['transform']
-        else:
-            transform = 'linear'
-
-        # read baseline nut field
-        baseline_file = os.path.join(self.dir_foam_base, '0', 'nut')
-        nut_baseline = foam.read_scalar_from_file(baseline_file)
-        self.ncells = len(nut_baseline)
-
-        # read mesh
-        foam_coords = foam.read_cell_coordinates(dir_mesh)
-        foam_volume = foam.read_cell_volumes(dir_mesh)
 
         # read observations
         self.obs = np.loadtxt(obs_file)
@@ -118,100 +134,33 @@ class Model(dafi.PhysicsModel):
         self.obs_vel2obs = _construct_obsmat_vec(
             obs_mat, self.nstate_obs, self.ncells)
 
-        # read KL modes
-        if nkl_modes is not None:
-            kl_modes = np.loadtxt(kl_modes_file, usecols=range(nkl_modes))
-        else:
-            kl_modes = np.loadtxt(kl_modes_file)
-            self.nkl_modes = kl_modes.shape[1]
-
-        # initiliaze the Gaussian process
-        if transform == 'linear':
-            # nut - nut_baseline ~ GP
-            # baseline=mean
-            def lin(x):
-                return x
-            self.transform = lin
-            self.transform_inv = lin
-        elif transform == 'log':
-            # ln(nut) _ ln(nut_baseline) = ln(nut / nut_baseline) ~ GP
-            # baseline=median
-            self.transform = np.log
-            self.transform_inv = np.exp
-        self.delta_nut_rf = rf.GaussianProcess(
-            name='nut', zero_mean=True, coords=foam_coords,
-            kl_modes=kl_modes, weight_field=foam_volume)
-        self.baseline = self.transform(nut_baseline)
-        self.baseline_mat = np.tile(self.baseline, [self.nsamples, 1]).T
-
-        # required attributes for DAFI
-        self.name = 'FoamNutSolver'
-        self.nstate = nkl_modes
-        self.nstate_obs = len(self.obs)
-        self.init_state = np.zeros(self.nstate)
-
-        # other initialization
-        self.da_step = 0
-        self.foam_solver = 'nutFoam'
-        self.dir_results = 'results_nutfoam'
-
-        # initialize parallel python
-        if(enable_parallel):
-            self.job_server = pp.Server()
-            if self.ncpu > 0:
-                self.job_server.set_ncpus(self.ncpu)
-            else:
-                # use all cpus
-                self.job_server.set_ncpus()
-                self.ncpu = self.job_server.get_ncpus()
-            self.jobs = []
 
     def __str__(self):
-        str_info = 'Dynamic model for nutFoam solver.'
-        return str_info
+        return 'Dynamic model for nutFoam eddy viscosity solver.'
 
     # required methods
     def generate_ensemble(self):
         """ Return states at the first data assimilation time-step.
 
-        Creates the OpenFOAM case directories for each sample. Creates
-        the perturbed nu_t fields (X0) and runs OpenFOAM to get the
-        velocities (HX0).
-
-        Note
-        ----
-        See documentation for ``DynModel`` (parent class) for
-        information on outputs.
+        Creates the OpenFOAM case directories for each sample, creates
+        samples of eddy viscosity (nut) based on samples of the KL modes
+        coefficients (state) and writes nut field files. Returns the
+        coefficients of KL modes for each sample.
         """
-        # generate folders
-        max_end_time = self.max_da_iteration * self.forward_interval
+        # create sample directories
+        os.makedirs(self.results_dir)
         for isample in range(self.nsamples):
-            sample_dir = os.path.join('sample_{:d}'.format(isample + 1))
-            shutil.copytree(self.dir_foam_base, sample_dir)
-            control_dict = os.path.join(sample_dir, "system", "controlDict")
-            util.replace(control_dict, "<endTime>", str(max_end_time))
-            util.replace(control_dict, "<writeInterval>",
-                         str(self.forward_interval))
-        # update X (nut)
-        delta_nut, coeffs = self.delta_nut_rf.sample_kl_reduced(
-            self.nsamples, self.nstate, return_coeffs=True)
-        nut = self.transform_inv(self.baseline_mat + delta_nut)
-        self._modify_openfoam_scalar('nut', nut, '0')
-        # map to HX (U)
-        model_obs = self.state_to_observation(None, False)
-        return (coeffs, model_obs)
+            sample_dir = _sample_dir(isample)
+            # TODO foam.copyfoam()
+            shutil.copytree(self.foam_case, sample_dir)
+            foam.write_controlDict(
+                self.control_list, self.foam_info['foam_version'],
+                self.foam_info['website'], ofcase=sample_dir)
 
-    def forecast_to_time(self, state_vec_current, end_time):
-        """ Return states at the next end time.
-
-        Required by DAFI, but not used for steady problems like this one.
-
-        Note
-        ----
-        See documentation for ``DynModel`` (parent class) for
-        information on inputs and outputs.
-        """
-        return state_vec_current
+        # create samples, modify files, output coefficients (state)
+        samps, coeffs = self.rf_nut.sample_func(self.nsamples)
+        self._modify_openfoam_scalar(samps, '0', nut_base_data)
+        return coeffs
 
     def state_to_observation(self, state_vec, update=True):
         """ Map the states to observation space (from X to HX).
@@ -269,23 +218,29 @@ class Model(dafi.PhysicsModel):
             shutil.move(sample_dir, self.dir_results)
 
     # internal methods
-    def _modify_openfoam_scalar(self, field_name, values, timedir):
+    def _sample_dir(self, isample):
+        "Return name of the sample's directory. "
+        return os.path.join(self.save_dir, f'sample_{isample:d}')
+
+    def _modify_openfoam_scalar(self, values, timedir, data_dict):
         """ Replace the values of a specific field in all samples.
 
         Parameters
         ----------
-        field_name : str
-            The field file to modify.
         values : ndarray
             New values for the field.
             ``dtype=float``, ``ndim=2``, ``shape=(ncells, nsamples)``
         timedir : str
             The time directory in which the field should be modified.
+        data_dict : dict
+            Dictionary with field information.
         """
         for isample in range(self.nsamples):
-            sample_dir = os.path.join('sample_{:d}'.format(isample + 1))
-            field_file = os.path.join(sample_dir, timedir, field_name)
-            foam.write_scalar_to_file(values[:, isample], field_file)
+            file = os.path.join(self._sample_dir(isample), timedir, field_name)
+            value = values[:, isample]
+            data_dict['file'] = file
+            data_dict['internal_field']['value'] = value
+            foam.write_field_file(data_dict**)
 
     def _call_foam(self, sample=False):
         """ Run the OpenFOAM cases for all samples, possibly in

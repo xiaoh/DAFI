@@ -17,10 +17,10 @@ FoamFile
 
 ddtSchemes
 {
-    default          none; //steadyState;
-    ddt(U)           backward; //Euler;
-    ddt(k)           backward; // Euler;
-    ddt(epsilon)     backward; // Euler;
+    default          none;
+    ddt(U)           backward;
+    ddt(k)           backward;
+    ddt(epsilon)     backward;
 }
 
 gradSchemes
@@ -31,12 +31,9 @@ gradSchemes
 divSchemes
 {
     default         Gauss linear;
-    // div(phi,U)      Gauss linearUpwind grad(U);
     div(phi,U)      bounded Gauss upwind;
-    div(phi,k)      bounded Gauss  upwind; // upwind;
-    div(phi,epsilon) bounded Gauss  upwind; // upwind;
-    // div(phi,R)      Gauss upwind;
-    // div((nuEff*dev(T(grad(U))))) Gauss linear;
+    div(phi,k)      bounded Gauss  upwind;
+    div(phi,epsilon) bounded Gauss  upwind;
 }
 
 laplacianSchemes
