@@ -1,4 +1,4 @@
-# Copyright 2020 Virginia Polytechnic Institute and State University.
+
 """ Random fields representation and manipulation.
 
 These functions can be called directly from ``dafi.random_field``, e.g.
@@ -478,6 +478,13 @@ def interpolate_field_rbf(data, coords, kernel, length_scale):
     return interp_func(*args2)
 
 
+def inverse_distance_weights(foam_case, ):
+    """
+    """
+    
+
+    pass
+
 # Gaussian process: generate samples
 def gp_samples_cholesky(cov, nsamples, mean=None, eps=1e-8):
     """ Generate samples of a Gaussian Process using Cholesky
@@ -731,21 +738,29 @@ class GaussianProcess(object):
         """ """
         return np.random.normal(0, 1, [self.nmodes, nsamples])
 
-    def sample_gp(self, nsamples, mean=self.mean):
+    def sample_gp(self, nsamples, mean=None):
         """ """
+        if mean is None:
+            mean = self.mean
         coeffs = self.sample_coeffs(nsamples)
         return reconstruct_kl(self.klmodes, coeffs, mean), coeffs
 
-    def sample_func(self, nsamples, mean=self.mean):
+    def sample_func(self, nsamples, mean=None):
         """ """
+        if mean is None:
+            mean = self.mean
         coeffs = self.sample_coeffs(nsamples)
         samps_gp = reconstruct_kl(self.klmodes, coeffs, mean)
         return self.func(samps_gp), coeffs
 
-    def reconstruct_gp(self, coeffs, mean=self.mean):
+    def reconstruct_gp(self, coeffs, mean=None):
+        if mean is None:
+            mean = self.mean
         return reconstruct_kl(self.klmodes, coeffs, mean)
 
-    def reconstruct_func(self, coeffs, mean=self.mean):
+    def reconstruct_func(self, coeffs, mean=None):
+        if mean is None:
+            mean = self.mean
         val_gp = reconstruct_kl(self.klmodes, coeffs, mean)
         return self.func(val_gp)
 
@@ -769,7 +784,7 @@ class GaussianProcess(object):
         return project_kl(field, self.klmodes, self.weights, mean)
 
 
-class LogNormal(object):
+class LogNormal(GaussianProcess):
     # TODO: Docstrings
 
     def __init__(self, klmodes_gp, median=1.0, weights=None):
@@ -784,5 +799,6 @@ class LogNormal(object):
         def funcinv(y):
             return np.log(y / self.median_func)
 
+        mean = 0.0
         super(self.__class__, self).__init__(
-            klmodes_gp, mean=0.0, weights, func, funcinv)
+            klmodes_gp, mean, weights, func, funcinv)

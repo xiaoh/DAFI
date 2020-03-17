@@ -171,6 +171,33 @@ def get_cell_volumes(foam_case='.', keep_file=False):
     return vol
 
 
+def get_neighbors(foam_case):
+    """ """  # TODO
+    # create mesh if needed
+    delMesh = _checkMesh(foam_case)
+    ncells = get_number_cells(foam_case)
+
+    # read mesh files
+    mesh_dir = os.path.join(foam_case, 'constant', 'polyMesh')
+    owner = read_scalar_field(os.path.join(mesh_dir, 'owner'), ' ')
+    neighbour = read_scalar_field(os.path.join(mesh_dir, 'neighbour'), ' ')
+
+    # keep internal faces only
+    nintfaces = len(neighbour)
+    owner = owner[:nintfaces]
+
+    #
+    connectivity = {cellid: [] for cellid in range(ncells)}
+    for iowner, ineighbour in zip(owner, neighbour):
+        connectivity[iowner].append(ineighbour)
+        connectivity[ineighbour].append(iowner)
+
+    # delete mesh if it was created here
+    if delMesh:
+        shutil.rmtree(os.path.join(foam_case, 'constant', 'polyMesh'))
+
+    return connectivity
+
 # read fields
 def read_field(file, ndim, group='internalField'):
     """ Read the field values from an OpenFOAM field file.
@@ -271,7 +298,7 @@ def read_cell_volumes(file='V'):
 # read entire field file
 def _read_logo(content):
     """ Read info from logo in file header. """
-    def _read_logo(pat)
+    def _read_logo(pat):
         pattern = pat + r":\s+\S+"
         data_str = re.compile(pattern).search(content).group()
         return data_str.split(':')[1].strip()
@@ -284,7 +311,7 @@ def _read_logo(content):
 
 def _read_header_info(content):
     """ Read info from info section in file header. """
-    def _read_header(pat)
+    def _read_header(pat):
         pattern = pat + r"\s+\S+;"
         data_str = re.compile(pattern).search(content).group()
         return data_str.split(pat)[1][:-1].strip()
