@@ -32,8 +32,9 @@ Description
 
 #include "fvCFD.H"
 #include "singlePhaseTransportModel.H"
+#include "turbulentTransportModel.H"
 #include "simpleControl.H"
-#include "fvIOoptionList.H"
+#include "fvOptions.H"
 
 // * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
 
@@ -44,6 +45,7 @@ int main(int argc, char *argv[])
     #include "createMesh.H"
     #include "createFields.H"
     #include "createFvOptions.H"
+    #include "createMRF.H"
     #include "initContinuityErrs.H"
 
     simpleControl simple(mesh);

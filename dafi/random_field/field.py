@@ -16,6 +16,7 @@ import numpy as np
 from scipy import sparse as sp
 from scipy.sparse import linalg as splinalg
 from scipy import interpolate
+from scipy import spatial
 
 
 # KL decomposition
@@ -478,12 +479,36 @@ def interpolate_field_rbf(data, coords, kernel, length_scale):
     return interp_func(*args2)
 
 
-def inverse_distance_weights(foam_case, ):
+def inverse_distance_weights(coords, connectivity, points, tol=1e-6):
+    """ Create linear interpolation matrix (observation operatror H).
     """
-    """
-    
+    # get host cell (cell centre closest to point)
+    tree = spatial.cKDTree(coords)
+    distances, indexes = tree.query(list(points))
 
-    pass
+    npoints = points.shape[0]
+    ncells = coords.shape[0]
+
+    # calculate weights
+    mat = sp.lil_matrix((npoints, ncells))
+    for i in range(npoints):
+        id = indexes[i]
+        if distances[i] < tol:
+            # if location is cell centre
+            mat[i, id] = 1.0
+        else:
+            point = np.expand_dims(np.squeeze(points[i,:]),0)
+            neighbours = coords[connectivity[id], :]
+            dist = spatial.distance.cdist(point, neighbours)
+            weight = 1 / dist
+            wsum = np.sum(weight) + 1 / distances[i]
+            weight /= wsum
+            # host cell
+            mat[i, id] = (1 / distances[i]) / wsum
+            # neighbour cells
+            mat[i, connectivity[id]] = weight
+    return sp.csc_matrix(mat)
+
 
 # Gaussian process: generate samples
 def gp_samples_cholesky(cov, nsamples, mean=None, eps=1e-8):
@@ -719,10 +744,11 @@ class GaussianProcess(object):
 
     def __init__(self, klmodes, mean=None, weights=None, func=None,
                  funcinv=None):
+        nstate = klmodes.shape[0]
         self.klmodes = klmodes
         self.ncell, self.nmodes = self.klmodes.shape
         self.mean = _preprocess_field(mean, self.ncell, 0.0)
-        self.weights = _preprocess_field(mean, self.weights, 1.0)
+        self.weights = _preprocess_field(mean, nstate, 1.0)
 
         def func_identity(x):
             return x
@@ -790,7 +816,8 @@ class LogNormal(GaussianProcess):
     def __init__(self, klmodes_gp, median=1.0, weights=None):
         """
         """
-        median = _preprocess_field(median)
+        nstate = klmodes_gp.shape[0]
+        median = _preprocess_field(median, nstate, 1.0)
         self.median_func = np.expand_dims(np.squeeze(median), 1)
 
         def func(x):
