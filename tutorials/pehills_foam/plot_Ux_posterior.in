@@ -1,38 +1,37 @@
 
-field :U
+field: U
 field_name: U_1
 index: 1
 norm: 0.028
 norm_name: U_b
 
-plot_truth: True
+plot_truth: False
 plot_baseline: True
-plot_obs: True
-plot_samples: False
+plot_obs: False
+plot_samples: True
 plot_sample_mean: True
 plot_sample_median: False
 plot_sample_mode: False
 
-x_pos_list: [0, 2, 4, 4.5, 7]
-x_name_list: [0, 2, 4, 4p5, 7]
+x_pos_list: [4]
+x_name_list: [4]
 y_pos_list: [0.5, 2.5]
 y_name_list: [0p5, 2p5]
 y_cyclic: [False, True]
 
 show_legend: False
-legend_top: True
+legend_top: False
 fix_aspect: True
 
-truth_dir: ../../truth/postProcessing/sets/0
-base_dir: ../../baseline/postProcessing/sets/0
-sample_dir: ../results_nutfoam
-obs_location_file: ../preproc/obs_locations
-obs_values_file: ../inputs/observations
+truth_dir: ./nutfoam_inputs/truth/postProcessing/sets/0
+base_dir: ./nutfoam_inputs/baseline/sets
+sample_dir: ./results_nutFoam
+obs_file: ./nutfoam_inputs/obs
 
 save_dir: .
 file_name: posterior_U1.pdf
 
-da_step: 10
-nsamps: 500
+da_step: 2
+nsamps: 2
 show_plot: True
-scale = 1.5
+scale: 1.5
