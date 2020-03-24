@@ -14,6 +14,8 @@ FoamFile
     object      sampleDict;
 }
 // * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
+type sets;
+libs ("libsampling.so");
 
 setFormat raw;
 surfaceFormat vtk;
@@ -68,6 +70,13 @@ sets
         axis        y;
         start       (4.00001 2e-5  0.05);
         end         (4.00001 3.03  0.05);
+    }
+    line_x4p5
+    {
+        type        midPoint;
+        axis        y;
+        start       (4.5 -1  0.05);
+        end         (4.5 4  0.05);
     }
     line_x5
     {

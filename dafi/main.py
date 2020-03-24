@@ -302,8 +302,21 @@ def _solve(inputs_dafi, inverse, model):
                 file = key + f'_{time}'
                 np.savetxt(os.path.join(dir, file), val)
 
+        # model cleanup
+        try:
+            model.clean('iter')
+        except AttributeError:
+            pass
+
         # collect output
         state_analysis_list.append(state_analysis)
+
+    # model cleanup
+    try:
+        model.clean('time')
+    except AttributeError:
+        pass
+
     return state_analysis_list
 
 

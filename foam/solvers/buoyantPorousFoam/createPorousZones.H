@@ -1,2 +1,0 @@
-    IOporosityModelList pZones(mesh);
-

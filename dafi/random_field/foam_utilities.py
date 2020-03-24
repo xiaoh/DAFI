@@ -94,7 +94,7 @@ def _checkMesh(foam_case):
     return meshCreated
 
 
-def get_cell_coordinates(foam_case='.', keep_file=False):
+def get_cell_centres(foam_case='.', keep_file=False):
     """ Get the coordinates of cell centers in an OpenFOAM case.
 
     Requires OpenFOAM to be sourced.
@@ -124,7 +124,7 @@ def get_cell_coordinates(foam_case='.', keep_file=False):
     os.remove(os.path.join(foam_case, timedir, 'Cy'))
     os.remove(os.path.join(foam_case, timedir, 'Cz'))
     file = os.path.join(foam_case, timedir, 'C')
-    coords = read_cell_coordinates(file, group='internalField')
+    coords = read_cell_centres(file, group='internalField')
     if not keep_file:
         os.remove(file)
     if del0:
@@ -280,7 +280,7 @@ def read_tensor_field(file, group='internalField'):
     return read_field(file, NDIM['tensor'], group=group)
 
 
-def read_cell_coordinates(file='C', group='internalField'):
+def read_cell_centres(file='C', group='internalField'):
     """ Read an OpenFOAM mesh coordinate file.
 
     See :py:meth:`read_field` for more information.
@@ -518,7 +518,7 @@ def foam_header_logo(foam_version, website):
     return header
 
 
-def foam_header_info(name, foamclass, location=None):
+def foam_header_info(name, foamclass, location=None, isfield=True):
     """ Write the info part of the OpenFOAM file header.
 
     Used by :py:meth:`write_field_file`.
@@ -542,7 +542,8 @@ def foam_header_info(name, foamclass, location=None):
 
     VERSION = '2.0'
     FORMAT = 'ascii'
-    foamclass = 'vol' + foamclass[0].capitalize() + foamclass[1:] + 'Field'
+    if isfield:
+        foamclass = 'vol' + foamclass[0].capitalize() + foamclass[1:] + 'Field'
     # create header
     header = 'FoamFile\n{'
     header += header_line('version', VERSION)
@@ -578,8 +579,8 @@ def write_controlDict(content, foam_version, website, ofcase=None):
         Content written to file.
     """
     # create content
-    file_str = foam_header_logo(foam_version, website)
-    file_str += '\n' + foam_header_info('controlDict', 'dictionary', 'system')
+    file_str = foam_header_logo(foam_version, website) + '\n'
+    file_str += foam_header_info('controlDict', 'dictionary', 'system', False)
     file_str += '\n' + foam_sep() + '\n'
     for key, val in content.items():
         file_str += f'\n{key:<16} {val};'

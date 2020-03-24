@@ -483,15 +483,15 @@ def inverse_distance_weights(coords, connectivity, points, tol=1e-6):
     """ Create linear interpolation matrix (observation operatror H).
     """
     # get host cell (cell centre closest to point)
-    tree = scipy.spatial.cKDTree(coords)
+    tree = spatial.cKDTree(coords)
     distances, indexes = tree.query(list(points))
 
     npoints = points.shape[0]
     ncells = coords.shape[0]
 
     # calculate weights
-    mat = sp.csc_matrix(npoints, ncells)
-    for i in range(nPoints):
+    mat = sp.lil_matrix((npoints, ncells))
+    for i in range(npoints):
         id = indexes[i]
         if distances[i] < tol:
             # if location is cell centre
@@ -499,7 +499,7 @@ def inverse_distance_weights(coords, connectivity, points, tol=1e-6):
         else:
             point = np.expand_dims(np.squeeze(points[i,:]),0)
             neighbours = coords[connectivity[id], :]
-            dist = spatial.distance.cdist(point, neighbors)
+            dist = spatial.distance.cdist(point, neighbours)
             weight = 1 / dist
             wsum = np.sum(weight) + 1 / distances[i]
             weight /= wsum
@@ -507,7 +507,7 @@ def inverse_distance_weights(coords, connectivity, points, tol=1e-6):
             mat[i, id] = (1 / distances[i]) / wsum
             # neighbour cells
             mat[i, connectivity[id]] = weight
-    return mat
+    return sp.csc_matrix(mat)
 
 
 # Gaussian process: generate samples
@@ -744,10 +744,11 @@ class GaussianProcess(object):
 
     def __init__(self, klmodes, mean=None, weights=None, func=None,
                  funcinv=None):
+        nstate = klmodes.shape[0]
         self.klmodes = klmodes
         self.ncell, self.nmodes = self.klmodes.shape
         self.mean = _preprocess_field(mean, self.ncell, 0.0)
-        self.weights = _preprocess_field(mean, self.weights, 1.0)
+        self.weights = _preprocess_field(mean, nstate, 1.0)
 
         def func_identity(x):
             return x
@@ -815,7 +816,8 @@ class LogNormal(GaussianProcess):
     def __init__(self, klmodes_gp, median=1.0, weights=None):
         """
         """
-        median = _preprocess_field(median)
+        nstate = klmodes_gp.shape[0]
+        median = _preprocess_field(median, nstate, 1.0)
         self.median_func = np.expand_dims(np.squeeze(median), 1)
 
         def func(x):
