@@ -174,8 +174,8 @@ def get_cell_volumes(foam_case='.', keep_file=False):
 def get_neighbors(foam_case):
     """ """  # TODO
     # create mesh if needed
-    delMesh = _checkMesh(foam_case)
-    ncells = get_number_cells(foam_case)
+    # delMesh = _checkMesh(foam_case)
+    ncells = 1500#get_number_cells(foam_case)
 
     # read mesh files
     mesh_dir = os.path.join(foam_case, 'constant', 'polyMesh')
@@ -189,14 +189,15 @@ def get_neighbors(foam_case):
     #
     connectivity = {cellid: [] for cellid in range(ncells)}
     for iowner, ineighbour in zip(owner, neighbour):
-        connectivity[iowner].append(ineighbour)
-        connectivity[ineighbour].append(iowner)
+        connectivity[int(iowner)].append(int(ineighbour))
+        connectivity[int(ineighbour)].append(int(iowner))
 
     # delete mesh if it was created here
-    if delMesh:
-        shutil.rmtree(os.path.join(foam_case, 'constant', 'polyMesh'))
+    # if delMesh:
+    #     shutil.rmtree(os.path.join(foam_case, 'constant', 'polyMesh'))
 
     return connectivity
+
 
 # read fields
 def read_field(file, ndim, group='internalField'):

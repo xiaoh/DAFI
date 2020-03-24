@@ -16,6 +16,7 @@ import numpy as np
 from scipy import sparse as sp
 from scipy.sparse import linalg as splinalg
 from scipy import interpolate
+from scipy import spatial
 
 
 # KL decomposition
@@ -478,12 +479,36 @@ def interpolate_field_rbf(data, coords, kernel, length_scale):
     return interp_func(*args2)
 
 
-def inverse_distance_weights(foam_case, ):
+def inverse_distance_weights(coords, connectivity, points, tol=1e-6):
+    """ Create linear interpolation matrix (observation operatror H).
     """
-    """
-    
+    # get host cell (cell centre closest to point)
+    tree = scipy.spatial.cKDTree(coords)
+    distances, indexes = tree.query(list(points))
 
-    pass
+    npoints = points.shape[0]
+    ncells = coords.shape[0]
+
+    # calculate weights
+    mat = sp.csc_matrix(npoints, ncells)
+    for i in range(nPoints):
+        id = indexes[i]
+        if distances[i] < tol:
+            # if location is cell centre
+            mat[i, id] = 1.0
+        else:
+            point = np.expand_dims(np.squeeze(points[i,:]),0)
+            neighbours = coords[connectivity[id], :]
+            dist = spatial.distance.cdist(point, neighbors)
+            weight = 1 / dist
+            wsum = np.sum(weight) + 1 / distances[i]
+            weight /= wsum
+            # host cell
+            mat[i, id] = (1 / distances[i]) / wsum
+            # neighbour cells
+            mat[i, connectivity[id]] = weight
+    return mat
+
 
 # Gaussian process: generate samples
 def gp_samples_cholesky(cov, nsamples, mean=None, eps=1e-8):
