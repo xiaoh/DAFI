@@ -16,8 +16,9 @@ mpl.rcParams.update({'text.usetex': True,
                      'text.latex.preamble': ['\\usepackage{gensymb}'], })
 
 
-if not os.path.exists('results_figures/'):
-    os.mkdir('results_figures/')
+save_dir = 'results_figures'
+if not os.path.exists(save_dir):
+    os.mkdir(save_dir)
 
 
 def plot_inferred_mu(step, nmodes):
@@ -79,7 +80,7 @@ def main():
             [u1[0], u2[0], u3[0], u4[0]],
             ['samples', u2[0].get_label(), u3[0].get_label(), u4[0].get_label()],
             loc='best')
-        figure_name = './figures/DA_u_' + case + '.png'
+        figure_name = os.path.join(save_dir, f'DA_u_{case}.png')
         plt.savefig(figure_name)
 
         fig2, ax2 = plt.subplots()
@@ -93,7 +94,7 @@ def main():
             ['samples', v2[0].get_label(), v3[0].get_label(), v4[0].get_label()],
             loc='best')
         # save figure
-        figure_name = './figures/DA_mu_'+case+'.png'
+        figure_name = os.path.join(save_dir, f'DA_mu_{case}.png')
         plt.savefig(figure_name)
 
 
