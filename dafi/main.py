@@ -262,10 +262,9 @@ def _solve(inputs_dafi, inverse, model):
                            'residual': residual_list,
                            }
             for key, val in convergence.items():
-                dir = os.path.join(tdir, key)
-                _create_dir(dir)
-                file = key + f'_{iteration}'
-                np.savetxt(os.path.join(dir, file), val)
+                np.savetxt(os.path.join(tdir, key), val)
+            key, val = ('iteration', np.array([iteration], dtype=int))
+            np.savetxt(os.path.join(tdir, key), val, fmt='%i')
 
         # log inner loop summary
         if early_stop:
@@ -282,7 +281,7 @@ def _solve(inputs_dafi, inverse, model):
             logger.log(_log_level(2), log_message)
             state_in_obsspace = model.state_to_observation(state_analysis)
             if inputs_dafi['save_level'] in {'iter', 'debug'}:
-                dir = os.path.join(tdir, key)
+                dir = os.path.join(tdir, 'Hx')
                 file = 'Hxa'
                 np.savetxt(os.path.join(dir, file), state_in_obsspace)
 

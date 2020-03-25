@@ -2,7 +2,7 @@
 # prior distribution (diffusivity)
 prior_mean: 0.8
 stddev: 0.5
-length_scale:  0.02
+length_scale:  0.1
 
 # Observations
 obs_locations: [0.25, 0.5, 0.75]
@@ -10,5 +10,4 @@ obs_rel_stddev: 0.01
 obs_abs_stddev: 0.0001
 
 # KL modes options
-calculate_kl_flag: True
 nmodes: 15

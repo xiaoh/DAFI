@@ -1,15 +1,11 @@
-# Copyright 2018 Virginia Polytechnic Institute and State University.
+# Copyright 2020 Virginia Polytechnic Institute and State University.
 """ Physics model for the one dimension diffusion equation."""
 
 # standard library imports
-import ast
-import sys
-import math
 import os
 
 # third party imports
 import numpy as np
-import scipy.sparse as sp
 import yaml
 
 # local imports
@@ -24,14 +20,13 @@ class Model(PhysicsModel):
     def __init__(self, inputs_dafi, inputs_model):
         # save the main input
         self.nsamples = inputs_dafi['nsamples']
-        self.max_iteration = inputs_dafi['max_iterations']
 
         # required attributes
         self.name = '1D diffusion Equation'
 
         # case properties
         self.space_interval = 0.01
-        self.max_length = 1
+        max_length = 1.0
 
         # counter for number of state_to_observation calls
         self.counter = 0
@@ -40,14 +35,14 @@ class Model(PhysicsModel):
         input_file = inputs_model['input_file']
         with open(input_file, 'r') as f:
             inputs_model = yaml.load(f, yaml.SafeLoader)
-        self.mu_init = inputs_model['prior_mean']
-        self.stddev = inputs_model['stddev']
-        self.length_scale = inputs_model['length_scale']
+        mu_init = inputs_model['prior_mean']
+        stddev = inputs_model['stddev']
+        length_scale = inputs_model['length_scale']
         self.obs_loc = inputs_model['obs_locations']
         obs_rel_std = inputs_model['obs_rel_stddev']
         obs_abs_std = inputs_model['obs_abs_stddev']
         self.nmodes = inputs_model['nmodes']
-        self.calculate_kl_flag = inputs_model['calculate_kl_flag']
+        calculate_kl_flag = inputs_model.get('calculate_kl_flag', True)
 
         # create save directory
         self.savedir = './results_diffusion'
@@ -55,26 +50,25 @@ class Model(PhysicsModel):
             os.makedirs(self.savedir)
 
         # create spatial coordinate and save
-        self.x_coor = np.arange(
-            0, self.max_length+self.space_interval, self.space_interval)
+        self.x_coor = np.expand_dims(np.arange(
+            0, max_length+self.space_interval, self.space_interval), 1)
         np.savetxt(os.path.join(self.savedir, 'x_coor.dat'), self.x_coor)
 
         # dimension of state space
         self.ncells = self.x_coor.shape[0]
 
-        # create source term fx
-        source = np.zeros(self.ncells)
-        for i in range(self.ncells - 1):
-            source[i] = math.sin(0.2*np.pi*self.x_coor[i])
-        source = np.mat(source).T
-        self.fx = source.A
+        # create source term
+        period = 10 * max_length
+        mag = 1.0
+        self.fx = mag * np.sin(2.0 * np.pi / (period) * self.x_coor)
+        self.fx[-1] = 0.0  # Q
 
         # create or read modes for K-L expansion
-        if self.calculate_kl_flag:
+        if calculate_kl_flag:
             # covariance
             cov = rf.covariance.generate_cov(
-                'sqrexp', self.stddev, coords=self.x_coor,
-                length_scales=[self.length_scale])
+                'sqrexp', stddev, coords=self.x_coor,
+                length_scales=[length_scale])
             # KL decomposition
             eig_vals, kl_modes = rf.calc_kl_modes(
                 cov, self.nmodes, self.space_interval, normalize=False)
@@ -83,9 +77,12 @@ class Model(PhysicsModel):
             np.savetxt(os.path.join(self.savedir, 'eigVals.dat'), eig_vals)
             np.savetxt(os.path.join(self.savedir, 'eigValsNorm.dat'),
                        eig_vals/eig_vals[0])
-            self.kl_modes = kl_modes
         else:
-            self.kl_modes = np.loadtxt('KLmodes.dat')
+            kl_modes = np.loadtxt('KLmodes.dat')
+        kl_modes = kl_modes[:-1, :]  # Q
+
+        # create random field
+        self.rf = rf.LogNormal(kl_modes, mu_init, self.space_interval)
 
         # create observations
         true_obs = self._truth()
@@ -93,6 +90,14 @@ class Model(PhysicsModel):
         self.obs_error = np.diag(std_obs**2)
         self.obs = np.random.multivariate_normal(true_obs, self.obs_error)
         self.nobs = len(self.obs)
+        np.savetxt(os.path.join(self.savedir, 'obs.dat'), self.obs)
+        np.savetxt(os.path.join(self.savedir, 'std_obs.dat'), std_obs)
+
+        # solve baseline
+        mu = np.ones(self.ncells-1) * mu_init  # Q
+        mu_dot = np.zeros(self.ncells-1)  # Q
+        u_vec = self._solve_diffusion_equation(mu, mu_dot)
+        np.savetxt(os.path.join(self.savedir, 'u_baseline.dat'), u_vec)
 
     def __str__(self):
         return '1-D heat diffusion model.'
@@ -120,9 +125,11 @@ class Model(PhysicsModel):
         model_obs = np.zeros([self.nobs, self.nsamples])
         # solve model in observation space for each sample
         for isample in range(self.nsamples):
-            mu, mu_dot = self._get_mu_mudot(state_vec[:, isample])
+            mu = np.squeeze(self.rf.reconstruct_func(state_vec[:, isample]))
+            mu_dot = np.gradient(mu, self.space_interval)
             u_vec = self._solve_diffusion_equation(mu, mu_dot)
-            model_obs[:, isample] = np.interp(self.obs_loc, self.x_coor, u_vec)
+            model_obs[:, isample] = np.interp(
+                self.obs_loc, np.squeeze(self.x_coor), u_vec)
             u_mat[:, isample] = u_vec
         np.savetxt(os.path.join(self.savedir, f'U.{self.counter}'), u_mat)
         return model_obs
@@ -132,7 +139,7 @@ class Model(PhysicsModel):
         return self.obs, self.obs_error
 
     def _truth(self):
-        """Return synthetic truth in obervation space.
+        """Return synthetic truth in observation space.
 
         Returns
         -------
@@ -141,13 +148,10 @@ class Model(PhysicsModel):
             *dtype=float*, *ndim=1*, *shape=(nstate_obs)*
         """
         # Synthetic truth, omega=1,1,1,0,0,0,...
-        synthetic_mu = np.zeros((self.ncells))
         omega = np.zeros((self.nmodes))
         omega[0:3] = np.array([1, 1, 1])
         np.savetxt(os.path.join(self.savedir, 'omega_truth.dat'), omega)
-        for i in range(self.nmodes):
-            synthetic_mu += omega[i] * self.kl_modes[:, i]
-        mu = self.mu_init * np.exp(synthetic_mu[:-1])
+        mu = np.squeeze(self.rf.reconstruct_func(omega))
         mu_dot = np.gradient(mu, self.space_interval)
         np.savetxt(os.path.join(self.savedir, 'mu_truth.dat'), mu)
 
@@ -156,7 +160,7 @@ class Model(PhysicsModel):
         np.savetxt(os.path.join(self.savedir, 'u_truth.dat'), u_vec)
 
         # interpolate
-        return np.interp(self.obs_loc, self.x_coor, u_vec)
+        return np.interp(self.obs_loc, np.squeeze(self.x_coor), u_vec)
 
     def _solve_diffusion_equation(self, mu, mu_dot):
         """ Solve the one-dimensional diffusion equation.
@@ -183,41 +187,11 @@ class Model(PhysicsModel):
         B1 = np.append(B, 1)
         D1 = np.diag(B1)
         D1[0][0] = 1
-        D2 = np.diag(C, 1)   # C above the main diagonal
+        D2 = np.diag(C, 1)  # C above the main diagonal
         D2[0][1] = 0
         A1 = np.append(A, 0)
-        D3 = np.diag(A1[1:self.ncells], -1)   # A below the main diagonal
+        D3 = np.diag(A1[1:self.ncells], -1)  # A below the main diagonal
         D = D1+D2+D3
         D = np.mat(D)
         u = - (D.I)*(self.fx)
         return u.getA1()
-
-    def _get_mu_mudot(self, state):
-        """ Convert state (KL coefficients) to diffusivity field and
-        calculate spatial derivative.
-
-        Parameters
-        ----------
-        state : ndarray
-            KL coefficients. *dtype=float*, *ndim=1*, *shape=(nstate)*
-
-        Returns
-        -------
-        mu : ndarray
-            Diffusivity field. *dtype=float*, *ndim=1*, *shape=(ncells)*
-        mu_dot : ndarray
-            Spatial derivative (d/dx) of the diffusivity field.
-            *dtype=float*, *ndim=1*, *shape=(ncells)*
-        """
-        mu = np.zeros(self.ncells-1)
-        mu_dot = np.zeros(self.ncells-1)
-        # obtain diffusivity based on KL coefficient and KL mode
-        for imode in range(self.nmodes):
-            mode_dot = np.gradient(
-                self.kl_modes[:-1, imode], self.space_interval)
-            mu_dot += state[imode] * mode_dot
-        # for imode in range(self.nmodes):
-            mu += state[imode] * self.kl_modes[:-1, imode]
-        mu = self.mu_init * np.exp(mu)
-        mu_dot *= mu
-        return mu, mu_dot

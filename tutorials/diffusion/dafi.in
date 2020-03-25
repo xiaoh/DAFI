@@ -3,11 +3,10 @@ dafi:
     model_file: diffusion.py
     inverse_method: EnKF
     nsamples: 100
-    max_iterations: 100
-    rand_seed: 1
-    verbosity: 2
+    max_iterations: 20
+    verbosity: 3
     convergence_option: discrepancy
-    convergence_factor: 1.2
+    convergence_factor: 1.0
     save_level: iter
     save_dir: results
     analysis_to_obs: True
@@ -16,4 +15,3 @@ inverse:
 
 model:
     input_file: diffusion.in
-    penalties_python_file: ./penalties.py
