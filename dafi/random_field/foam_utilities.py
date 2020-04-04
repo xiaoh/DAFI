@@ -88,7 +88,7 @@ def _checkMesh(foam_case):
     meshdir = os.path.join(foam_case, 'constant', 'polyMesh')
     meshCreated = False
     if not os.path.isdir(meshdir):
-        bash_command = "blockMesh -case" + foam_case
+        bash_command = "blockMesh -case " + foam_case
         subprocess.call(bash_command, shell=True)
         meshCreated = True
     return meshCreated
@@ -118,7 +118,7 @@ def get_cell_centres(foam_case='.', keep_file=False):
     del0 = _check0(foam_case)
     delMesh = _checkMesh(foam_case)
     bash_command = "simpleFoam -postProcess -func writeCellCentres " + \
-        "-case " + foam_case + f" -time '{timedir}' " + "&> /dev/null"
+        "-case " + foam_case + f" -time '{timedir}' " + "> /dev/null"
     subprocess.call(bash_command, shell=True)
     os.remove(os.path.join(foam_case, timedir, 'Cx'))
     os.remove(os.path.join(foam_case, timedir, 'Cy'))
@@ -158,7 +158,7 @@ def get_cell_volumes(foam_case='.', keep_file=False):
     del0 = _check0(foam_case)
     delMesh = _checkMesh(foam_case)
     bash_command = "simpleFoam -postProcess -func writeCellVolumes " + \
-        "-case " + foam_case + f" -time '{timedir}' " + "&> /dev/null"
+        "-case " + foam_case + f" -time '{timedir}' " + "> /dev/null"
     subprocess.call(bash_command, shell=True)
     file = os.path.join(foam_case, timedir, 'V')
     vol = read_cell_volumes(file)
