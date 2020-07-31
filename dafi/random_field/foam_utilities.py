@@ -117,7 +117,7 @@ def get_cell_centres(foam_case='.', keep_file=False):
     timedir = '0'
     del0 = _check0(foam_case)
     delMesh = _checkMesh(foam_case)
-    bash_command = "simpleFoam -postProcess -func writeCellCentres " + \
+    bash_command = "postProcess -func writeCellCentres " + \
         "-case " + foam_case + f" -time '{timedir}' " + "> /dev/null"
     subprocess.call(bash_command, shell=True)
     os.remove(os.path.join(foam_case, timedir, 'Cx'))
@@ -157,7 +157,7 @@ def get_cell_volumes(foam_case='.', keep_file=False):
     timedir = '0'
     del0 = _check0(foam_case)
     delMesh = _checkMesh(foam_case)
-    bash_command = "simpleFoam -postProcess -func writeCellVolumes " + \
+    bash_command = "postProcess -func writeCellVolumes " + \
         "-case " + foam_case + f" -time '{timedir}' " + "> /dev/null"
     subprocess.call(bash_command, shell=True)
     file = os.path.join(foam_case, timedir, 'V')
@@ -378,7 +378,9 @@ def read_field_file(file):
     data_str = re.compile(pattern).search(content).group()
     if data_str.split()[1] == 'uniform':
         internal['uniform'] = True
-        internal['value'] = data_str.split('uniform')[1].strip()[:-1]
+        tmp = data_str.split('uniform')[1].strip()[:-1]
+        tmp = tmp.replace('(', '').replace(')', '').split()
+        internal['value'] =  np.array([float(i) for i in tmp])
     else:
         internal['uniform'] = False
         internal['value'] = read_field(file, NDIM[info['foam_class']])
@@ -409,7 +411,12 @@ def read_field_file(file):
             if v.split()[0] == 'uniform':
                 value['uniform'] = True
                 v = v.split('uniform')[1]
-                value['data'] = v.replace('}', '').replace(';', '').strip()
+                tmp = v.replace('}', '').replace(';', '').strip()
+                tmp = tmp.replace('(', '').replace(')', '').split()
+                if len(tmp) == 1:
+                    value['data'] = float(tmp[0])
+                else:
+                    value['data'] =  np.array([float(i) for i in tmp])
             else:
                 value['uniform'] = False
                 value['data'] = read_field(
@@ -684,6 +691,7 @@ def write_field_file(name, foam_class, dimensions, internal_field,
             # list type
             if isinstance(value, (list, np.ndarray)):
                 if isinstance(value, np.ndarray):
+                    # value = np.atleast_1d(np.squeeze(value))
                     value = np.squeeze(value)
                     if value.ndim != 1:
                         err_msg = 'Uniform data should have one dimension.'
