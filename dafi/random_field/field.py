@@ -317,6 +317,8 @@ def integral(field, weight_field):
     field_integral : float
         The integral of the field over the domain.
     """
+    field = np.squeeze(field)
+    assert field.ndim == 1
     nstate = len(field)
     weight_field = _preprocess_field(weight_field, nstate, 1.0)
     return np.sum(field * weight_field)
