@@ -183,6 +183,7 @@ def corr_to_cov(corr, stddev):
     """
     if len(np.atleast_1d(np.squeeze(np.array(stddev)))) == 1:
         # constant stddev
+        stddev = np.atleast_2d(np.squeeze(stddev))
         cov = stddev**2 * corr
     else:
         stddev = np.atleast_2d(stddev)

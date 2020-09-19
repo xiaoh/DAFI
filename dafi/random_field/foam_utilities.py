@@ -94,7 +94,7 @@ def _checkMesh(foam_case):
     return meshCreated
 
 
-def get_cell_centres(foam_case='.', keep_file=False):
+def get_cell_centres(foam_case='.', group='internalField',  keep_file=False):
     """ Get the coordinates of cell centers in an OpenFOAM case.
 
     Requires OpenFOAM to be sourced.
@@ -124,7 +124,7 @@ def get_cell_centres(foam_case='.', keep_file=False):
     os.remove(os.path.join(foam_case, timedir, 'Cy'))
     os.remove(os.path.join(foam_case, timedir, 'Cz'))
     file = os.path.join(foam_case, timedir, 'C')
-    coords = read_cell_centres(file, group='internalField')
+    coords = read_cell_centres(file, group=group)
     if not keep_file:
         os.remove(file)
     if del0:
