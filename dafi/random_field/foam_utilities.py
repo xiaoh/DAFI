@@ -38,7 +38,7 @@ def get_number_cells(foam_case='.'):
         Number of cells.
     """
     bash_command = "checkMesh -case " + foam_case + \
-        " -time '0' | grep '    cells:' > tmp.ncells"
+        " -time '0' | grep '    cells:'" # > tmp.ncells"
     cells = subprocess.check_output(bash_command, shell=True)
     cells = cells.decode("utf-8").replace('\n', '').split(':')[1].strip()
     return int(cells)
@@ -171,11 +171,13 @@ def get_cell_volumes(foam_case='.', keep_file=False):
     return vol
 
 
-def get_neighbors(foam_case):
+def get_neighbors(foam_case='.'):
     """ """  # TODO
     # create mesh if needed
-    # delMesh = _checkMesh(foam_case)
-    ncells = 1500#get_number_cells(foam_case)
+    timedir = '0'
+    del0 = _check0(foam_case)
+    delMesh = _checkMesh(foam_case)
+    ncells = get_number_cells(foam_case)
 
     # read mesh files
     mesh_dir = os.path.join(foam_case, 'constant', 'polyMesh')
@@ -192,9 +194,10 @@ def get_neighbors(foam_case):
         connectivity[int(iowner)].append(int(ineighbour))
         connectivity[int(ineighbour)].append(int(iowner))
 
-    # delete mesh if it was created here
-    # if delMesh:
-    #     shutil.rmtree(os.path.join(foam_case, 'constant', 'polyMesh'))
+    if del0:
+        shutil.rmtree(os.path.join(foam_case, timedir))
+    if delMesh:
+        shutil.rmtree(os.path.join(foam_case, 'constant', 'polyMesh'))
 
     return connectivity
 
@@ -235,7 +238,7 @@ def read_field(file, ndim, group='internalField'):
         data_structure = f"({floatn}\\n)+"
     else:
         data_structure = r'(\(' + f"({floatn}" + r"(\ ))" + \
-                         f"{{{ndim-1}}}{floatn}" + r"\)\n)+"
+                        f"{{{ndim-1}}}{floatn}" + r"\)\n)+"
     # extract data
     pattern = r'\(\n' + data_structure + r'\)'
     data_str = re.compile(pattern).search(content).group()
