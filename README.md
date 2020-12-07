@@ -10,9 +10,9 @@ Cite: MichelénStröfer, Zhang, Xiao. DAFI: An open-source framework for ensembl
 
 List of publications using DAFI:
 
-- X.-L. Zhang*, C. Michelén-Ströfer*, H. Xiao. Regularization of ensemble Kalman methods for inverse problems. Journal of Computational Physics, 416, 109517 (26 pages), 2020. DOI: [10.1016/j.jcp.2020.109517](https://doi.org/10.1016/j.jcp.2020.109517) Also available at: [arxiv: 1910.01292](https://arxiv.org/abs/1910.01292)
+- X.-L. Zhang, C. Michelén-Ströfer, H. Xiao. Regularization of ensemble Kalman methods for inverse problems. Journal of Computational Physics, 416, 109517 (26 pages), 2020. DOI: [10.1016/j.jcp.2020.109517](https://doi.org/10.1016/j.jcp.2020.109517) Also available at: [arxiv: 1910.01292](https://arxiv.org/abs/1910.01292)
 
-- X.-L. Zhang*, H. Xiao, Th. Gomez, O. Coutier-Delgosha. Evaluation of ensemble methods for quantifying uncertainties in steady-state CFD applications with small ensemble sizes. Computers and Fluids, 203, 104530, 2020. DOI: [10.1016/j.compfluid.2020.104530](https://doi.org/10.1016/j.compfluid.2020.104530) Also available at: [arxiv: 2004.05541](https://arxiv.org/abs/2004.05541)
+- X.-L. Zhang, H. Xiao, Th. Gomez, O. Coutier-Delgosha. Evaluation of ensemble methods for quantifying uncertainties in steady-state CFD applications with small ensemble sizes. Computers and Fluids, 203, 104530, 2020. DOI: [10.1016/j.compfluid.2020.104530](https://doi.org/10.1016/j.compfluid.2020.104530) Also available at: [arxiv: 2004.05541](https://arxiv.org/abs/2004.05541)
 
 
 PLAN Before Release:
