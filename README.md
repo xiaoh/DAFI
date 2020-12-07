@@ -36,4 +36,4 @@ Contributors:
 * Rui Sun
 * Jinlong Wu
 
-Contact: Carlos A. Michelén Ströfer (cmich@vt.edu) Heng Xiao (hengxiao@vt.edu)
+Contact: Carlos A. Michelén Ströfer; Heng Xiao
