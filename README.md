@@ -6,7 +6,7 @@ Developed at Dr. Heng Xiao's group at Virginia Tech: [Data-Enabled Computational
 
 Website: https://dafi.readthedocs.io/en/latest/
 
-Cite: MichelénStröfer, Zhang, Xiao. DAFI: An open-source framework for ensemble-based data assimilation and field inversion. *Communications in Computational Physics*, 2021. In Press. [arxiv: 2012.02651](https://arxiv.org/abs/2012.02651)
+Cite: C. Michelén Ströfer, X-L. Zhang, H. Xiao. DAFI: An open-source framework for ensemble-based data assimilation and field inversion. *Communications in Computational Physics*, 2021. In Press. [arxiv: 2012.02651](https://arxiv.org/abs/2012.02651)
 
 List of publications using DAFI:
 
