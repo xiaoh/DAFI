@@ -79,6 +79,6 @@ For more information, please refer to :cite:`xiao2016`
 
 References
 ----------
-.. bibliography:: Theory.bib
+.. bibliography:: theory.bib
    :style: unsrt
    :labelprefix: A
