@@ -28,6 +28,7 @@ Prerequisites\:
     * NumPy
     * SciPy
     * Matplotlib
+    * PyYAML
 
 
 Developers
