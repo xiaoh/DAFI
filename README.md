@@ -4,7 +4,7 @@ Ensemble based data-assimilation and field inversion.
 
 Developed at Dr. Heng Xiao's group at Virginia Tech: [Data-Enabled Computational Mechanics Laboratory at Virgnia Tech.](https://www.aoe.vt.edu/people/faculty/xiaoheng/personal-page.html)
 
-Website: https://dafi.readthedocs.io/en/latest/
+Website: https://dafi.readthedocs.io
 
 Cite: C. Michelén Ströfer, X-L. Zhang, H. Xiao. DAFI: An open-source framework for ensemble-based data assimilation and field inversion. *Communications in Computational Physics*, 2021. In Press. [arxiv: 2012.02651](https://arxiv.org/abs/2012.02651)
 
