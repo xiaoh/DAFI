@@ -5,13 +5,14 @@ These functions are accesible from ``dafi.random_field.foam``.
 """
 
 # standard library imports
-import numpy as np
 import os
 import shutil
 import re
 import tempfile
 import subprocess
 
+# third party imports
+import numpy as np
 
 # global variables
 NDIM = {'scalar': 1,
