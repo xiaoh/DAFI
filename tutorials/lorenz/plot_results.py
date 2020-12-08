@@ -12,14 +12,19 @@ import matplotlib.pyplot as plt
 import yaml
 
 # local import
-# TODO: import lorenz model with importlib
-from lorenz import lorenz, NSTATE, OBSERVE_STATE
+from lorenz import NSTATE, OBSERVE_STATE
 
 
 # read input file
 input_file = 'dafi.in'
 with open(input_file, 'r') as f:
     input_dafi = yaml.load(f, yaml.SafeLoader)
+
+# initialize physics model
+spec = importlib.util.spec_from_file_location("model", 'lorenz.py')
+model_module = importlib.util.module_from_spec(spec)
+spec.loader.exec_module(model_module)
+lorenz = getattr(model_module, 'lorenz')
 
 # what to plot
 plot_truth = True
@@ -29,7 +34,7 @@ plot_samps = True
 plot_baseline = True
 
 # create directory
-savedir = 'results_postprocess'
+savedir = 'results_figures'
 if not os.path.exists(savedir):
     os.makedirs(savedir)
 
@@ -49,7 +54,7 @@ da_time = obs[:, 0]
 # get initial states (Xi)
 if plot_samps or plot_sampmean or plot_baseline:
     X0 = np.loadtxt(da_dir + os.sep + '/xf/xf_0')
-    X0m = np.array([-8.5, -7, 27.0, 28.0])  # TODO get from input
+    X0m = X0.mean(axis=1)
     nsamples = X0.shape[1]
 
 if plot_samps or plot_sampmean:
@@ -190,5 +195,4 @@ fig2.legend(lines2, labels2, loc='center right')
 fig1.savefig(savedir + os.sep + 'plot_state.pdf')
 fig2.savefig(savedir + os.sep + 'plot_rho.pdf')
 
-plt.show()
 plt.close('all')

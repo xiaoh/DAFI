@@ -7,6 +7,7 @@ import importlib
 import logging
 import warnings
 import os
+import sys
 
 # third party imports
 import numpy as np
@@ -125,7 +126,7 @@ def run(model_file, inverse_method, nsamples, ntime=None,
         np.random.seed(rand_seed)
 
     # stationary problem
-    if inputs_dafi['ntime'] == None:
+    if inputs_dafi['ntime'] is None:
         inputs_dafi['ntime'] = 1
 
     # create save directory
@@ -138,6 +139,7 @@ def run(model_file, inverse_method, nsamples, ntime=None,
     spec.loader.exec_module(model_module)
     Model = getattr(model_module, 'Model')
     model = Model(inputs_dafi, inputs_model)
+    sys.modules['model'] = model_module
 
     # initialize inverse method
     Inverse = getattr(
@@ -260,10 +262,9 @@ def _solve(inputs_dafi, inverse, model):
                            'residual': residual_list,
                            }
             for key, val in convergence.items():
-                dir = os.path.join(tdir, key)
-                _create_dir(dir)
-                file = key + f'_{iteration}'
-                np.savetxt(os.path.join(dir, file), val)
+                np.savetxt(os.path.join(tdir, key), val)
+            key, val = ('iteration', np.array([iteration], dtype=int))
+            np.savetxt(os.path.join(tdir, key), val, fmt='%i')
 
         # log inner loop summary
         if early_stop:
@@ -280,7 +281,7 @@ def _solve(inputs_dafi, inverse, model):
             logger.log(_log_level(2), log_message)
             state_in_obsspace = model.state_to_observation(state_analysis)
             if inputs_dafi['save_level'] in {'iter', 'debug'}:
-                dir = os.path.join(tdir, key)
+                dir = os.path.join(tdir, 'Hx')
                 file = 'Hxa'
                 np.savetxt(os.path.join(dir, file), state_in_obsspace)
 
@@ -300,8 +301,21 @@ def _solve(inputs_dafi, inverse, model):
                 file = key + f'_{time}'
                 np.savetxt(os.path.join(dir, file), val)
 
+        # model cleanup
+        try:
+            model.clean('iter')
+        except AttributeError:
+            pass
+
         # collect output
         state_analysis_list.append(state_analysis)
+
+    # model cleanup
+    try:
+        model.clean('time')
+    except AttributeError:
+        pass
+
     return state_analysis_list
 
 

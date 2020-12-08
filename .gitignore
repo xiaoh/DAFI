@@ -16,6 +16,7 @@ _
 # OpenFOAM
 *.dep
 linux64GccDPOpt
+linux64GccDPInt32Opt
 
 # tutorials
 results*

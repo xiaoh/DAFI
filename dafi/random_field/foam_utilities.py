@@ -38,7 +38,7 @@ def get_number_cells(foam_case='.'):
         Number of cells.
     """
     bash_command = "checkMesh -case " + foam_case + \
-        " -time '0' | grep '    cells:' > tmp.ncells"
+        " -time '0' | grep '    cells:'" # > tmp.ncells"
     cells = subprocess.check_output(bash_command, shell=True)
     cells = cells.decode("utf-8").replace('\n', '').split(':')[1].strip()
     return int(cells)
@@ -88,13 +88,13 @@ def _checkMesh(foam_case):
     meshdir = os.path.join(foam_case, 'constant', 'polyMesh')
     meshCreated = False
     if not os.path.isdir(meshdir):
-        bash_command = "blockMesh -case" + foam_case
+        bash_command = "blockMesh -case " + foam_case
         subprocess.call(bash_command, shell=True)
         meshCreated = True
     return meshCreated
 
 
-def get_cell_coordinates(foam_case='.', keep_file=False):
+def get_cell_centres(foam_case='.', group='internalField',  keep_file=False):
     """ Get the coordinates of cell centers in an OpenFOAM case.
 
     Requires OpenFOAM to be sourced.
@@ -117,14 +117,14 @@ def get_cell_coordinates(foam_case='.', keep_file=False):
     timedir = '0'
     del0 = _check0(foam_case)
     delMesh = _checkMesh(foam_case)
-    bash_command = "simpleFoam -postProcess -func writeCellCentres " + \
-        "-case " + foam_case + f" -time '{timedir}' " + "&> /dev/null"
+    bash_command = "postProcess -func writeCellCentres " + \
+        "-case " + foam_case + f" -time '{timedir}' " + "> /dev/null"
     subprocess.call(bash_command, shell=True)
     os.remove(os.path.join(foam_case, timedir, 'Cx'))
     os.remove(os.path.join(foam_case, timedir, 'Cy'))
     os.remove(os.path.join(foam_case, timedir, 'Cz'))
     file = os.path.join(foam_case, timedir, 'C')
-    coords = read_cell_coordinates(file, group='internalField')
+    coords = read_cell_centres(file, group=group)
     if not keep_file:
         os.remove(file)
     if del0:
@@ -157,8 +157,8 @@ def get_cell_volumes(foam_case='.', keep_file=False):
     timedir = '0'
     del0 = _check0(foam_case)
     delMesh = _checkMesh(foam_case)
-    bash_command = "simpleFoam -postProcess -func writeCellVolumes " + \
-        "-case " + foam_case + f" -time '{timedir}' " + "&> /dev/null"
+    bash_command = "postProcess -func writeCellVolumes " + \
+        "-case " + foam_case + f" -time '{timedir}' " + "> /dev/null"
     subprocess.call(bash_command, shell=True)
     file = os.path.join(foam_case, timedir, 'V')
     vol = read_cell_volumes(file)
@@ -169,6 +169,37 @@ def get_cell_volumes(foam_case='.', keep_file=False):
     if delMesh:
         shutil.rmtree(os.path.join(foam_case, 'constant', 'polyMesh'))
     return vol
+
+
+def get_neighbors(foam_case='.'):
+    """ """  # TODO
+    # create mesh if needed
+    timedir = '0'
+    del0 = _check0(foam_case)
+    delMesh = _checkMesh(foam_case)
+    ncells = get_number_cells(foam_case)
+
+    # read mesh files
+    mesh_dir = os.path.join(foam_case, 'constant', 'polyMesh')
+    owner = read_scalar_field(os.path.join(mesh_dir, 'owner'), ' ')
+    neighbour = read_scalar_field(os.path.join(mesh_dir, 'neighbour'), ' ')
+
+    # keep internal faces only
+    nintfaces = len(neighbour)
+    owner = owner[:nintfaces]
+
+    #
+    connectivity = {cellid: [] for cellid in range(ncells)}
+    for iowner, ineighbour in zip(owner, neighbour):
+        connectivity[int(iowner)].append(int(ineighbour))
+        connectivity[int(ineighbour)].append(int(iowner))
+
+    if del0:
+        shutil.rmtree(os.path.join(foam_case, timedir))
+    if delMesh:
+        shutil.rmtree(os.path.join(foam_case, 'constant', 'polyMesh'))
+
+    return connectivity
 
 
 # read fields
@@ -207,7 +238,7 @@ def read_field(file, ndim, group='internalField'):
         data_structure = f"({floatn}\\n)+"
     else:
         data_structure = r'(\(' + f"({floatn}" + r"(\ ))" + \
-                         f"{{{ndim-1}}}{floatn}" + r"\)\n)+"
+                        f"{{{ndim-1}}}{floatn}" + r"\)\n)+"
     # extract data
     pattern = r'\(\n' + data_structure + r'\)'
     data_str = re.compile(pattern).search(content).group()
@@ -252,7 +283,7 @@ def read_tensor_field(file, group='internalField'):
     return read_field(file, NDIM['tensor'], group=group)
 
 
-def read_cell_coordinates(file='C', group='internalField'):
+def read_cell_centres(file='C', group='internalField'):
     """ Read an OpenFOAM mesh coordinate file.
 
     See :py:meth:`read_field` for more information.
@@ -269,6 +300,37 @@ def read_cell_volumes(file='V'):
 
 
 # read entire field file
+def _read_logo(content):
+    """ Read info from logo in file header. """
+    def _read_logo(pat):
+        pattern = pat + r":\s+\S+"
+        data_str = re.compile(pattern).search(content).group()
+        return data_str.split(':')[1].strip()
+
+    info = {}
+    for pat in ['Version', 'Website']:
+        info[pat] = _read_logo(pat)
+    return info
+
+
+def _read_header_info(content):
+    """ Read info from info section in file header. """
+    def _read_header(pat):
+        pattern = pat + r"\s+\S+;"
+        data_str = re.compile(pattern).search(content).group()
+        return data_str.split(pat)[1][:-1].strip()
+
+    info = {}
+    foam_class = _read_header('class').split('Field')[0].split('vol')[1]
+    info['foam_class'] = foam_class[0].lower() + foam_class[1:]
+    info['name'] = _read_header('object')
+    try:
+        info['location'] = _read_header('location')
+    except AttributeError:
+        info['location'] = None
+    return info
+
+
 def read_field_file(file):
     """ Read a complete OpenFOAM field file.
 
@@ -298,27 +360,15 @@ def read_field_file(file):
     info['file'] = file
 
     # read logo
-    def _read_logo(pat):
-        pattern = pat + r":\s+\S+"
-        data_str = re.compile(pattern).search(content).group()
-        return data_str.split(':')[1].strip()
-
-    info['foam_version'] = _read_logo('Version')
-    info['website'] = _read_logo('Website')
+    logo_info = _read_logo(content)
+    info['foam_version'] = logo_info['Version']
+    info['website'] = logo_info['Website']
 
     # read header
-    def _read_header(pat):
-        pattern = pat + r"\s+\S+;"
-        data_str = re.compile(pattern).search(content).group()
-        return data_str.split(pat)[1][:-1].strip()
-
-    foam_class = _read_header('class').split('Field')[0].split('vol')[1]
-    info['foam_class'] = foam_class[0].lower() + foam_class[1:]
-    info['name'] = _read_header('object')
-    try:
-        info['location'] = _read_header('location')
-    except AttributeError:
-        info['location'] = None
+    header_info = _read_header_info(content)
+    info['foam_class'] = header_info['foam_class']
+    info['name'] = header_info['name']
+    info['location'] = header_info['location']
 
     # dimension
     pattern = r"dimensions\s+.+"
@@ -331,7 +381,9 @@ def read_field_file(file):
     data_str = re.compile(pattern).search(content).group()
     if data_str.split()[1] == 'uniform':
         internal['uniform'] = True
-        internal['value'] = data_str.split('uniform')[1].strip()[:-1]
+        tmp = data_str.split('uniform')[1].strip()[:-1]
+        tmp = tmp.replace('(', '').replace(')', '').split()
+        internal['value'] =  np.array([float(i) for i in tmp])
     else:
         internal['uniform'] = False
         internal['value'] = read_field(file, NDIM[info['foam_class']])
@@ -362,7 +414,12 @@ def read_field_file(file):
             if v.split()[0] == 'uniform':
                 value['uniform'] = True
                 v = v.split('uniform')[1]
-                value['data'] = v.replace('}', '').replace(';', '').strip()
+                tmp = v.replace('}', '').replace(';', '').strip()
+                tmp = tmp.replace('(', '').replace(')', '').split()
+                if len(tmp) == 1:
+                    value['data'] = float(tmp[0])
+                else:
+                    value['data'] =  np.array([float(i) for i in tmp])
             else:
                 value['uniform'] = False
                 value['data'] = read_field(
@@ -375,7 +432,180 @@ def read_field_file(file):
     return info
 
 
+def read_header(file):
+    """ Read the information in an OpenFOAM file header.
+
+    Parameters
+    ----------
+    file : str
+        Name (path) of OpenFOAM file.
+
+    Returns
+    -------
+    info : dictionary
+        The information in the file header.
+    """
+    with open(file, 'r') as f:
+        content = f.read()
+    info = {}
+    info['file'] = file
+
+    # read logo
+    logo_info = _read_logo(content)
+    info['foam_version'] = logo_info['Version']
+    info['website'] = logo_info['Website']
+
+    # read header
+    header_info = _read_header_info(content)
+    info['foam_class'] = header_info['foam_class']
+    info['name'] = header_info['name']
+    info['location'] = header_info['location']
+
+    return info
+
+
+def read_controlDict():
+    # TODO
+    # read header logo
+    # read header info
+    # read content
+    raise NotImplementedError()
+
+
 # write fields
+def foam_sep():
+    """ Write a separation comment line.
+
+    Used by :py:meth:`write_field_file`.
+
+    Returns
+    -------
+    sep : str
+        Separation comment string
+    """
+    return '\n// ' + '* '*37 + '//'
+
+
+def foam_header_logo(foam_version, website):
+    """ Write the logo part of the OpenFOAM file header.
+
+    Used by :py:meth:`write_field_file`.
+
+    Parameters
+    ----------
+    foam_version : str
+        OpenFOAM version to write in the header.
+    website : str
+        OpenFOAM website to write in the header.
+
+    Returns
+    -------
+    header : str
+        OpenFOAM file header logo.
+    """
+    def header_line(str1, str2):
+        return f'\n| {str1:<26}| {str2:<48}|'
+
+    header_start = '/*' + '-'*32 + '*- C++ -*' + '-'*34 + '*\\'
+    header_end = '\n\\*' + '-'*75 + '*/'
+    logo = ['=========',
+            r'\\      /  F ield',
+            r' \\    /   O peration',
+            r'  \\  /    A nd',
+            r'   \\/     M anipulation',
+            ]
+    info = ['',
+            'OpenFOAM: The Open Source CFD Toolbox',
+            f'Version:  {foam_version}',
+            f'Website:  {website}',
+            '',
+            ]
+    # create header
+    header = header_start
+    for l, i in zip(logo, info):
+        header += header_line(l, i)
+    header += header_end
+    return header
+
+
+def foam_header_info(name, foamclass, location=None, isfield=True):
+    """ Write the info part of the OpenFOAM file header.
+
+    Used by :py:meth:`write_field_file`.
+
+    Parameters
+    ----------
+    name : str
+        Field name (e.g. 'p').
+    foamclass : str
+        OpenFOAM class (e.g. 'scalar').
+    location : str
+        File location (optional).
+
+    Returns
+    -------
+    header : str
+        OpenFOAM file header info.
+    """
+    def header_line(str1, str2):
+        return f'\n    {str1:<12}{str2};'
+
+    VERSION = '2.0'
+    FORMAT = 'ascii'
+    if isfield:
+        foamclass = 'vol' + foamclass[0].capitalize() + foamclass[1:] + 'Field'
+    # create header
+    header = 'FoamFile\n{'
+    header += header_line('version', VERSION)
+    header += header_line('format', FORMAT)
+    header += header_line('class', foamclass)
+    if location is not None:
+        header += header_line('location', f'"{location}"')
+    header += header_line('object', name)
+    header += '\n}'
+    return header
+
+
+def write_controlDict(content, foam_version, website, ofcase=None):
+    """
+    Parameters
+    ----------
+    content : dict
+        Content of cotrolDict.
+    foam_version : str
+        OpenFOAM version to write in the header.
+    website : str
+        OpenFOAM website to write in the header.
+    ofcase : str
+        OpenFOAM directory. File will be written to
+        <ofcase>/system/controlDict. If *None* file will be written in
+        current directory.
+
+    Returns
+    -------
+    file_loc : str
+        Location (absolute path) of file written.
+    file_content : str
+        Content written to file.
+    """
+    # create content
+    file_str = foam_header_logo(foam_version, website) + '\n'
+    file_str += foam_header_info('controlDict', 'dictionary', 'system', False)
+    file_str += '\n' + foam_sep() + '\n'
+    for key, val in content.items():
+        file_str += f'\n{key:<16} {val};'
+    file_str += '\n' + foam_sep()
+
+    # write
+    if ofcase is None:
+        file = 'controlDict'
+    else:
+        file = os.path.join(ofcase, 'system', 'controlDict')
+    with open(file, 'w') as f:
+        f.write(file_str)
+    return os.path.abspath(file), file_str
+
+
 def write_field_file(name, foam_class, dimensions, internal_field,
                      boundaries, foam_version, website, location=None,
                      file=None):
@@ -440,53 +670,6 @@ def write_field_file(name, foam_class, dimensions, internal_field,
                 Dictionary with same entries as the *'internal_field'*
                 dictionary.
     """
-    def _foam_sep():
-        return '\n// ' + '* '*37 + '//'
-
-    def _foam_header_logo(version):
-
-        def header_line(str1, str2):
-            return f'\n| {str1:<26}| {str2:<48}|'
-
-        header_start = '/*' + '-'*32 + '*- C++ -*' + '-'*34 + '*\\'
-        header_end = '\n\\*' + '-'*75 + '*/'
-        logo = ['=========',
-                r'\\      /  F ield',
-                r' \\    /   O peration',
-                r'  \\  /    A nd',
-                r'   \\/     M anipulation',
-                ]
-        info = ['',
-                'OpenFOAM: The Open Source CFD Toolbox',
-                f'Version:  {version}',
-                f'Website:  {website}',
-                '',
-                ]
-        # create header
-        header = header_start
-        for l, i in zip(logo, info):
-            header += header_line(l, i)
-        header += header_end
-        return header
-
-    def _foam_header_info(object, foamclass, location=None):
-        def header_line(str1, str2):
-            return f'\n    {str1:<12}{str2};'
-
-        VERSION = '2.0'
-        FORMAT = 'ascii'
-        foamclass = 'vol' + foamclass[0].capitalize() + foamclass[1:] + 'Field'
-        # create header
-        header = 'FoamFile\n{'
-        header += header_line('version', VERSION)
-        header += header_line('format', FORMAT)
-        header += header_line('class', foamclass)
-        if location is not None:
-            header += header_line('location', f'"{location}"')
-        header += header_line('object', object)
-        header += '\n}'
-        return header
-
     def _foam_field(uniform, value, foamclass=None):
         def _list_to_foamstr(inlist):
             outstr = ''
@@ -511,6 +694,7 @@ def write_field_file(name, foam_class, dimensions, internal_field,
             # list type
             if isinstance(value, (list, np.ndarray)):
                 if isinstance(value, np.ndarray):
+                    # value = np.atleast_1d(np.squeeze(value))
                     value = np.squeeze(value)
                     if value.ndim != 1:
                         err_msg = 'Uniform data should have one dimension.'
@@ -538,9 +722,9 @@ def write_field_file(name, foam_class, dimensions, internal_field,
         return dimensions
 
     # create string
-    file_str = _foam_header_logo(foam_version)
-    file_str += '\n' + _foam_header_info(name, foam_class, location)
-    file_str += '\n' + _foam_sep()
+    file_str = foam_header_logo(foam_version, website)
+    file_str += '\n' + foam_header_info(name, foam_class, location)
+    file_str += '\n' + foam_sep()
     file_str += '\n'*2 + f'dimensions      {_foam_dimensions(dimensions)};'
     file_str += '\n'*2 + 'internalField   '
     file_str += _foam_field(
@@ -558,7 +742,7 @@ def write_field_file(name, foam_class, dimensions, internal_field,
                 bc['value']['uniform'], bc['value']['data'], foam_class)
             file_str += '\n' + ' '*8 + 'value' + ' '*11 + data + ';'
         file_str += '\n' + ' '*4 + '}'
-    file_str += '\n}\n' + _foam_sep()
+    file_str += '\n}\n' + foam_sep()
 
     # write to file
     if file is None:

@@ -1,4 +1,4 @@
-# Copyright 2020 Virginia Polytechnic Institute and State University.
+
 """ Random fields representation and manipulation.
 
 These functions can be called directly from ``dafi.random_field``, e.g.
@@ -16,6 +16,7 @@ import numpy as np
 from scipy import sparse as sp
 from scipy.sparse import linalg as splinalg
 from scipy import interpolate
+from scipy import spatial
 
 
 # KL decomposition
@@ -56,9 +57,9 @@ def calc_kl_modes(cov, nmodes=None, weight_field=None, eps=1e-8,
 
     # default values
     nstate = cov.shape[0]
-    if nmodes == None:
+    if nmodes is None:
         nmodes = nstate-1
-    weight_field = _get_weight_field(weight_field, nstate)
+    weight_field = _preprocess_field(weight_field, nstate, 1.0)
 
     # add small value to diagonal
     cov = cov + sp.eye(cov.shape[0], format='csc')*eps
@@ -101,7 +102,8 @@ def calc_kl_modes(cov, nmodes=None, weight_field=None, eps=1e-8,
     return eig_vals, kl_modes
 
 
-def calc_kl_modes_coverage(cov, coverage, weight_field=None, eps=1e-8):
+def calc_kl_modes_coverage(cov, coverage, weight_field=None, eps=1e-8,
+                           max_modes=None, normalize=True):
     """ Calculate all KL modes and return only those required to achieve
     a certain coverage of the variance.
 
@@ -118,6 +120,8 @@ def calc_kl_modes_coverage(cov, coverage, weight_field=None, eps=1e-8):
     eps : float
         Small quantity to add to the diagonal of the covariance matrix
         for numerical stability.
+    normalize : bool
+        Whether to normalize (norm = 1) the KL modes.
 
     Returns
     -------
@@ -135,15 +139,19 @@ def calc_kl_modes_coverage(cov, coverage, weight_field=None, eps=1e-8):
 
     # default values
     nstate = cov.shape[0]
-    weight_field = _get_weight_field(weight_field, nstate)
+    weight_field = _preprocess_field(weight_field, nstate, 1.0)
+    if max_modes is None:
+        max_modes = nstate - 1
 
-    # get all KL modes
-    nmodes = nstate - 1
-    eig_vals, kl_modes = calc_kl_modes(cov, nmodes, weight_field, eps)
+    # get the first max_modes KL modes
+    eig_vals, kl_modes = calc_kl_modes(
+        cov, max_modes, weight_field, eps, normalize)
 
     # return only those KL modes required for desired coverage
     cummalative_variance = kl_coverage(cov, eig_vals, weight_field)
     coverage_index = np.argmax(cummalative_variance >= coverage)
+    if coverage_index == 0:
+        coverage_index = max_modes
     return eig_vals[:coverage_index], kl_modes[:, :coverage_index]
 
 
@@ -200,7 +208,7 @@ def kl_coverage(cov, eig_vals, weight_field=None):
 
     # default values
     nstate = cov.shape[0]
-    weight_field = _get_weight_field(weight_field, nstate)
+    weight_field = _preprocess_field(weight_field, nstate, 1.0)
 
     # calculate coverage
     weight_vec = np.atleast_2d(weight_field)
@@ -233,14 +241,13 @@ def reconstruct_kl(modes, coeffs, mean=None):
         *dtype=float*, *ndim=2*, *shape=(nstate, nsamples)*
     """
     # number of modes, samples, and states
-    if len(coeffs) == 1:
+    if len(coeffs.shape) == 1:
         coeffs = np.expand_dims(coeffs, 1)
     nmodes, nsamps = coeffs.shape
     nstate = modes.shape[0]
 
     # mean vector
-    if mean == None:
-        mean = np.zeros(nstate)
+    mean = _preprocess_field(mean, nstate, 0.0)
     mean = np.expand_dims(np.squeeze(mean), axis=1)
 
     # create samples
@@ -252,7 +259,7 @@ def reconstruct_kl(modes, coeffs, mean=None):
     return fields
 
 
-def project_kl(field, modes, weight_field=None):
+def project_kl(field, modes, weight_field=None, mean=None):
     """ Project a field onto a set of modes.
 
     Parameters
@@ -264,6 +271,8 @@ def project_kl(field, modes, weight_field=None):
     weight_field : ndarray
         Weight (e.g. cell volume) associated with each state.
         *dtype=float*, *ndim=1*, *shape=(nstate)*
+    mean : ndarray
+        Mean vector. *dtype=float*, *ndim=1*, *shape=(nstate)*
 
     Returns
     -------
@@ -271,28 +280,25 @@ def project_kl(field, modes, weight_field=None):
         Projection magnitude.
         *dtype=float*, *ndim=1*, *shape=(nmodes)*
     """
-    # default values
-    nstate = len(field)
-    weight_field = _get_weight_field(weight_field, nstate)
-
     nstate, nmode = modes.shape
+    mean = _preprocess_field(mean, nstate, 0.0)
 
     coeffs = []
     for imode in range(nmode):
         mode = modes[:, imode]
-        coeffs.append(projection_magnitude(field, mode, weight_field))
+        coeffs.append(projection_magnitude(field-mean, mode, weight_field))
     return np.array(coeffs)
 
 
-def _get_weight_field(weight_field, nstate):
+def _preprocess_field(field, nstate, default):
     """Pre-process provided weight field. """
     # default value
-    if weight_field is None:
-        weight_field = np.ones(nstate)
+    if field is None:
+        field = np.ones(nstate)*default
     # constant value
-    if len(np.atleast_1d(np.squeeze(np.array(weight_field)))) == 1:
-        weight_field = np.ones(nstate)*weight_field
-    return weight_field
+    if len(np.atleast_1d(np.squeeze(np.array(field)))) == 1:
+        field = np.ones(nstate)*field
+    return field
 
 
 # linear algebra on scalar fields
@@ -311,8 +317,10 @@ def integral(field, weight_field):
     field_integral : float
         The integral of the field over the domain.
     """
+    field = np.squeeze(field)
+    assert field.ndim == 1
     nstate = len(field)
-    weight_field = _get_weight_field(weight_field, nstate)
+    weight_field = _preprocess_field(weight_field, nstate, 1.0)
     return np.sum(field * weight_field)
 
 
@@ -398,8 +406,8 @@ def projection_magnitude(field_1, field_2, weight_field):
     magnitude : float
         magnitude of the projected field.
     """
-    magnitude = inner_product(field_1, field_2, weight_field) \
-        / norm(field_2, weight_field)
+    magnitude = inner_product(field_1, field_2, weight_field) / \
+        (norm(field_2, weight_field)**2)
     return magnitude
 
 
@@ -434,7 +442,10 @@ def projection(field_1, field_2, weight_field):
 # interpolation
 def interpolate_field_rbf(data, coords, kernel, length_scale):
     """ Interpolate data using a radial basis function (RBF) to create a
-    field.
+    field from sparse specifications.
+
+    This is used for instance to specify a variance field based on
+    expert knowledge.
 
     Parameters
     ----------
@@ -470,14 +481,41 @@ def interpolate_field_rbf(data, coords, kernel, length_scale):
     return interp_func(*args2)
 
 
+def inverse_distance_weights(coords, connectivity, points, tol=1e-6):
+    """ Create linear interpolation matrix (observation operatror H).
+    """
+    # get host cell (cell centre closest to point)
+    tree = spatial.cKDTree(coords)
+    distances, indexes = tree.query(list(points))
+
+    npoints = points.shape[0]
+    ncells = coords.shape[0]
+
+    # calculate weights
+    mat = sp.lil_matrix((npoints, ncells))
+    for i in range(npoints):
+        id = indexes[i]
+        if distances[i] < tol:
+            # if location is cell centre
+            mat[i, id] = 1.0
+        else:
+            point = np.expand_dims(np.squeeze(points[i,:]),0)
+            neighbours = coords[connectivity[id], :]
+            dist = spatial.distance.cdist(point, neighbours)
+            weight = 1 / dist
+            wsum = np.sum(weight) + 1 / distances[i]
+            weight /= wsum
+            # host cell
+            mat[i, id] = (1 / distances[i]) / wsum
+            # neighbour cells
+            mat[i, connectivity[id]] = weight
+    return sp.csc_matrix(mat)
+
+
 # Gaussian process: generate samples
 def gp_samples_cholesky(cov, nsamples, mean=None, eps=1e-8):
     """ Generate samples of a Gaussian Process using Cholesky
     decomposition.
-
-    Error
-    -----
-    NOT IMPLEMENTED: need to figure out how to account for weights.
 
     Parameters
     ----------
@@ -498,8 +536,6 @@ def gp_samples_cholesky(cov, nsamples, mean=None, eps=1e-8):
         Matrix of samples.
         *dtype=float*, *ndim=2*, *shape=(nstate, nsamples)*
     """
-    # TODO: account for weight_field
-    raise NotImplementedError
     # make sparse if its not already
     cov = sp.csc_matrix(cov)
     nstate = cov.shape[0]
@@ -508,26 +544,20 @@ def gp_samples_cholesky(cov, nsamples, mean=None, eps=1e-8):
     cov = cov + sp.eye(nstate, format='csc')*eps
 
     # mean vector
-    if mean == None:
-        mean = np.zeros(cov.shape[0])
+    mean = _preprocess_field(mean, nstate, 0.0)
     mean = np.expand_dims(np.squeeze(mean), axis=1)
 
     # Create samples using Cholesky Decomposition
     L = sparse_cholesky(cov)
     a = np.random.normal(size=(nstate, nsamples))
     perturb = L.dot(a)
-
-    return mean + perturb.toarray()
+    return mean + perturb
 
 
 def sparse_cholesky(cov):
     """ Compute the Cholesky decomposition for a sparse (scipy) matrix.
 
     Adapted from `gist.github.com/omitakahiro`_.
-
-    Error
-    ----
-    NOT IMPLEMENTED: need to figure out how to account for weights.
 
     Parameters
     ----------
@@ -540,24 +570,23 @@ def sparse_cholesky(cov):
     lower: scipy.sparse.csc_matrix
         Lower triangular Cholesky factor of the covariance matrix.
     """
-    # TODO: account for weight_field
-    raise NotImplementedError
     # convert to sparse matrix
     cov = sp.csc_matrix(cov)
 
     # LU decomposition
-    LU = sparse.linalg.splu(A, diag_pivot_thresh=0)
+    LU = splinalg.splu(cov, diag_pivot_thresh=0)
 
-    # check the matrix A is positive definite.
+    # check the matrix is positive definite.
     n = cov.shape[0]
     posd = (LU.perm_r == np.arange(n)).all() and (LU.U.diagonal() > 0).all()
     if not posd:
         raise ValueError('The matrix is not positive definite')
 
-    return LU.L.dot(sparse.diags(LU.U.diagonal()**0.5))
+    return LU.L.dot(sp.diags(LU.U.diagonal()**0.5))
 
 
-def gp_samples_kl(cov, nsamples, nmodes=None, mean=None, eps=1e-8):
+def gp_samples_kl(cov, nsamples, weight_field, nmodes=None, mean=None,
+                  eps=1e-8):
     """ Generate samples of a Gaussian Process using KL decomposition.
 
     Parameters
@@ -567,6 +596,9 @@ def gp_samples_kl(cov, nsamples, nmodes=None, mean=None, eps=1e-8):
         matrix. *dtype=float*, *ndim=2*, *shape=(nstate, nstate)*
     nsamples : int
         Number of samples to generate.
+    weight_field : ndarray
+        Weight (e.g. cell volume) associated with each state.
+        *dtype=float*, *ndim=1*, *shape=(nstate)*
     nmodes : int
         Number of modes to use when generating samples. *'None'* to use
         all modes.
@@ -584,7 +616,7 @@ def gp_samples_kl(cov, nsamples, nmodes=None, mean=None, eps=1e-8):
     """
     # KL decomposition
     eigv, klmodes = calc_kl_modes(cov, nmodes, weight_field, eps, False)
-    if nmodes == None:
+    if nmodes is None:
         nmodes = len(eigv)
 
     # create samples
@@ -592,7 +624,33 @@ def gp_samples_kl(cov, nsamples, nmodes=None, mean=None, eps=1e-8):
     return reconstruct_kl(modes, coeffs, mean)
 
 
-def gp_samples_kl_coverage(cov, nsamples, coverage=0.99, mean=None, eps=1e-8):
+def gp_samples_klmodes(modes, nsamples, mean=None):
+    """ Generate samples of a Gaussian Process using the given KL
+    modes.
+
+    Parameters
+    ----------
+    modes : ndarray
+        KL modes. *dtype=float*, *ndim=2*, *shape=(nstate, nmodes)*
+    nsamples : int
+        Number of samples to generate.
+    mean : ndarray
+        Mean vector. *dtype=float*, *ndim=1*, *shape=(nstate)*
+
+    Returns
+    -------
+    samples : ndarray
+        Matrix of samples.
+        *dtype=float*, *ndim=2*, *shape=(nstate, nsamples)*
+    """
+    # create samples
+    nmodes = modes.shape[1]
+    coeffs = np.random.normal(0, 1, [nmodes, nsamples])
+    return reconstruct_kl(modes, coeffs, mean)
+
+
+def gp_samples_kl_coverage(cov, nsamples, weight_field, coverage=0.99,
+                           max_modes=None, mean=None, eps=1e-8):
     """ Generate samples of a Gaussian Process using KL decomposition.
 
     Only the firs N modes required to get the desired variance coverage
@@ -605,8 +663,15 @@ def gp_samples_kl_coverage(cov, nsamples, coverage=0.99, mean=None, eps=1e-8):
         matrix. *dtype=float*, *ndim=2*, *shape=(nstate, nstate)*
     nsamples : int
         Number of samples to generate.
+    weight_field : ndarray
+        Weight (e.g. cell volume) associated with each state.
+        *dtype=float*, *ndim=1*, *shape=(nstate)*
     coverage : float
         Desired percentage coverage of the variance. Value between 0-1.
+    max_modes : int
+        Maximum number of modes used. This is the number of modes that
+        is calculated. If less are needed to achieve the desired
+        coverage the additional ones are discarded.
     mean : ndarray
         Mean vector. *dtype=float*, *ndim=1*, *shape=(nstate)*
     eps : float
@@ -618,12 +683,151 @@ def gp_samples_kl_coverage(cov, nsamples, coverage=0.99, mean=None, eps=1e-8):
     samples : ndarray
         Matrix of samples.
         *dtype=float*, *ndim=2*, *shape=(nstate, nsamples)*
+    nmodes : int
+        Number of modes used to achieve the requested coverage.
     """
     # KL decomposition
     eigv, klmodes = calc_kl_modes_coverage(
-        cov, nmodes, weight_field, eps, False)
+        cov, coverage, weight_field, eps, max_modes, False)
     nmodes = len(eigv)
 
     # create samples
     coeffs = np.random.normal(0, 1, [nmodes, nsamples])
-    return reconstruct_kl(modes, coeffs, mean)
+    return reconstruct_kl(klmodes, coeffs, mean), nmodes
+
+
+def gp_sqrexp_samples(nsamples, coords, stddev, length_scales, mean=None,
+                      weight_field=None, max_modes=None):
+    """ Generate samples from a Gaussian Process with square exponential
+    correlation kernel.
+
+    This is a convinience function for new users or simple cases.
+    It create the covariance matrix, does the KL decomposition, keeps
+    the required modes for 99% coverage, and create the samples.
+
+    Parameters
+    ----------
+    nsamples : int
+        Number of samples to generate.
+    coords : ndarray
+        Array of coordinates. Each row correspond to a different point
+        and the number of columns is the number of physical dimensions
+        (e.g. 3 for (x,y,z)).
+        *dtype=float*, *ndim=2*, *shape=(npoints, ndims)*
+    stddev : ndarray
+        Standard deviation of each state. Alternatively, provide a float
+        for a constant standard deviation.
+        *dtype=float*, *ndim=1*, *shape=(nstate)*
+    length_scales : list
+        Length scale for each physical dimensions. List length is ndims.
+        Each entry is either a one dimensional ndarray of length nstate
+        (length scale field) or a float (constant length scale).
+    mean : ndarray
+        Mean vector. *dtype=float*, *ndim=1*, *shape=(nstate)*
+    weight_field : ndarray
+        Weight (e.g. cell volume) associated with each state.
+        *dtype=float*, *ndim=1*, *shape=(nstate)*
+    max_modes : int
+        Maximum number of modes used. This is the number of modes that
+        is calculated. If less are needed to achieve 99% coverage the
+        additional ones are discarded.
+    """
+    from dafi.random_field.covariance import generate_cov
+    cov = generate_cov(
+        'sqrexp', stddev, coords=coords, length_scales=length_scales)
+    samples, _ = gp_samples_kl_coverage(
+        cov, nsamples, weight_field, 0.99, max_modes, mean)
+    return samples
+
+
+# Random field class
+class GaussianProcess(object):
+    # TODO: Docstrings
+
+    def __init__(self, klmodes, mean=None, weights=None, func=None,
+                 funcinv=None):
+        nstate = klmodes.shape[0]
+        self.klmodes = klmodes
+        self.ncell, self.nmodes = self.klmodes.shape
+        self.mean = _preprocess_field(mean, self.ncell, 0.0)
+        self.weights = _preprocess_field(mean, nstate, 1.0)
+
+        def func_identity(x):
+            return x
+
+        if func is None:
+            func = func_identity
+        if funcinv is None:
+            funcinv = func_identity
+        self.func = func
+        self.funcinv = funcinv
+
+    def sample_coeffs(self, nsamples):
+        """ """
+        return np.random.normal(0, 1, [self.nmodes, nsamples])
+
+    def sample_gp(self, nsamples, mean=None):
+        """ """
+        if mean is None:
+            mean = self.mean
+        coeffs = self.sample_coeffs(nsamples)
+        return reconstruct_kl(self.klmodes, coeffs, mean), coeffs
+
+    def sample_func(self, nsamples, mean=None):
+        """ """
+        if mean is None:
+            mean = self.mean
+        coeffs = self.sample_coeffs(nsamples)
+        samps_gp = reconstruct_kl(self.klmodes, coeffs, mean)
+        return self.func(samps_gp), coeffs
+
+    def reconstruct_gp(self, coeffs, mean=None):
+        if mean is None:
+            mean = self.mean
+        return reconstruct_kl(self.klmodes, coeffs, mean)
+
+    def reconstruct_func(self, coeffs, mean=None):
+        if mean is None:
+            mean = self.mean
+        val_gp = reconstruct_kl(self.klmodes, coeffs, mean)
+        return self.func(val_gp)
+
+    def pdf(self, coeffs):
+        return np.exp(logpdf(coeffs))
+
+    def logpdf(self, coeffs):
+        if len(coeffs.shape) == 1:
+            coeffs = np.expand_dims(coeffs, 1)
+        norm_coeff = np.linalg.norm(coeffs, axis=0)
+        const = np.log((2*np.pi)**(-self.ncell/2))
+        return const + -0.5*norm_coeff**2
+
+    def project_gp_field(self, field, mean=None):
+        return project_kl(field, self.klmodes, self.weights, mean)
+
+    def project_func_field(self, field, mean=None):
+        field = self.funcinv(field)
+        mean = _preprocess_field(mean)
+        mean = self.funcinv(mean)
+        return project_kl(field, self.klmodes, self.weights, mean)
+
+
+class LogNormal(GaussianProcess):
+    # TODO: Docstrings
+
+    def __init__(self, klmodes_gp, median=1.0, weights=None):
+        """
+        """
+        nstate = klmodes_gp.shape[0]
+        median = _preprocess_field(median, nstate, 1.0)
+        self.median_func = np.expand_dims(np.squeeze(median), 1)
+
+        def func(x):
+            return self.median_func * np.exp(x)
+
+        def funcinv(y):
+            return np.log(y / self.median_func)
+
+        mean = 0.0
+        super(self.__class__, self).__init__(
+            klmodes_gp, mean, weights, func, funcinv)

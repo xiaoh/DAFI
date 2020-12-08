@@ -1,3 +1,24 @@
+
+
+
+
+foam_case: nutfoam_inputs/foam_base
+iteration_step_length: 1.0
+iteration_nstep: 300
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 forward_interval     300
 nkl_modes            10
 
@@ -9,4 +30,3 @@ generate_hmat        False
 
 enable_parallel      True
 ncpu                 2
-

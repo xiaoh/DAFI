@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 # Copyright 2018 Virginia Polytechnic Insampletitute and State University.
 """ This module is to postprocess the data for the heat diffusion model. """
 
@@ -12,90 +12,107 @@ from matplotlib.lines import Line2D
 import matplotlib as mpl
 import yaml
 
-mpl.rcParams.update({'text.usetex': True, 
-    'text.latex.preamble': ['\\usepackage{gensymb}'], })
+mpl.rcParams.update({'text.usetex': True,
+                     'text.latex.preamble': ['\\usepackage{gensymb}'], })
 
 
-if not os.path.exists('figures/'):
-    os.mkdir('figures/')
+# create save directory
+save_dir = 'results_figures'
+if not os.path.exists(save_dir):
+    os.mkdir(save_dir)
 
+# files and directories
+dafi_input_file = 'dafi.in'
+model_input_file = 'diffusion.in'
+results_dir = 'results_diffusion'
+dafi_results_dir = 'results'
 
-def plot_inferred_mu(step, nmodes, mu_o):
-    """Plot inferred diffusivity field"""
-    x_coor = np.loadtxt('./results_diffusion/x_coor.dat')
-    KLmodes = np.loadtxt('./results_diffusion/KLmodes.dat')
-    omega_all = np.loadtxt('./results/t_0/xa/xa_'+str(step))
-    vx = np.zeros((len(x_coor), len(omega_all[0, :])))
-    for i in range(len(omega_all[0, :])):
-        for j in range(len(omega_all[:, 0])):
-            vx[:, i] += omega_all[j, i] * KLmodes[:, j]
-        vx[:, i] = np.exp(vx[:, i]) / mu_o
-    samp_mean = np.sum(vx, 1)/vx.shape[1]
-    xcoor_matrix = np.tile(x_coor, (len(omega_all[0, :]), 1))
-    v1 = plt.plot(x_coor, vx, '-', color='0.7', lw=0.2)
-    v2 = plt.plot(x_coor, samp_mean, 'b-.', label='sample mean')
+# read required data
+with open(os.path.join(dafi_results_dir, 't_0', 'iteration')) as file:
+    final_step = int(file.read())
+with open(model_input_file, 'r') as f:
+    model_dict = yaml.load(f, yaml.SafeLoader)
+with open(dafi_input_file, 'r') as f:
+    dafi_dict = yaml.load(f, yaml.SafeLoader)['dafi']
+mu_o = model_dict['prior_mean']
+x_coor_obs = model_dict['obs_locations']
+x_coor = np.loadtxt(os.path.join(results_dir, 'x_coor.dat'))
+klmodes = np.loadtxt(os.path.join(results_dir, 'KLmodes.dat'))
+
+# read truth
+u_truth = np.loadtxt(os.path.join(results_dir, 'u_truth.dat'))
+mu_truth = np.loadtxt(os.path.join(results_dir, 'mu_truth.dat'))
+mu_truth /= mu_o
+obs = np.loadtxt(os.path.join(results_dir, 'obs.dat'))
+obs_error = np.loadtxt(os.path.join(results_dir, 'std_obs.dat'))
+obs_error *= dafi_dict['convergence_factor']
+
+# read baseline
+u_base = np.loadtxt(os.path.join(results_dir, 'u_baseline.dat'))
+
+# reconstruct diffusivity from KL modes
+def reconstruct_inferred_mu(omega_mat, klmodes):
+    """ reconstruct inferred diffusivity field. """
+    nmodes, nsamps = omega_mat.shape
+    ncells = klmodes.shape[0]
+    mu = np.zeros([ncells, nsamps])
+    for isamp in range(nsamps):
+        for imode in range(nmodes):
+            mu[:, isamp] += omega_mat[imode, isamp] * klmodes[:, imode]
+        mu[:, isamp] = np.exp(mu[:, isamp])
+    return mu
+
+# plot results
+prior = ('prior', 0, 'xf')
+posterior = ('posterior', final_step, 'xa')
+for case, step, fname in [prior, posterior]:
+    # load results
+    u_mat = np.loadtxt(f'./results_diffusion/U.{step+1}')
+    u_mean = np.mean(u_mat, 1)
+    omega_file = os.path.join(dafi_results_dir, fname, f'{fname}_0')
+    omega_mat = np.loadtxt(omega_file)
+    mu_mat = reconstruct_inferred_mu(omega_mat, klmodes)
+    mu_mean = np.sum(mu_mat, 1) / mu_mat.shape[1]
+
+    # plot results: output field
+    fig1, ax1 = plt.subplots()
+    u1 = ax1.plot(x_coor, u_mat, '-', color='0.7', lw=0.2)
+    u2 = ax1.plot(x_coor, u_mean, 'b-.', label='sample mean')
+    u3 = ax1.plot(x_coor, u_base, 'r--', label='baseline')
+    u4 = ax1.plot(x_coor, u_truth, 'k-', label='truth')
+    u5 = ax1.errorbar(x_coor_obs, obs, yerr=obs_error, fmt='kx')
+    ax1.set_xlabel(r'position $\xi_1/L$')
+    ax1.set_ylabel(r'output field $u$')
+    # legend
+    lines = [u1[0], u2[0], u3[0], u4[0], u5[0]]
+    labels = ['samples', u2[0].get_label(), u3[0].get_label(),
+              u4[0].get_label(), 'observations']
+    box1 = ax1.get_position()
+    ax1.set_position([box1.x0, box1.y0, box1.width * 0.8, box1.height])
+    ax1.legend(lines, labels, loc='center left', bbox_to_anchor=(1.0, 0.5))
+    # save figure
+    figure_name = os.path.join(save_dir, f'DA_u_{case}.pdf')
+    plt.savefig(figure_name)
+    if case == 'posterior':
+        plt.show()
+    plt.close()
+
+    # plot results: diffusivity
+    fig2, ax2 = plt.subplots()
+    v1 = plt.plot(x_coor, mu_mat, '-', color='0.7', lw=0.2)
+    v2 = plt.plot(x_coor, mu_mean, 'b-.', label='sample mean')
     v3 = plt.plot(x_coor, np.ones(x_coor.shape)*1., 'r--', label='baseline')
-    return v1, v2, v3
-
-
-def main():
-    # read required parameters
-    with open('dafi.in', 'r') as f:
-       input_dict = yaml.load(f, yaml.SafeLoader)['dafi']
-    path, dirs, files = os.walk('./results/t_0/xa').__next__()
-    final_step = len(files) - 1
-    with open('diffusion.in', 'r') as f:
-       model_dict = yaml.load(f, yaml.SafeLoader)
-    nmodes =  int(model_dict['nmodes'])
-    mu_o = float(model_dict['prior_mean'])
-    x_coor_obs = model_dict['obs_locations']
-    x_coor = np.loadtxt('./results_diffusion/x_coor.dat')
-
-    # read truth
-    u_truth = np.loadtxt('./results_diffusion/u_truth.dat')
-    mu_truth = np.loadtxt('./results_diffusion/mu_truth.dat') / mu_o
-    obs = np.mean(np.loadtxt('./results/y/y_0'), 1)
-
-    # plot results
-    for i in range(2):
-        if i == 0:
-            case = 'prior'
-            step = 0
-        if i == 1:
-            case = 'posterior'
-            step = final_step
-
-        # plot results in velocity
-        fig1, ax1 = plt.subplots()
-        u_mat = np.loadtxt(f'./results_diffusion/U.{step+1}')
-        u_mean = np.mean(u_mat, 1)
-        u1 = ax1.plot(x_coor, u_mat, '-', color='0.7', lw=0.2)
-        u2 = ax1.plot(x_coor, u_mean, 'b-.', label='sample mean')
-        u3 = ax1.plot(x_coor, u_truth, 'k-', label='truth')
-        u4 = ax1.plot(x_coor_obs, obs, 'kx', label='observations')
-        plt.xlabel(r'position $\xi_1/L$')
-        plt.ylabel(r'output field $u$')
-        plt.legend(
-            [u1[0], u2[0], u3[0], u4[0]],
-            ['samples', u2[0].get_label(), u3[0].get_label(), u4[0].get_label()],
-            loc='best')
-        figure_name = './figures/DA_u_' + case + '.png'
-        plt.savefig(figure_name)
-
-        fig2, ax2 = plt.subplots()
-        ax2 = plt.subplot(111)
-        v1, v2, v3 = plot_inferred_mu(step, nmodes, mu_o)
-        v4 = plt.plot(x_coor[1:-1], mu_truth[:-1], 'k-', label='truth')
-        plt.xlabel(r'position $\xi_1/L$')
-        plt.ylabel(r'diffusivity $\mu/\mu_0$')
-        plt.legend(
-            [v1[0], v2[0], v3[0], v4[0]],
-            ['samples', v2[0].get_label(), v3[0].get_label(), v4[0].get_label()],
-            loc='best')
-        # save figure
-        figure_name = './figures/DA_mu_'+case+'.png'
-        plt.savefig(figure_name)
-
-
-if __name__ == "__main__":
-    main()
+    v4 = plt.plot(x_coor[1:-1], mu_truth[:-1], 'k-', label='truth')
+    ax2.set_xlabel(r'position $\xi_1/L$')
+    ax2.set_ylabel(r'diffusivity $\mu/\mu_0$')
+    # legend
+    lines = [v1[0], v2[0], v3[0], v4[0]]
+    labels = ['samples', v2[0].get_label(), v3[0].get_label(),
+              v4[0].get_label()]
+    box2 = ax2.get_position()
+    ax2.set_position([box2.x0, box2.y0, box2.width * 0.8, box2.height])
+    ax2.legend(lines, labels, loc='center left', bbox_to_anchor=(1.0, 0.5))
+    # save figure
+    figure_name = os.path.join(save_dir, f'DA_mu_{case}.pdf')
+    plt.savefig(figure_name)
+    plt.close()

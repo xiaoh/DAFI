@@ -1,34 +1,38 @@
 Getting Started
 ===============
 
-Install
--------
+Installation
+------------
 
-To install simply clone from the GitHub repository::
+Using ``pip``::
+
+    pip install dafi
+
+From Github Repository::
 
     cd $INSTALL_LOCATION
     git clone https://github.com/xiaoh/dafi.git
 
 Replace ``$INSTALL_LOCATION`` with the path to where you want to install the code.
 
-When using the code you will need to source the following file in your terminal::
+When using the code you will need to add the following to your ``PATH`` and ``PYTHONPATH``. You can either run these commands in each new terminal or add it to your ``~/.bashrc`` file.::
 
-    source $INSTALL_LOCATION/dafi/source/init
+    export PATH="$INSTALL_LOCATION/DAFI/bin:$PATH"
+    export PYTHONPATH="$INSTALL_LOCATION/DAFI:$PYTHONPATH"
 
 Prerequisites\:
 
-* Python 2.7 or 3.x \*
+* Python 3.x 
 * Python packages
 
     * NumPy
     * SciPy
     * Matplotlib
 
-\* *2.7 required if using FOAM_Tau_Solver*
 
 Developers
 ----------
-Prerequisites\:
+Prerequisites for building the documentation\:
 
 * Sphinx
 * Sphinx packages
@@ -53,19 +57,13 @@ Some notes for developers\:
 * Always update the documentation immediately if your changes warrant it.
 
 Updating the documentation\:
-The source code is in ``docs/sphinx/``.
-To compile run ``devtools/build_documentation``.
-Sometimes it might be required to ``make clean`` from within ``docs/sphinx/``.
+The source code is in ``docs/_source/``.
+To compile run ``make html`` from DAFI/docs. 
+Sometimes it might be required to ``make clean``. 
+Compiling the documentation locally is useful for developing, but the compiled html should not be pushed to GitHub. 
+ReadTheDocs compiles it from source files. 
 
-OpenFOAM users
---------------
-If running FOAM_NUT_Solver or FOAM_TAU_Solver you will need the following additional prerequisites\:
-
-* OpenFOAM 2.x
-
-Recommended\:
-
-* ParaView
-* ImageMagick
-
-Also note that you will need to run the code with Python 2.7.
+OpenFOAM
+--------
+For the OpenFOAM tutorial you will need to `install OpenFOAM <https://www.openfoam.com/download>`_ and `Paraview <https://www.paraview.org/download>`_ (recommended). 
+We also find `ImageMagick <https://imagemagick.org/script/download.php>' and `Gnuplot <http://www.gnuplot.info/>` useful. 

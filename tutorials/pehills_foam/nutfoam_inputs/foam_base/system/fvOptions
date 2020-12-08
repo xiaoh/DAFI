@@ -1,8 +1,8 @@
 /*--------------------------------*- C++ -*----------------------------------*\
 | =========                 |                                                 |
 | \\      /  F ield         | OpenFOAM: The Open Source CFD Toolbox           |
-|  \\    /   O peration     | Version:  2.3.0                                 |
-|   \\  /    A nd           | Web:      www.OpenFOAM.org                      |
+|  \\    /   O peration     | Version:  v1906                                 |
+|   \\  /    A nd           | Web:      www.OpenFOAM.com                      |
 |    \\/     M anipulation  |                                                 |
 \*---------------------------------------------------------------------------*/
 FoamFile
@@ -17,15 +17,11 @@ FoamFile
 
 momentumSource
 {
-    type            pressureGradientExplicitSource;
-    active          on;            //on/off switch
-    selectionMode   all;       //cellSet // points //cellZone
-
-    pressureGradientExplicitSourceCoeffs
-    {
-        fieldNames  (U);
-        Ubar        (0.020188 0 0 );
-    }
+    type            meanVelocityForce;
+    fields          (U);
+    active          on;
+    selectionMode   all;
+    Ubar            (0.020188 0 0);
 }
 
 
