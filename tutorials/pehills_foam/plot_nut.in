@@ -1,31 +1,38 @@
 
-field = nut
-field_name = \nu_t
-index = 1
-norm = 1.0
-norm_name = 1
-scale = 20.0
+field: nut
+field_name: \nu_t
+index: 1
+norm: 1.0
+norm_name: 1
+scale: 20.0
 
-da_step = 1
-x_pos_list = 0, 1, 2, 3, 4, 5, 6, 7, 8
-nsamps = 2
-casedir = .
+plot_truth: False
+plot_baseline: True
+plot_obs: False
+plot_samples: True
+plot_sample_mean: True
+plot_sample_median: False
+plot_sample_mode: False
 
-plot_truth = True
-plot_baseline = True
-plot_samples = True
-plot_sample_mean = True
-sample_median = True
+x_pos_list: [4]
+x_name_list: [4]
+y_pos_list: [0.5, 2.5]
+y_name_list: [0p5, 2p5]
+y_cyclic: [False, True]
 
-truth_name = Truth
-baseline_name = Baseline
-samples_name = Sample
-sample_mean_name = Sample Median
+show_legend: False
+legend_top: False
+fix_aspect: True
 
-show_plot = True
-file_name = nut_pehills.pdf
+truth_dir: ./nutfoam_inputs/truth/postProcessing/sets/0
+base_dir: ./nutfoam_inputs/baseline/sets
+sample_dir: ./results_nutFoam
+obs_file: ./nutfoam_inputs/obs
 
-show_legend = True
-legend_top = True
+save_dir: .
+file_name: posterior_nut.pdf
 
-fix_aspect = True
+da_step: 1
+nsamps: 2
+show_plot: True
+scale: 300.0
