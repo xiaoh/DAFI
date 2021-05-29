@@ -31,7 +31,7 @@ obs_file: ./nutfoam_inputs/obs
 save_dir: .
 file_name: posterior_U1.pdf
 
-da_step: 2
+da_step: 1
 nsamps: 2
 show_plot: True
 scale: 1.5

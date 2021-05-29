@@ -9,7 +9,7 @@ Developed by Dr. Heng Xiao's group at Virginia Tech:
 
 Cite: 
 
-* `DAFI: An Open-Source Framework for Ensemble-Based Data Assimilation and Field Inversion. Carlos A. Michelén Ströfer, Xin-Lei Zhang, and Heng Xiao. In Press. arXiv:2012.02651 <https://arxiv.org/abs/2012.02651>`_
+* `DAFI: An Open-Source Framework for Ensemble-Based Data Assimilation and Field Inversion. Carlos A. Michelén Ströfer, Xin-Lei Zhang, and Heng Xiao. Communications in Computational Physics, 29,  1583-1622, 2021. DOI: 10.4208/cicp.OA-2020-0178  Also available: arXiv:2012.02651 <https://arxiv.org/abs/2012.02651>`_
 
 
 

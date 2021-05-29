@@ -237,7 +237,7 @@ def _run_foam(solver, case_dir, iteration, timeprecision):
     """
     # run foam
     logfile = os.path.join(case_dir, solver + '.log')
-    bash_command = f'{solver} -case {case_dir} &>> {logfile}'
+    bash_command = f'{solver} -case {case_dir} > {logfile}'
     subprocess.call(bash_command, shell=True)
     bash_command = f'postProcess  -case {case_dir} -func sampleDict ' + \
         '> log.sample 2>&1'

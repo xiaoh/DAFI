@@ -21,6 +21,7 @@ linux64GccDPInt32Opt
 # tutorials
 results*
 *.log
+log.*
 .dafi_ver
 .time
 
