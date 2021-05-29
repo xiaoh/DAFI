@@ -174,7 +174,7 @@ def get_cell_volumes(foam_case='.', keep_file=False):
 
 def get_neighbors(foam_case='.'):
     """ Get the neighbors of each cell (connectivity). 
-    
+
     Parameters
     ----------
     foam_case : str
@@ -185,7 +185,7 @@ def get_neighbors(foam_case='.'):
     connectivity : dictionary
         The keys are cell's index and the values are a list of indices 
         for the cells that neighbor it. 
-    """  
+    """
     # create mesh if needed
     timedir = '0'
     del0 = _check0(foam_case)
