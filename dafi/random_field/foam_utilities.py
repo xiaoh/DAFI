@@ -39,7 +39,7 @@ def get_number_cells(foam_case='.'):
         Number of cells.
     """
     bash_command = "checkMesh -case " + foam_case + \
-        " -time '0' | grep '    cells:'" # > tmp.ncells"
+        " -time '0' | grep '    cells:'"  # > tmp.ncells"
     cells = subprocess.check_output(bash_command, shell=True)
     cells = cells.decode("utf-8").replace('\n', '').split(':')[1].strip()
     return int(cells)
@@ -173,7 +173,19 @@ def get_cell_volumes(foam_case='.', keep_file=False):
 
 
 def get_neighbors(foam_case='.'):
-    """ """  # TODO
+    """ Get the neighbors of each cell (connectivity). 
+    
+    Parameters
+    ----------
+    foam_case : str
+        Name (path) of OF case directory.
+
+    Returns
+    -------
+    connectivity : dictionary
+        The keys are cell's index and the values are a list of indices 
+        for the cells that neighbor it. 
+    """  
     # create mesh if needed
     timedir = '0'
     del0 = _check0(foam_case)
@@ -239,7 +251,7 @@ def read_field(file, ndim, group='internalField'):
         data_structure = f"({floatn}\\n)+"
     else:
         data_structure = r'(\(' + f"({floatn}" + r"(\ ))" + \
-                        f"{{{ndim-1}}}{floatn}" + r"\)\n)+"
+            f"{{{ndim-1}}}{floatn}" + r"\)\n)+"
     # extract data
     pattern = r'\(\n' + data_structure + r'\)'
     data_str = re.compile(pattern).search(content).group()
@@ -384,7 +396,7 @@ def read_field_file(file):
         internal['uniform'] = True
         tmp = data_str.split('uniform')[1].strip()[:-1]
         tmp = tmp.replace('(', '').replace(')', '').split()
-        internal['value'] =  np.array([float(i) for i in tmp])
+        internal['value'] = np.array([float(i) for i in tmp])
     else:
         internal['uniform'] = False
         internal['value'] = read_field(file, NDIM[info['foam_class']])
@@ -420,7 +432,7 @@ def read_field_file(file):
                 if len(tmp) == 1:
                     value['data'] = float(tmp[0])
                 else:
-                    value['data'] =  np.array([float(i) for i in tmp])
+                    value['data'] = np.array([float(i) for i in tmp])
             else:
                 value['uniform'] = False
                 value['data'] = read_field(
@@ -466,7 +478,7 @@ def read_header(file):
 
 
 def read_controlDict():
-    # TODO
+    # TODO: Implement.
     # read header logo
     # read header info
     # read content

@@ -1,5 +1,7 @@
 # Mac OS
 .DS_Store
+.localized
+Icon[]
 
 # built package
 build

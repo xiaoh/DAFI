@@ -499,7 +499,7 @@ def inverse_distance_weights(coords, connectivity, points, tol=1e-6):
             # if location is cell centre
             mat[i, id] = 1.0
         else:
-            point = np.expand_dims(np.squeeze(points[i,:]),0)
+            point = np.expand_dims(np.squeeze(points[i, :]), 0)
             neighbours = coords[connectivity[id], :]
             dist = spatial.distance.cdist(point, neighbours)
             weight = 1 / dist
@@ -742,10 +742,37 @@ def gp_sqrexp_samples(nsamples, coords, stddev, length_scales, mean=None,
 
 # Random field class
 class GaussianProcess(object):
-    # TODO: Docstrings
+    """ Gaussian process class. 
+
+    Also allows for the creation of a function of a Gaussian process. 
+    E.g. see *'Lognormal'* class. 
+    """
 
     def __init__(self, klmodes, mean=None, weights=None, func=None,
                  funcinv=None):
+        """ Initialize Gaussian process class.
+
+        Parameters
+        ----------
+        klmodes : ndarray
+            KL modes (eigenvectors).
+            *dtype=float*, *ndim=2*, *shape=(nstate, nmodes)*
+
+        mean : ndarray
+            Mean vector. Default zero (0). 
+            *dtype=float*, *ndim=1*, *shape=(nstate)*
+
+        weights : ndarray
+            Weight (e.g. cell volume) associated with each state.
+            Default ones (1). *dtype=float*, *ndim=1*, *shape=(nstate)* 
+
+        func: function
+            Function to create a random process that is a function of 
+            a Gaussian process. Default is identity function (GP). 
+
+        funcinv: function
+            Inverse of func. 
+        """
         nstate = klmodes.shape[0]
         self.klmodes = klmodes
         self.ncell, self.nmodes = self.klmodes.shape
@@ -763,18 +790,66 @@ class GaussianProcess(object):
         self.funcinv = funcinv
 
     def sample_coeffs(self, nsamples):
-        """ """
+        """ Create Karhunen-Loève (KL) coefficents for random samples. 
+
+        Parameters
+        ----------
+        nsamples : int
+            Number of samples for which to generate KL coefficients.
+
+        Returns
+        -------
+        coeffs : ndarray
+            Matrix of samples KL coefficients for the Gaussian process. 
+            *dtype=float*, *ndim=2*, *shape=(nstate, nsamples)*
+        """
         return np.random.normal(0, 1, [self.nmodes, nsamples])
 
     def sample_gp(self, nsamples, mean=None):
-        """ """
+        """ Generate samples of the Gaussian process. 
+
+        Parameters
+        ----------
+        nsamples : int
+            Number of samples to generate. 
+
+        mean : ndarray
+            Mean vector. If *None*, self.mean is used. 
+            *dtype=float*, *ndim=1*, *shape=(nstate)*
+
+        Returns
+        -------
+        samples : ndarray
+            Sample fields from Gaussian process.
+            *dtype=float*, *ndim=2*, *shape=(nstate, nsamples)*
+
+        coeffs : ndarray
+            Matrix of samples KL coefficients for the Gaussian process. 
+            *dtype=float*, *ndim=2*, *shape=(nstate, nsamples)*
+        """
         if mean is None:
             mean = self.mean
         coeffs = self.sample_coeffs(nsamples)
         return reconstruct_kl(self.klmodes, coeffs, mean), coeffs
 
     def sample_func(self, nsamples, mean=None):
-        """ """
+        """ Generate samples of the function of the Gaussian process. 
+
+        Parameters
+        ----------
+        nsamples : int
+            Number of samples to generate. 
+
+        mean : ndarray
+            Mean vector. If *None*, self.mean is used. 
+            *dtype=float*, *ndim=1*, *shape=(nstate)*
+
+        Returns
+        -------
+        samples : ndarray
+            Sample fields from the function of the Gaussian process.
+            *dtype=float*, *ndim=2*, *shape=(nstate, nsamples)*
+        """
         if mean is None:
             mean = self.mean
         coeffs = self.sample_coeffs(nsamples)
@@ -782,20 +857,89 @@ class GaussianProcess(object):
         return self.func(samps_gp), coeffs
 
     def reconstruct_gp(self, coeffs, mean=None):
+        """ Reconstruct the Gaussian process field from given 
+        KL coefficients.
+
+        Parameters
+        ----------
+        coeffs : ndarray
+            Array of KL coefficients.
+            *dtype=float*, *ndim=2*, *shape=(nmodes, nsamples)*
+        mean : ndarray
+            Mean vector. If *None*, self.mean is used. 
+            *dtype=float*, *ndim=1*, *shape=(nstate)*
+
+        Returns
+        -------
+        fields : ndarray
+            Reconstructed fields.
+            *dtype=float*, *ndim=2*, *shape=(nstate, nsamples)*
+        """
         if mean is None:
             mean = self.mean
         return reconstruct_kl(self.klmodes, coeffs, mean)
 
     def reconstruct_func(self, coeffs, mean=None):
+        """ Reconstruct the function of the Gaussian process field 
+        from given KL coefficients.
+
+        Parameters
+        ----------
+        coeffs : ndarray
+            Array of KL coefficients.
+            *dtype=float*, *ndim=2*, *shape=(nmodes, nsamples)*
+        mean : ndarray
+            Mean vector. If *None*, self.mean is used. 
+            *dtype=float*, *ndim=1*, *shape=(nstate)*
+
+        Returns
+        -------
+        fields : ndarray
+            Reconstructed fields.
+            *dtype=float*, *ndim=2*, *shape=(nstate, nsamples)*
+        """
         if mean is None:
             mean = self.mean
         val_gp = reconstruct_kl(self.klmodes, coeffs, mean)
         return self.func(val_gp)
 
     def pdf(self, coeffs):
+        """ Probaility density function (PDF). 
+
+        PDF(x) where x is a field (point in sample space) specified by 
+        KL coeffiecients. 
+
+        Parameters
+        ----------
+        coeffs : ndarray
+            Array of KL coefficients.
+            *dtype=float*, *ndim=2*, *shape=(nmodes, nsamples)*
+
+        Returns
+        -------
+        pdf : ndarray
+            Value of the PDF function for the given point in the sample space. 
+        """
         return np.exp(logpdf(coeffs))
 
     def logpdf(self, coeffs):
+        """ Logarithm of the probability density function. 
+
+        log(PDF(x)) where x is a field (point in sample space) 
+        specified by KL coeffiecients.
+
+        Parameters
+        ----------
+        coeffs : ndarray
+            Array of KL coefficients.
+            *dtype=float*, *ndim=2*, *shape=(nmodes, nsamples)*
+
+        Returns
+        -------
+        logpdf : ndarray
+            Logarithm of the value of the PDF function for the given 
+            point in the sample space.
+        """
         if len(coeffs.shape) == 1:
             coeffs = np.expand_dims(coeffs, 1)
         norm_coeff = np.linalg.norm(coeffs, axis=0)
@@ -803,9 +947,40 @@ class GaussianProcess(object):
         return const + -0.5*norm_coeff**2
 
     def project_gp_field(self, field, mean=None):
+        """ Project a field onto the KL modes.
+
+        Parameters
+        ----------
+        field : ndarray
+            Scalar field. *dtype=float*, *ndim=1*, *shape=(ncells)*
+        mean : ndarray
+            Mean vector. *dtype=float*, *ndim=1*, *shape=(nstate)*
+
+        Returns
+        -------
+        coeffs : ndarray
+            Projection magnitude.
+            *dtype=float*, *ndim=1*, *shape=(nmodes)*
+        """
         return project_kl(field, self.klmodes, self.weights, mean)
 
     def project_func_field(self, field, mean=None):
+        """ Project a field from the function of the Gaussian process 
+        onto the KL modes. 
+
+        Parameters
+        ----------
+        field : ndarray
+            Scalar field. *dtype=float*, *ndim=1*, *shape=(ncells)*
+        mean : ndarray
+            Mean vector. *dtype=float*, *ndim=1*, *shape=(nstate)*
+
+        Returns
+        -------
+        coeffs : ndarray
+            Projection magnitude.
+            *dtype=float*, *ndim=1*, *shape=(nmodes)*
+        """
         field = self.funcinv(field)
         mean = _preprocess_field(mean)
         mean = self.funcinv(mean)
@@ -813,10 +988,24 @@ class GaussianProcess(object):
 
 
 class LogNormal(GaussianProcess):
-    # TODO: Docstrings
+    """ Log-normal process class. """
 
     def __init__(self, klmodes_gp, median=1.0, weights=None):
-        """
+        """ Initialize log-normal process class.
+
+        Parameters
+        ----------
+        klmodes_gp : ndarray
+            KL modes (eigenvectors) of the underlying Gaussian process. 
+            *dtype=float*, *ndim=2*, *shape=(nstate, nmodes)*
+
+        median : ndarray
+            Median vector. Default one (1). 
+            *dtype=float*, *ndim=1*, *shape=(nstate)*
+
+        weights : ndarray
+            Weight (e.g. cell volume) associated with each state.
+            Default ones (1). *dtype=float*, *ndim=1*, *shape=(nstate)* 
         """
         nstate = klmodes_gp.shape[0]
         median = _preprocess_field(median, nstate, 1.0)
