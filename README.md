@@ -25,4 +25,4 @@ Contributors:
 * Rui Sun
 * Jinlong Wu
 
-Contact: Heng Xiao
+Contact: Carlos A. Michelén Ströfer; Heng Xiao
