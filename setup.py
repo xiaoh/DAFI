@@ -24,9 +24,9 @@ setuptools.setup(
     ],
     classifiers=[
         'Development Status :: 4 - Beta',
-        'Intended Audience :: Engineering Researchers',
-        'Topic :: Data Assimilation',
-        'License :: Apache License 2.0',
+        'Intended Audience :: Science/Research',
+        'Topic :: Scientific/Engineering',
+        'License:: OSI Approved:: Apache Software License',
         'Programming Language :: Python :: 3.8',
     ],
 )
