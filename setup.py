@@ -5,7 +5,7 @@ with open("README.md", "r", encoding="utf-8") as fh:
 
 setuptools.setup(
     name='DAFI',
-    version='1.0.0',
+    version='1.0.1',
     packages=setuptools.find_packages(),
     scripts=['bin/dafi'],
     license='Apache 2.0',
