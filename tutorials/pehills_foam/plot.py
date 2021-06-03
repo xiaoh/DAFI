@@ -144,12 +144,12 @@ def main():
     showfig = True
     legend_top = True
     centered = False
-    x_pos_list = [0, 2, 4.5, 7] # 2, 7 are observation locations. 
+    x_pos_list = [0, 2, 4.5, 7]  # 2, 7 are observation locations.
     x_name_list = [str(i).replace('.', 'p') for i in x_pos_list]
-    
-    alpha = 1.0 # baseline periodic hills geometry
-    ycol = 0 # y is in column 0 
-    xcol = 1 # Ux and nu_t are in column 1 of their respective files
+
+    alpha = 1.0  # baseline periodic hills geometry
+    ycol = 0  # y is in column 0
+    xcol = 1  # Ux and nu_t are in column 1 of their respective files
 
     # define color for different profiles
     # [line_style, color, line_width, dashes, opacity]
@@ -169,10 +169,10 @@ def main():
     samples_name = 'Samples'
     obs_name = "Observations"
 
-    # observations 
+    # observations
     obsfile = 'pre_processing/obs'
     obs = np.loadtxt(obsfile)
-    obs = obs[obs[:, 3]==0, :]
+    obs = obs[obs[:, 3] == 0, :]
 
     # create figure
     def plot_figure(case, field):
@@ -180,7 +180,7 @@ def main():
             iter = 0
         elif case == 'posterior':
             iter = niter
-        else: 
+        else:
             raise ValueError("'case' must be one of 'prior' or 'posterior'")
 
         if field == 'Ux':
@@ -195,9 +195,9 @@ def main():
             norm = 0.00017857142857142857
             norm_name = r'\nu'
             scale = 0.01
-        else: 
+        else:
             raise ValueError("'field_name' must be one of 'Ux' or 'nut'")
-        
+
         # start figure and plot domain
         fig = plt.figure()
         ax1 = fig.add_subplot(1, 1, 1)
@@ -207,13 +207,13 @@ def main():
 
         # plot observations
         ls = line_obs
-        if centered: 
+        if centered:
             for i in range(len(obs)):
                 obs[i, 0] += L/2 if xpos < L/2 else -L/2
         obs_x = obs[:, 0] + obs[:, 4]*scale/norm
         obs_y = obs[:, 1]
-        plt.plot(obs_x, obs_y, color=ls[0], marker=ls[1], ls=ls[2], 
-            markersize=ls[3], markeredgewidth=ls[4])
+        plt.plot(obs_x, obs_y, color=ls[0], marker=ls[1], ls=ls[2],
+                 markersize=ls[3], markeredgewidth=ls[4])
 
         # plot profiles
         plot_prof = plot_profile_x_centered if centered else plot_profile_x
@@ -224,28 +224,29 @@ def main():
             for i in range(nsamples):
                 filename = f"results_nutFoam/sample_{i:d}/postProcessing/" +\
                     f"sampleDict/{iter}/line_x{xname}_{field_filename}.xy"
-                _, xval, yval = plot_prof(filename, xpos, scale, xcol, ycol, norm,
-                            ls[0], ls[1], ls[2], ls[3], ls[4], L)
+                _, xval, yval = plot_prof(
+                    filename, xpos, scale, xcol, ycol, norm, ls[0], ls[1],
+                    ls[2], ls[3], ls[4], L)
                 # update mean
                 sample_mean += xval
             sample_mean /= nsamples
             ls = line_inferred
-            _ = plt.plot(xval, yval, linestyle=ls[0], color=ls[1], lw=ls[2], 
-                dashes=ls[3], alpha=ls[4])
+            _ = plt.plot(xval, yval, linestyle=ls[0], color=ls[1], lw=ls[2],
+                         dashes=ls[3], alpha=ls[4])
 
             # truth
             ls = line_truth
             filename = 'pre_processing/truth_foam/postProcessing/sampleDict/'
             filename += f'{foam_end_time}/line_x{xname}_{field_filename}.xy'
             _ = plot_prof(filename, xpos, scale, xcol, ycol, norm,
-                        ls[0], ls[1], ls[2], ls[3], ls[4], L)
+                          ls[0], ls[1], ls[2], ls[3], ls[4], L)
 
             # baseline
             ls = line_base
             filename = 'pre_processing/baseline_foam/postProcessing/sampleDict/'
             filename += f'{foam_end_time}/line_x{xname}_{field_filename}.xy'
             _ = plot_prof(filename, xpos, scale, xcol, ycol, norm,
-                        ls[0], ls[1], ls[2], ls[3], ls[4], L)
+                          ls[0], ls[1], ls[2], ls[3], ls[4], L)
 
         # set figure properties and labels
         scale_name = str(scale)
@@ -282,22 +283,22 @@ def main():
 
         ls = line_obs
         lines.append(Line2D(
-            [0], [0], color=ls[0], marker=ls[1], ls=ls[2], markersize=ls[3], 
+            [0], [0], color=ls[0], marker=ls[1], ls=ls[2], markersize=ls[3],
             markeredgewidth=ls[4]))
         labels.append(obs_name)
 
         box1 = ax1.get_position()
         if legend_top:
             ax1.set_position([box1.x0, box1.y0+box1.height*0.05, box1.width,
-                            box1.height * 0.9])
+                              box1.height * 0.9])
             plt.legend(lines, labels, handlelength=4,
-                    loc='lower center', bbox_to_anchor=(0.5, 1.05),
-                    fancybox=False, shadow=False, ncol=5)
+                       loc='lower center', bbox_to_anchor=(0.5, 1.05),
+                       fancybox=False, shadow=False, ncol=5)
         else:
             ax1.set_position([box1.x0, box1.y0, box1.width * 0.8, box1.height])
             plt.legend(lines, labels, handlelength=4,
-                    loc='center left', bbox_to_anchor=(1.0, 0.5),
-                    fancybox=False, shadow=False)
+                       loc='center left', bbox_to_anchor=(1.0, 0.5),
+                       fancybox=False, shadow=False)
 
         # save/show
         if savefig:
@@ -311,6 +312,7 @@ def main():
 
     if showfig:
         plt.show()
+
 
 if __name__ == "__main__":
     main()

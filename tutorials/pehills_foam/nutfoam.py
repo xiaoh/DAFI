@@ -65,7 +65,6 @@ class Model(PhysicsModel):
         obs_file = inputs_model['obs_file']
         self.foam_rc = inputs_model.get('foam_rc', None)
 
-
         # required attributes
         self.name = 'nutFoam Eddy viscosity RANS model'
 
@@ -133,15 +132,18 @@ class Model(PhysicsModel):
         pointsUy = obsdata[obsfield == 1, :3]
         pointsUz = obsdata[obsfield == 2, :3]
         if pointsUx.shape[0] > 0:
-            self.H_Ux = rf.inverse_distance_weights(coords, connectivity, pointsUx)
+            self.H_Ux = rf.inverse_distance_weights(
+                coords, connectivity, pointsUx)
         else:
             self.H_Ux = np.empty([0, nstates])
         if pointsUy.shape[0] > 0:
-            self.H_Uy = rf.inverse_distance_weights(coords, connectivity, pointsUy)
+            self.H_Uy = rf.inverse_distance_weights(
+                coords, connectivity, pointsUy)
         else:
             self.H_Uy = np.empty([0, nstates])
         if pointsUz.shape[0] > 0:
-            self.H_Uz = rf.inverse_distance_weights(coords, connectivity, pointsUz)
+            self.H_Uz = rf.inverse_distance_weights(
+                coords, connectivity, pointsUz)
         else:
             self.H_Uz = np.empty([0, nstates])
 
@@ -193,8 +195,8 @@ class Model(PhysicsModel):
         parallel = multiprocessing.Pool(self.ncpu)
         inputs = [
             ('nutFoam', self._sample_dir(i), self.da_iteration,
-                self.timeprecision, self.foam_rc) 
-                for i in range(self.nsamples)]
+                self.timeprecision, self.foam_rc)
+            for i in range(self.nsamples)]
         _ = parallel.starmap(_run_foam, inputs)
         parallel.close()
 

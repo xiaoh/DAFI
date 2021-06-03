@@ -961,4 +961,3 @@ def write_omega(version, internal, boundaries, location=None, file=None):
     information.
     """
     return write(version, 'omega', internal, boundaries, location, file)
-
