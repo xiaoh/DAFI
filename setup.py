@@ -7,6 +7,7 @@ setup(
     name='DAFI',
     version='1.0.0',
     packages=setuptools.find_packages(),
+    scripts=['bin/dafi'],
     license='Apache License 2.0',
     author="Virginia Tech",
     description="Ensemble based data-assimilation and field inversion.",
