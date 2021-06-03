@@ -20,4 +20,3 @@ model:
     nklmodes: 50
     ncpu: 25
     obs_file: pre_processing/obs
-    foam_rc: /Users/cmichel/.OpenFOAMrc

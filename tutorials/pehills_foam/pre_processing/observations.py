@@ -7,7 +7,6 @@ import numpy as np
 from dafi import random_field as rf
 
 foam_rc = None  # modify if needed to run in your system
-foam_rc = "/Users/cmichel/.OpenFOAMrc"
 
 foam_case = 'truth_foam'
 time_dir = '10000'

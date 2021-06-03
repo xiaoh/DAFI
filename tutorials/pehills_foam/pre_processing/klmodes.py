@@ -9,7 +9,6 @@ coverage = 0.99
 foam_case = "baseline_foam"
 
 foam_rc = None  # modify if needed to run in your system
-foam_rc = "/Users/cmichel/.OpenFOAMrc"
 
 kernel = "mixed_periodic_sqrexp"
 stddev = 1.0
