@@ -8,7 +8,7 @@ setuptools.setup(
     version='1.0.0',
     packages=setuptools.find_packages(),
     scripts=['bin/dafi'],
-    license='Apache License 2.0',
+    license='Apache 2.0',
     author="Virginia Tech",
     description="Ensemble based data-assimilation and field inversion.",
     long_description=long_description,
@@ -26,7 +26,7 @@ setuptools.setup(
         'Development Status :: 4 - Beta',
         'Intended Audience :: Science/Research',
         'Topic :: Scientific/Engineering',
-        'License:: OSI Approved:: Apache Software License',
+        'License :: OSI Approved :: Apache Software License',
         'Programming Language :: Python :: 3.8',
     ],
 )
