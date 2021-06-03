@@ -14,7 +14,7 @@ setup(
     long_description=long_description,
     long_description_content_type="text/markdown",
     url='https://github.com/xiaoh/DAFI',
-    download_url="",
+    download_url="https://github.com/xiaoh/DAFI/archive/refs/tags/1.0.0.tar.gz",
     keywords=["Data Assimilation", "Field Inversion"],
     install_requires=[
         'numpy',
