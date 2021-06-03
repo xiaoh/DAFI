@@ -22,8 +22,8 @@ sys.path.insert(0, os.path.abspath('../..'))
 project = u'dafi'
 copyright = u'Copyright 2020 Virginia Polytechnic Institute and State University.'
 author = u'Carlos A. Michelén Ströfer, Xinlei Zhang, Heng Xiao'
-version = u'1.0' # The short X.Y version
-release = u'1.0.0' # The full version, including alpha/beta/rc tags
+version = u'1.0'  # The short X.Y version
+release = u'1.0.0'  # The full version, including alpha/beta/rc tags
 
 
 # -- General configuration ---------------------------------------------------

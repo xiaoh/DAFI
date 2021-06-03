@@ -22,7 +22,7 @@ When using the code you will need to add the following to your ``PATH`` and ``PY
 
 Prerequisites\:
 
-* Python 3.x 
+* Python 3.8 
 * Python packages
 
     * NumPy

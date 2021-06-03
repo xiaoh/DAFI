@@ -25,10 +25,9 @@ class TestEnKF(unittest.TestCase):
         self.input_file = 'dafi.in'
         self.results_dir = 'results'
         model_file = 'model.py'
-        model_input_file = 'model.in'
 
         # copy physics model file
-        src = os.path.join(TUTORIALS_DIR, 'uq', 'uq.py')
+        src = os.path.join(TUTORIALS_DIR, 'scalar_inversion_uq', 'model.py')
         dst = os.path.join(self.dir, model_file)
         try:
             os.makedirs(self.dir)
@@ -56,20 +55,15 @@ class TestEnKF(unittest.TestCase):
                 '\ninverse:' + \
                 '\n' + \
                 '\nmodel:' + \
-                f'\n    input_file: {model_input_file}'
-            with open(filename, "w") as file:
-                file.write(content)
+                '\n    x_init_mean: [0.5, 0.5]' + \
+                '\n    x_init_std: [0.1, 0.1]' + \
+                '\n    obs: [0.8, 2.]' + \
+                '\n    obs_std: [0.05, 0.05]'
 
-        def _create_model_input(filename):
-            content = 'x_init_mean: [0.5, 0.5]' + \
-                '\nx_init_std: [0.1, 0.1]' + \
-                '\nobs: [0.8, 2.]' + \
-                '\nobs_std: [0.05, 0.05]'
             with open(filename, "w") as file:
                 file.write(content)
 
         _create_dafi_input(os.path.join(self.dir, self.input_file))
-        _create_model_input(os.path.join(self.dir, model_input_file))
 
         # run dafi
         bash_command = f"cd {self.dir}; dafi {self.input_file}"
