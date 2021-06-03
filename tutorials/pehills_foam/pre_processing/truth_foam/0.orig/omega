@@ -1,0 +1,49 @@
+/*--------------------------------*- C++ -*----------------------------------*\
+| =========                 |                                                 |
+| \\      /  F ield         | OpenFOAM: The Open Source CFD Toolbox           |
+|  \\    /   O peration     | Version:  v2012                                 |
+|   \\  /    A nd           | Website:  www.OpenFOAM.com                      |
+|    \\/     M anipulation  |                                                 |
+\*---------------------------------------------------------------------------*/
+FoamFile
+{
+    version     2.0;
+    format      ascii;
+    class       volScalarField;
+    location    "0";
+    object      omega;
+}
+// * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
+
+dimensions      [0 0 -1 0 0 0 0];
+
+internalField   uniform 1.60;
+
+boundaryField
+{
+    "(topWall|bottomWall)"
+    {
+        type            omegaWallFunction;
+        value           $internalField;
+    }
+    "(inlet|outlet)"
+    {
+        type            cyclic;
+    }
+    defaultFaces
+    {
+        type            empty;
+    }
+}
+
+// https://www.cfd-online.com/Wiki/Turbulence_free-stream_boundary_conditions
+// using "pipe" approximation, to get approximate order of magnitude
+//    1x1 square pipe,
+//    hydraulic diameter: dh = 4*area/perimeter = 1
+//    turbulence length scale , l = 0.07*dh = 0.07
+// omega = Cmu^-0.25 * k^0.5 / l
+//    Cmu = 0.09
+//    k = 0.00375
+//    omega = 1.5971914124998496
+
+// ************************************************************************* //

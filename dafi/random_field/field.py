@@ -615,7 +615,7 @@ def gp_samples_kl(cov, nsamples, weight_field, nmodes=None, mean=None,
         *dtype=float*, *ndim=2*, *shape=(nstate, nsamples)*
     """
     # KL decomposition
-    eigv, klmodes = calc_kl_modes(cov, nmodes, weight_field, eps, False)
+    eigv, modes = calc_kl_modes(cov, nmodes, weight_field, eps, False)
     if nmodes is None:
         nmodes = len(eigv)
 

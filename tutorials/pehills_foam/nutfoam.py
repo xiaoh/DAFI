@@ -9,15 +9,11 @@ import multiprocessing
 
 # third party imports
 import numpy as np
-import scipy.sparse as sp
-import yaml
 
 # local imports
 from dafi import PhysicsModel
 from dafi import random_field as rf
 from dafi.random_field import foam
-
-
 
 
 class Model(PhysicsModel):
@@ -34,34 +30,25 @@ class Model(PhysicsModel):
 
         Note
         ----
-        Inputs in ``model_input`` dictionary:
-            * **forward_interval** (``int``) -
-              Number of simulation steps for forward model.
-            * **nkl_modes** (``int``) -
-              Number of KL modes to use.
-            * **enable_parallel** (``bool``, ``False``) -
-              Whether to run in parallel.
-            * **ncpu** (``int``, ``0``) -
-              Number of CPUs to use if ``enable_parallel`` is True. Set
-              to zero to use all available CPUs.
-            * **foam_base_dir** (``str``) -
+        Inputs in ``inputs_model`` dictionary:
+            * **foam_case** (``str``) -
               OpenFOAM case directory to be copied to run each sample.
-            * **mesh_dir** (``str``) -
-              Directory containing the OpenFOAM mesh coordinates and
-              volume information files (ccx, ccy, ccz, cv).
+            * **iteration_nstep** (``int``) -
+              Number of simulation steps for a forward model (OpenFOAM)
+              solve.
+            * **klmodes_file** (``str``) -
+              File containing the KL modes for the nu_t covariance.
+            * **nut_baseline_foamfile** (````) -
+              OpenFOAM field file for the baseline eddy viscosity.
+            * **nklmodes** (``int``) -
+              Number of KL modes to use.
+            * **ncpu** (``int``, ``0``) -
+              Number of CPUs to use. Set to zero to use all available 
+              CPUs.
             * **obs_file** (``str``) -
               File containing the observation values.
-            * **obs_err_file** (``str``) -
-              File containing the observation error/covariance (R)
-              matrix.
-            * **kl_modes_file** (``str``) -
-              File containing the KL modes for the nu_t covariance.
-            * **obs_mat_file** (``str``) -
-              File containing the mesh cells and weights at observation
-              locations. Generated with ``getObsMatrix`` utility.
-            * **transform** (``str``) -
-              Tranformation option for nut s.t. T(nut)~GP(0,K). Options:
-              linear, log.
+            * **foam_rc** (``str``) -
+              File used to source OpenFOAM in your system, if needed.
         """
         # get required DAFI inputs.
         self.nsamples = inputs_dafi['nsamples']
@@ -76,6 +63,8 @@ class Model(PhysicsModel):
         nklmodes = inputs_model.get('nklmodes', None)
         self.ncpu = inputs_model.get('ncpu', 1)
         obs_file = inputs_model['obs_file']
+        self.foam_rc = inputs_model.get('foam_rc', None)
+
 
         # required attributes
         self.name = 'nutFoam Eddy viscosity RANS model'
@@ -101,10 +90,10 @@ class Model(PhysicsModel):
             'writeInterval': '1',
             'purgeWrite': '2',
             'writeFormat': 'ascii',
-            'writePrecision': f'{self.timeprecision}',
+            'writePrecision': '6',
             'writeCompression': 'off',
             'timeFormat': 'fixed',
-            'timePrecision': '6',
+            'timePrecision': f'{self.timeprecision}',
             'runTimeModifiable': 'true',
         }
         self.foam_info = foam.read_header(nut_base_foamfile)
@@ -115,10 +104,11 @@ class Model(PhysicsModel):
         klmodes = np.loadtxt(klmodes_file)
         if nklmodes is not None:
             klmodes = klmodes[:, :nklmodes]
-        weights = foam.get_cell_volumes(self.foam_case)
+        weights = foam.get_cell_volumes(self.foam_case, foam_rc=self.foam_rc)
         self.nut_data = foam.read_field_file(nut_base_foamfile)
         nut_base = self.nut_data['internal_field']['value']
         self.rf_nut = rf.LogNormal(klmodes, nut_base, weights)
+        nstates = len(nut_base)
 
         # observations
         obsdata = np.loadtxt(obs_file)
@@ -138,13 +128,22 @@ class Model(PhysicsModel):
 
         # create "H matrix"
         connectivity = foam.get_neighbors(self.foam_case)
-        coords = foam.get_cell_centres(self.foam_case)
+        coords = foam.get_cell_centres(self.foam_case, foam_rc=self.foam_rc)
         pointsUx = obsdata[obsfield == 0, :3]
         pointsUy = obsdata[obsfield == 1, :3]
         pointsUz = obsdata[obsfield == 2, :3]
-        self.H_Ux = rf.inverse_distance_weights(coords, connectivity, pointsUx)
-        self.H_Uy = rf.inverse_distance_weights(coords, connectivity, pointsUy)
-        self.H_Uz = rf.inverse_distance_weights(coords, connectivity, pointsUz)
+        if pointsUx.shape[0] > 0:
+            self.H_Ux = rf.inverse_distance_weights(coords, connectivity, pointsUx)
+        else:
+            self.H_Ux = np.empty([0, nstates])
+        if pointsUy.shape[0] > 0:
+            self.H_Uy = rf.inverse_distance_weights(coords, connectivity, pointsUy)
+        else:
+            self.H_Uy = np.empty([0, nstates])
+        if pointsUz.shape[0] > 0:
+            self.H_Uz = rf.inverse_distance_weights(coords, connectivity, pointsUz)
+        else:
+            self.H_Uz = np.empty([0, nstates])
 
     def __str__(self):
         return 'Dynamic model for nutFoam eddy viscosity solver.'
@@ -162,14 +161,13 @@ class Model(PhysicsModel):
         os.makedirs(self.results_dir)
         for isample in range(self.nsamples):
             sample_dir = self._sample_dir(isample)
-            # TODO foam.copyfoam(, post='') - copies system, constant, 0
             shutil.copytree(self.foam_case, sample_dir)
             foam.write_controlDict(
                 self.control_list, self.foam_info['foam_version'],
                 self.foam_info['website'], ofcase=sample_dir)
 
         # create samples, modify files, output coefficients (state)
-        samps, coeffs = self.rf_nut.sample_func(self.nsamples)
+        _, coeffs = self.rf_nut.sample_func(self.nsamples)
         return coeffs
 
     def state_to_observation(self, state_vec):
@@ -195,7 +193,8 @@ class Model(PhysicsModel):
         parallel = multiprocessing.Pool(self.ncpu)
         inputs = [
             ('nutFoam', self._sample_dir(i), self.da_iteration,
-                self.timeprecision) for i in range(self.nsamples)]
+                self.timeprecision, self.foam_rc) 
+                for i in range(self.nsamples)]
         _ = parallel.starmap(_run_foam, inputs)
         parallel.close()
 
@@ -229,7 +228,7 @@ class Model(PhysicsModel):
         return os.path.join(self.results_dir, f'sample_{isample:d}')
 
 
-def _run_foam(solver, case_dir, iteration, timeprecision):
+def _run_foam(solver, case_dir, iteration, timeprecision, foam_rc):
     """ Run an OpenFOAM case.
 
     Used by state_to_observation but needs to be outside class to run
@@ -237,10 +236,8 @@ def _run_foam(solver, case_dir, iteration, timeprecision):
     """
     # run foam
     logfile = os.path.join(case_dir, solver + '.log')
-    bash_command = f'{solver} -case {case_dir} > {logfile}'
-    subprocess.call(bash_command, shell=True)
-    bash_command = f'postProcess  -case {case_dir} -func sampleDict ' + \
-        '> log.sample 2>&1'
+    bash_command = foam._bash_source_of(foam_rc)
+    bash_command += f'{solver} -case {case_dir} > {logfile}'
     subprocess.call(bash_command, shell=True)
 
     # move results from i to i-1 directory
@@ -252,3 +249,9 @@ def _run_foam(solver, case_dir, iteration, timeprecision):
         src = os.path.join(case_dir, f'{iteration + 1:d}', field)
         dst = os.path.join(case_dir, f'{iteration:d}', field)
         shutil.copyfile(src, dst)
+
+    # sample
+    bash_command = foam._bash_source_of(foam_rc)
+    bash_command += f'postProcess  -case {case_dir} -func sampleDict ' + \
+        f'-time {iteration:d}> log.sample 2>&1'
+    subprocess.call(bash_command, shell=True)

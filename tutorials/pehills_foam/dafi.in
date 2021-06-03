@@ -2,21 +2,22 @@
 dafi:
     model_file: nutfoam.py
     inverse_method: EnKF
-    nsamples: 2
-    max_iterations: 2
+    nsamples: 50
+    max_iterations: 10
     rand_seed: 1
     verbosity: 2
     convergence_option: max
     save_level: iter
-    analysis_to_obs: False
+    analysis_to_obs: True
 
 inverse:
 
 model:
-    foam_case: nutfoam_inputs/foam_base
-    iteration_nstep: 300
-    klmodes_file: nutfoam_inputs/kl_modes/kl_modes
-    nut_baseline_foamfile: nutfoam_inputs/foam_base/0/nut
-    nklmodes: 20
-    ncpu: 2
-    obs_file: nutfoam_inputs/obs
+    foam_case: foam
+    iteration_nstep: 10000
+    klmodes_file: pre_processing/klmodes
+    nut_baseline_foamfile: foam/0.orig/nut
+    nklmodes: 50
+    ncpu: 25
+    obs_file: pre_processing/obs
+    foam_rc: /Users/cmichel/.OpenFOAMrc
