@@ -15,6 +15,10 @@ cd ../
 ./klmodes.py
 
 # Create mesh and 0 directory for the foam case 
+rm ../foam/0.orig/*
+cp baseline_foam/10000/U ../foam/0.orig/
+cp baseline_foam/10000/p ../foam/0.orig/
+cp baseline_foam/10000/nut ../foam/0.orig/
 cd ../foam
 cp -r 0.orig 0
 blockMesh
