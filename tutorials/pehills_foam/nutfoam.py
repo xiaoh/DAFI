@@ -255,5 +255,5 @@ def _run_foam(solver, case_dir, iteration, timeprecision, foam_rc):
     # sample
     bash_command = foam._bash_source_of(foam_rc)
     bash_command += f'postProcess  -case {case_dir} -func sampleDict ' + \
-        f'-time {iteration:d}> log.sample 2>&1'
+        f'-time {iteration:d} > log.sample 2>&1'
     subprocess.call(bash_command, shell=True)
