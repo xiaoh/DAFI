@@ -136,12 +136,11 @@ def run(model_file, inverse_method, nsamples, ntime=None,
         _create_dir(save_dir)
 
     # initialize physics model
-    spec = importlib.util.spec_from_file_location("model", model_file)
-    model_module = importlib.util.module_from_spec(spec)
-    spec.loader.exec_module(model_module)
-    Model = getattr(model_module, 'Model')
+    sys.path.append(os.path.dirname(os.path.abspath(model_file)))
+    model_module = os.path.basename(os.path.splitext(model_file)[0])
+    Model = getattr(
+        importlib.import_module(model_module), 'Model')
     model = Model(inputs_dafi, inputs_model)
-    sys.modules['model'] = model_module
 
     # initialize inverse method
     Inverse = getattr(

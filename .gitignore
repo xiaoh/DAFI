@@ -1,6 +1,3 @@
-# Mac OS
-.DS_Store
-
 # built package
 build
 dist

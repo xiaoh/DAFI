@@ -1,0 +1,42 @@
+/*--------------------------------*- C++ -*----------------------------------*\
+| =========                 |                                                 |
+| \\      /  F ield         | OpenFOAM: The Open Source CFD Toolbox           |
+|  \\    /   O peration     | Version:  v2012                                 |
+|   \\  /    A nd           | Website:  www.OpenFOAM.com                      |
+|    \\/     M anipulation  |                                                 |
+\*---------------------------------------------------------------------------*/
+FoamFile
+{
+    version     2.0;
+    format      ascii;
+    class       volScalarField;
+    location    "0";
+    object      k;
+}
+// * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
+
+dimensions      [ 0 2 -2 0 0 0 0 ];
+
+internalField   uniform 0.00375;
+
+boundaryField
+{
+    "(topWall|bottomWall)"
+    {
+        type            kqRWallFunction;
+        value           uniform 0.0;
+    }
+    "(inlet|outlet)"
+    {
+        type            cyclic;
+    }
+    defaultFaces
+    {
+        type            empty;
+    }
+}
+
+// https://www.cfd-online.com/Wiki/Turbulence_free-stream_boundary_conditions
+// 5% turbulent intensity, U = 1, k=1.5(UI)^2=0.00375
+
+// ************************************************************************* //

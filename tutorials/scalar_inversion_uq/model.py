@@ -12,6 +12,7 @@ import yaml
 # local imports
 from dafi import PhysicsModel
 
+
 class Model(PhysicsModel):
 
     def __init__(self, inputs_dafi, inputs_model):
@@ -20,8 +21,8 @@ class Model(PhysicsModel):
 
         # read inputs
         self.init_state = np.array(inputs_model['x_init_mean'])
-        self.state_std =  np.array(inputs_model['x_init_std'])
-        self.obs =  np.array(inputs_model['obs'])
+        self.state_std = np.array(inputs_model['x_init_std'])
+        self.obs = np.array(inputs_model['obs'])
         self.obs_err = np.diag(np.array(inputs_model['obs_std'])**2)
 
         # required attributes.
@@ -36,7 +37,7 @@ class Model(PhysicsModel):
     def generate_ensemble(self):
         state_vec = np.empty([self.nstate, self.nsamples])
         for i in range(self.nstate):
-            state_vec[i,:] = np.random.normal(
+            state_vec[i, :] = np.random.normal(
                 self.init_state[i], self.state_std[i], self.nsamples)
         return state_vec
 

@@ -13,7 +13,7 @@ import matplotlib as mpl
 import yaml
 
 mpl.rcParams.update({'text.usetex': True,
-                     'text.latex.preamble': ['\\usepackage{gensymb}'], })
+                     'text.latex.preamble': '\\usepackage{gensymb}', })
 
 
 # create save directory
@@ -51,6 +51,8 @@ obs_error *= dafi_dict['convergence_factor']
 u_base = np.loadtxt(os.path.join(results_dir, 'u_baseline.dat'))
 
 # reconstruct diffusivity from KL modes
+
+
 def reconstruct_inferred_mu(omega_mat, klmodes):
     """ reconstruct inferred diffusivity field. """
     nmodes, nsamps = omega_mat.shape
@@ -61,6 +63,7 @@ def reconstruct_inferred_mu(omega_mat, klmodes):
             mu[:, isamp] += omega_mat[imode, isamp] * klmodes[:, imode]
         mu[:, isamp] = np.exp(mu[:, isamp])
     return mu
+
 
 # plot results
 prior = ('prior', 0, 'xf')
