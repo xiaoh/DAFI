@@ -7,6 +7,8 @@ import importlib
 import logging
 import warnings
 import os
+import time as tm
+
 import sys
 
 # third party imports
@@ -209,10 +211,13 @@ def _solve(inputs_dafi, inverse, model):
             log_message = f"\n  Iteration: {iteration}"
             logger.log(_log_level(2), log_message)
 
+            ts = tm.time()
             # map the state vector to observation space
             if iteration != 0:
                 state_forecast = state_analysis.copy()
             state_in_obsspace = model.state_to_observation(state_forecast)
+            print(f'      Ensemble of forecast ... {tm.time()-ts:.2f}s')
+
             if iteration == 0:
                 state_in_obsspace_prior = state_in_obsspace
 
@@ -222,9 +227,11 @@ def _solve(inputs_dafi, inverse, model):
                     obs_vec, obs_error, inputs_dafi['nsamples'])
 
             # data assimilaton
+            ts = tm.time()
             state_analysis = inverse.analysis(
                 iteration, state_forecast, state_in_obsspace, obs, obs_error,
                 obs_vec)
+            print(f'      Data assimilation analysis ... {tm.time()-ts:.2f}s')
 
             # save results
             if inputs_dafi['save_level'] in {'iter', 'debug'}:
