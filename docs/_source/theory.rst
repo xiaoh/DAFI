@@ -36,10 +36,8 @@ Thus the problem can be solved with data assimilation by finding state vector to
 Data Assimilation
 -----------------
 
-Data assimilation method can be divided as Kalman filter and variational method. However
-
 Data assimilation can be sorted by variational method :cite:`le1986variational` and Kalman filter :cite:`kalman1960new`.
-The variational method use the optimal control theory :cite:`berkovitz2013optimal` optimal to reduce the misfit between observation and model realization in observed space, while Kalman filter is originated directly from the Bayesian formulation. However, the  variational method need much efforts on the adjoint model and the Kalman filter is quite costly to estimatethe statics of the state vector especially for high-dimension problem. To address these issues, the trending appraoch is to introduce ensemble technique, and many ensemble based methods have been proposed.
+The variational method use the optimal control theory :cite:`berkovitz2013optimal` optimal to reduce the misfit between observation and model realization in observed space, while Kalman filter is originated directly from the Bayesian formulation. However, the  variational method need much efforts on the adjoint model and the Kalman filter is quite costly to estimate the statics of the state vector especially for high-dimension problem. To address these issues, the trending approach is to introduce ensemble technique, and many ensemble-based methods have been proposed.
 
 This toolbox is focused on ensemble-based data assimilation methods.
 
