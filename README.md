@@ -2,8 +2,7 @@ DAFI - Data Assimilation and Field Inversion
 ============================================
 Ensemble based data-assimilation and field inversion.
 
-Developed at Dr. Heng Xiao's group at Virginia Tech.
-Dr. Xiao moved to University of Stuttgart [Chair of Data-Driven Fluid Dynamics](https://www.hengx.org/)
+Developed at Dr. Heng Xiao's group at Virginia Tech. In December 2022, Dr. Xiao moved to University of Stuttgart to become [Chair of Data-Driven Fluid Dynamics](https://www.hengx.org/)
 
 Website: https://dafi.readthedocs.io
 
