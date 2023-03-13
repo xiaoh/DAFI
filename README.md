@@ -2,13 +2,16 @@ DAFI - Data Assimilation and Field Inversion
 ============================================
 Ensemble based data-assimilation and field inversion.
 
-Developed at Dr. Heng Xiao's group at Virginia Tech: [Data-Enabled Computational Mechanics Laboratory at Virgnia Tech.](https://www.aoe.vt.edu/people/faculty/xiaoheng/personal-page.html)
+Developed at Dr. Heng Xiao's group at Virginia Tech.
+Dr. Xiao moved to University of Stuttgart [Chair of Data-Driven Fluid Dynamics](https://www.hengx.org/)
 
 Website: https://dafi.readthedocs.io
 
 Cite: C. A. Michelén Ströfer, X-L. Zhang, H. Xiao. DAFI: An open-source framework for ensemble-based data assimilation and field inversion. *Communications in Computational Physics* 29, pp. 1583-1622, 2021. DOI: [10.4208/cicp.OA-2020-0178](https://doi.org/10.4208/cicp.OA-2020-0178). Also available at: [arxiv: 2012.02651](https://arxiv.org/abs/2012.02651).
 
 List of publications using DAFI:
+
+- X.-L. Zhang, H. Xiao, X. Luo, G. He. Ensemble Kalman method for learning turbulence models from indirect observation data. *Journal of Fluid Mechanics*, 949(A26), 2022.
 
 - C. A. Michelén Ströfer, X-L. Zhang, H. Xiao, O. Coutier-Delgosha. Enforcing boundary conditions on physical fields in Bayesian inversion. *Computer Methods in Applied Mechanics and Engineering* 367, 113097, 2020. DOI: [10.1016/j.cma.2020.113097](https://doi.org/10.1016/j.cma.2020.113097). Also available at: [arxiv: 1911.06683](https://arxiv.org/abs/1911.06683).
 
