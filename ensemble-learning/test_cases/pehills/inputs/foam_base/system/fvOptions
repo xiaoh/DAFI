@@ -1,0 +1,34 @@
+/*--------------------------------*- C++ -*----------------------------------*\
+| =========                 |                                                 |
+| \\      /  F ield         | OpenFOAM: The Open Source CFD Toolbox           |
+|  \\    /   O peration     | Version:  v1912                                 |
+|   \\  /    A nd           | Website:  www.OpenFOAM.com                      |
+|    \\/     M anipulation  |                                                 |
+\*---------------------------------------------------------------------------*/
+FoamFile
+{
+    version     2.0;
+    format      ascii;
+    class       dictionary;
+    location    "system";
+    object      fvOptions;
+}
+// * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
+
+momentumSource
+{
+    type            meanVelocityForce;
+    fields          (U);
+    active          on;
+    selectionMode   all;
+    Ubar            (0.721039 0 0); // based on profile bulk velocity at top of hill. See below.
+}
+
+// Because of incompressibility the integral reduces to Ubar = (H*L/V)*Uprof,
+// where Ubar is the volume averaged bulk velocity (specify above),
+// Uprof is the bulk velocity over a profile at the hill top (set to 1),
+// H is the height of the fluid domain on top of the hill,
+// L and V are the domain length and volume.
+// In this case: H=2.036 , L=9, V=25.4133269, and we set Uprof=1, giving Ubar=0.7210390072934529.
+
+// ************************************************************************* //

@@ -1,0 +1,204 @@
+/*--------------------------------*- C++ -*----------------------------------*\
+| =========                 |                                                 |
+| \\      /  F ield         | OpenFOAM: The Open Source CFD Toolbox           |
+|  \\    /   O peration     | Version:  v2006                                 |
+|   \\  /    A nd           | Website:  www.openfoam.com                      |
+|    \\/     M anipulation  |                                                 |
+\*---------------------------------------------------------------------------*/
+FoamFile
+{
+    version     2.0;
+    format      ascii;
+    class       dictionary;
+    object      blockMeshDict;
+}
+// * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
+
+scale   0.0357143;
+
+aw 1.0;
+
+Nx 100;
+Ny 30;
+Lz 2.8;
+
+Lx #eval{ 252.0-54*(1-$aw)*2 };
+
+vertices
+(
+    (  0 28   0)   // 0
+    ($Lx 28   0)   // 1
+    ($Lx 85   0)   // 2
+    (  0 85   0)   // 3
+
+    (  0 28 $Lz)   // 4
+    ($Lx 28 $Lz)   // 5
+    ($Lx 85 $Lz)   // 6
+    (  0 85 $Lz)   // 7
+);
+
+blocks
+(
+    hex (0 1 2 3 4 5 6 7) ($Nx $Ny 1) simpleGrading (1 ((0.5 0.5 10)(0.5 0.5 0.1)) 1)
+);
+
+
+
+edges #codeStream
+{
+    codeInclude
+    #{
+        #include "pointField.H"
+        #include "mathematicalConstants.H"
+    #};
+
+    code
+    #{
+        const scalar xMin = 0;
+        const scalar xMax = 252;
+        const label nPoints = 800;
+        const scalar dx = (xMax - xMin)/scalar(nPoints - 1);
+
+	const scalar a = $aw;
+        os  << "(" << nl << "spline 0 1" << nl;
+        pointField profile(nPoints, Zero);
+        
+	for (label i = 0; i <nPoints; ++i) 
+        {
+	    scalar x = xMin + i*dx;
+            profile[i].x() = x;
+
+	    if (x >= 0 && x < 54)
+	    { 
+                profile[i].x() *= a;
+	    }
+            
+            else if (x > 54 && x <= 126) 
+            {   
+     	        profile[i].x() -= (54*(1-a));
+            }
+	    else if (x > 126 && x <= 198) 
+	    {
+            	profile[i].x() -= (54*(1-a));
+	    }
+            else if (x > 198) 
+            {	
+		profile[i].x() -= (54*(1-a));
+                profile[i].x() -= (x-198)*(1-a);
+	    }	
+	}
+
+
+        for (label i = 0; i < nPoints; ++i)
+        {
+            scalar x = xMin + i*dx;
+            // profile[i].x() = x;
+            if (x > 198) x = 252 - x;
+
+            if (x >= 0 && x < 9)
+            {
+                profile[i].y() =
+                    28
+                  + 6.775070969851E-03*x*x
+                  - 2.124527775800E-03*x*x*x;
+            }
+            else if (x >= 9 && x < 14)
+            {
+                profile[i].y() =
+                    25.07355893131
+                  + 0.9754803562315*x
+                  - 1.016116352781E-01*x*x
+                  + 1.889794677828E-03*x*x*x;
+            }
+            else if (x >= 14 && x < 20)
+            {
+                profile[i].y() =
+                    2.579601052357E+01
+                  + 8.206693007457E-01*x
+                  - 9.055370274339E-02*x*x
+                  + 1.626510569859E-03*x*x*x;
+            }
+            else if (x >= 20 && x < 30)
+            {
+                profile[i].y() =
+                    4.046435022819E+01
+                  - 1.379581654948E+00*x
+                  + 1.945884504128E-02*x*x
+                  - 2.070318932190E-04*x*x*x;
+            }
+            else if (x >= 30 && x < 40)
+            {
+                profile[i].y() =
+                    1.792461334664E+01
+                  + 8.743920332081E-01*x
+                  - 5.567361123058E-02*x*x
+                  + 6.277731764683E-04*x*x*x;
+            }
+            else if (x >= 40 && x < 54)
+            {
+                profile[i].y() =
+                    max
+                    (
+                        0,
+                        5.639011190988E+01
+                      - 2.010520359035E+00*x
+                      + 1.644919857549E-02*x*x
+                      + 2.674976141766E-05*x*x*x
+                    );
+            }
+            profile[i].z() = 0;
+        }
+        os << profile << nl;
+
+        os << "spline 4 5" << nl;
+        profile.replace(2, $Lz);
+        os << profile << nl;
+
+        os  << ");" << nl;
+
+    #};
+};
+
+boundary
+(
+    inlet
+    {
+        type            cyclic;
+        neighbourPatch  outlet;
+        faces
+        (
+            (0 4 7 3)
+        );
+    }
+    outlet
+    {
+        type            cyclic;
+        neighbourPatch  inlet;
+        faces
+        (
+            (1 2 6 5)
+        );
+    }
+    topWall
+    {
+        type            wall;
+        faces
+        (
+            (3 7 6 2)
+        );
+    }
+    bottomWall
+    {
+        type            wall;
+        faces
+        (
+            (1 5 4 0)
+        );
+    }
+);
+
+mergePatchPairs
+(
+);
+
+// ************************************************************************* //

@@ -1,0 +1,14 @@
+#!/bin/sh
+cd ${0%/*} || exit 1                        # Run from this directory
+. $WM_PROJECT_DIR/bin/tools/RunFunctions    # Run functions
+
+restore0Dir
+runApplication blockMesh
+runApplication $(getApplication)
+simpleFoam -postProcess -func 'turbulenceFields(R, k, epsilon)'
+postProcess -func 'grad(U)'
+postProcess -func sampleDict > log.sample 2>&1
+foamLog log.$(getApplication)
+plot_residuals.py
+
+#------------------------------------------------------------------------------

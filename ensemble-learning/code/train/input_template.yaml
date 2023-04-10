@@ -1,0 +1,66 @@
+
+# architecture
+nscalar_invariants: 1 # number of NN inputs: theta_1, ..., theta_5
+nbasis_tensors: 1 # number of NN outputs: g_1, ..., g_10
+nhlayers:  10 # number of hidden layers
+nnodes:  10 # number of nodes per hidden layer
+alpha: 0.0 # 0.0 for ReLU, >0.0 for leaky ReLU
+
+# optimization
+opt_algorithm: Adam # a class from gradient_descent.py: optmization algorithm 
+opt_parameters: # kwargs for specific opt_algorithm, e.g. for ADAM:
+  learning_rate: 0.001
+  beta1: 0.9
+  beta2: 0.999
+  eps: 1.0e-8
+opt_restart: pretrain # 'None (empty)' for random initialization, integer to start from a saved state (weights, restart variables [e.g. S, V for Adam]), 'pretrain' to load weights "w.0" but not load restart variables. 
+opt_steps: 50 # number of gradient descent steps to take. 
+
+# data-preprocessing
+preproc_class: Scale # a class from data_preproc.py: input data pre-processing
+
+# regularization
+regularization: # a function from regularization.py: regularization method
+reg_coeff: # a float: regularization coefficient (scaling in cost function)
+
+# debug
+save_gradients: True # whether to save the gradient info (for debugging)
+fixed_inputs: False # whether to use fixed scalar invariants (theta) and tensor basis (T). I.e. to train from RANS to DNS (e.g. Ling et al.)
+
+# save dir
+save_dir: results_fullfield_ensemble # directory where to save results (and where results are saved for opt_restart=int/pretrain)
+
+# training flows and measurements
+nflows: 1 # number of different training flows
+parallel: True # NOT IMPLEMENTED. Whether to run different flows in parallel
+flow_0: # first training flow. Include on such dictionary per training flow
+  foam_dir: foam_primal # OpenFOAM case for primal run
+  foam_timedir: 1000 # final time in primal OpenFOAM case
+  # input_scalars: # if fixed_inputs
+  # input_tensors: # if fixed_inputs
+  # input_tke: # if fixed_inputs
+  start_from_prev: True
+  turb_quant: omega
+  gradient_method: adjoint # current methods: 'adjoint', 'ensemble'
+  gradient_options: # different inputs for different gradient methods
+    ## if adjoint:
+    foam_dir_a: foam_adjoint 
+    foam_timedir_a: 10 
+    log_dir: results/foamlogs_flow_0 
+    ## if ensemble:
+    # ncpu: 20
+    # nsamples: 20
+    # lenscale: 0.1
+    # stddev_ratio: 0.1
+    # ensemble_method: precondition
+    # baseline_as_mean: True
+    # eps: 1.0e-8
+  nmeasurements: 1 # number of measurements for this flow (full scalar field counts as one [e.g. full Ux, Uy, Uz would be 3], sparse points count as one each)
+flow_0_measurement_0: # one dictionary per nmeasurement
+  type: volume # 'volume' or 'boundary'. Currently only 'volume' implemented
+  variable: 'Ux' # one of: 'Ux', 'Uy', 'Uz', 'p'
+  observation_type: fullfield # either 'fullfield' or 'point', 'integral' quantities (e.g. drag) not implemented. 
+  # point_mask_length: [1.0, 1.0, 1.0] # if observation_mask_type=point and adjoint
+  training_data: data/UxFullField # file contatining the true field/point value for training
+  scaling: 1.0 # how much to scale this measurement relative to the others in the cost function
+  # measurement_stddev: 1.0 # if ensemble. 'None (empty)' for full field: uses R = cell volumes 

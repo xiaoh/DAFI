@@ -1,0 +1,51 @@
+
+dafi:
+    model_file: nnfoam.py
+    inverse_method: AD_EnKF
+    nsamples: 20
+    max_iterations: 20
+    rand_seed: 1
+    verbosity: 2
+    convergence_option: max # discrepancy
+    save_level: iter
+    analysis_to_obs: False
+
+inverse:
+    inflation_flag: 1
+    localization_flag: 0
+    nstate: 1042
+    nobs: 246 
+    alpha: 1.1
+    beta: 0.9
+    tau: 3
+    gamma: 0.8
+
+model:
+    foam_case: inputs/foam_base
+    iteration_nstep: 500
+    weight_baseline_file: inputs/w.0
+    nut_base_foamfile: inputs/foam_base/0/nut
+    ncpu: 30
+    obs_file: inputs/data
+    iteration_step_length: 1.0
+
+    # architecture
+    nscalar_invariants: 2
+    nbasis_tensors: 2
+    nhlayers:  10
+    nnodes:  10
+    g_init: [-0.03, 0.0]
+    g_scale: [1, 0.5]
+
+    # data-preprocessing
+    preproc_class: Scale
+
+    # debug
+    fixed_inputs: False
+
+    # training flows and measurements
+    parallel: False
+    rel_stddev: 0.1
+    abs_stddev: 0.001
+    obs_rel_std: 0.001
+    obs_abs_std: 0.000001

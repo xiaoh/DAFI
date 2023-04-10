@@ -40,6 +40,8 @@ class InverseMethod(object):
         self._debug_dir = os.path.join(inputs_dafi['save_dir'], 'debug')
         self.inputs_dafi = inputs_dafi
         self.time = 0
+        self.inflation_flag = 0
+        self.localization_flag = 0
 
     def __str__(self):
         str_info = f'DAFI inverse method: \n    {self.name}'
@@ -338,7 +340,7 @@ class REnKF(InverseMethod):
         for ipenalty in self.penalties:
             w_mat = ipenalty['weight_matrix']
             lamb = ipenalty['lambda']
-            lamda = lamb(iteration)
+            lamda = lamb(iteration) / np.linalg.norm(coeff*np.dot(xp, xp.T))
             func_penalty = ipenalty['penalty']
             func_gradient = ipenalty['gradient']
             for isamp in range(self.nsamples):
@@ -362,6 +364,65 @@ class REnKF(InverseMethod):
                 'dx1': dx1, 'dx2': dx2, 'k2': k2_gain_matrix,
                 'penalty': penalty_mat,
             }
+            self._save_debug(debug_dict, iteration)
+        return state_analysis
+
+# child classes (developing)
+class AD_EnKF(InverseMethod):
+    """ Implementation of the adaptive-stepping ensemble Kalman method (AD_EnKF).
+
+    :math:`x_f` is the forecasted state vector (by the forward model),
+    :math:`x_a` is the updated vector after data-assimilation,
+    :math:`K` is the Kalman gain matrix, :math:`obs` is the observation
+    vector, and
+    :math:`Hx` is the forecasted state vector in observation space.
+    """
+
+    def __init__(self, inputs_dafi, inputs):
+        """ See  :py:meth:`InverseMethod.__init__` for details. """
+        super(self.__class__, self).__init__(inputs_dafi, inputs)
+        self.name = 'Adaptive-stepping Ensemble Kalman Method (AD-EnKF)'
+        self.inflation_flag = inputs['inflation_flag']
+        self.localization_flag = inputs['localization_flag']
+        self.alpha = inputs['alpha']
+        self.beta = inputs['beta']
+        self.gamma = inputs['gamma']
+        if 'tau' not in inputs or inputs['tau'] is None:
+            self.tau = 3
+        else:
+            self.tau = inputs['tau']
+        nstate = inputs['nstate']
+        nobs = inputs['nobs']
+        self.corr = np.ones([nstate, nobs])
+
+    def analysis(self, iteration, state_forecast, state_in_obsspace, obs,
+                 obs_error, obs_vec, corr=None):
+        """ Correct the forecast ensemble states using AD-EnKF.
+
+        See :py:meth:`InverseMethod.analysis` for I/O details.
+        """
+        # calculate the Kalman gain matrix
+        xp = _mean_subtracted_matrix(state_forecast)
+        hxp = _mean_subtracted_matrix(state_in_obsspace)
+        coeff = (1.0 / (self.nsamples - 1.0))
+        Sm = np.sqrt(coeff) * xp
+        Sd = np.sqrt(coeff) * hxp
+
+        Sd_norm = np.sqrt(np.linalg.inv(obs_error)).dot(Sd)
+        delta_d = np.sqrt(np.linalg.inv(obs_error)).dot(obs - state_in_obsspace)
+        SmSd = Sm.dot(Sd_norm.T)
+        inv = np.linalg.inv(Sd_norm.dot(Sd_norm.T) + self.gamma * np.eye(len(obs_vec)))
+        kalman_gain_matrix = SmSd.dot(inv)
+
+        # analysis step
+        dx = np.dot(self.corr * kalman_gain_matrix, delta_d)
+        state_analysis = state_forecast + dx
+
+        # debug
+        if self._debug:
+            debug_dict = {'P': coeff * np.dot(xp, xp.T),
+                'K': kalman_gain_matrix, 'inv': inv, 'SmSd': SmSd,
+                'Hxp': hxp, 'xp': xp, 'corr': self.corr}
             self._save_debug(debug_dict, iteration)
         return state_analysis
 
