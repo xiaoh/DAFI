@@ -238,9 +238,7 @@ def _solve(inputs_dafi, inverse, model):
                     inverse.gamma *= np.trace(Sd_norm.dot(Sd_norm.T)) / len(obs_vec)
                 elif iteration != 1:
                     inverse.gamma = inverse.gamma * inverse.beta
-            # else:
-                # inverse.gamma = 1
-            print(inverse.gamma)
+                print(inverse.gamma)
             state_analysis = inverse.analysis(
                 iteration, state_forecast, state_in_obsspace, obs, obs_error,
                 obs_vec)
