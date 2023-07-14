@@ -1,0 +1,51 @@
+
+dafi:
+    model_file: nnfoam.py
+    inverse_method: EnKF
+    nsamples: 10
+    max_iterations: 50
+    rand_seed: 1
+    verbosity: 2
+    convergence_option: discrepancy # max
+    save_level: iter
+    analysis_to_obs: False
+
+inverse:
+    penalties_python_file: ./penalties.py
+    inflation_flag: 1
+    localization_flag: 0
+    nstate: 69
+    nobs: 519
+    alpha: 1.01
+    beta: 0.99
+    gamma: 1.0
+
+model:
+    foam_case: nnfoam_inputs/foam_base
+    iteration_nstep: 500
+    weight_baseline_file: nnfoam_inputs/w.0
+    nut_base_foamfile: nnfoam_inputs/foam_base/0.orig/nut
+    ncpu: 50
+    obs_file: nnfoam_inputs/data/DNS_data/Re3500/
+    iteration_step_length: 1.0
+
+    # architecture
+    nscalar_invariants: 2
+    nbasis_tensors: 4
+    nhlayers:  2
+    nnodes:  5
+    g_init: [-0.09, 0.0, 0.0, 0.0]
+    g_scale: [1, 0.1, 0.1, 0.1]
+
+    # data-preprocessing
+    preproc_class: Scale
+
+    # debug
+    fixed_inputs: False
+
+    # training flows and measurements
+    parallel: False
+    rel_stddev: 0.1
+    abs_stddev: 0.001
+    obs_rel_std: 0.01
+    obs_abs_std: 0.000001

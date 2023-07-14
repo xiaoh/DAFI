@@ -1,0 +1,170 @@
+/*--------------------------------*- C++ -*----------------------------------*\
+| =========                 |                                                 |
+| \\      /  F ield         | OpenFOAM: The Open Source CFD Toolbox           |
+|  \\    /   O peration     | Version:  v1912                                 |
+|   \\  /    A nd           | Website:  www.openfoam.com                      |
+|    \\/     M anipulation  |                                                 |
+\*---------------------------------------------------------------------------*/
+FoamFile
+{
+    version     2.0;
+    format      ascii;
+    class       dictionary;
+    location    "system";
+    object      fvSolution;
+}
+// * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
+
+solvers
+{
+    p
+    {
+        // solver           smoothSolver; //GAMG;
+        // smoother         FDIC; //GaussSeidel; //FDIC;
+        // tolerance        1e-6; //1e-6
+        // relTol           0.1;
+        //solver          PCG;
+        //preconditioner  DIC;
+
+        solver          GAMG;
+        tolerance       1e-16;
+        relTol          0.01;
+        smoother        FDIC; //
+
+        // solver          GAMG;
+        // mergeLevels       1;
+        // preconditioner  FDIC;
+        // smoother        FDIC; //GaussSeidel;
+        // agglomerator    faceAreaPair;
+        // nCellsInCoarsestLevel   30;
+        // tolerance       1e-10;
+        // relTol          0.0;
+
+    }
+
+    U
+    {
+       // solver          smoothSolver;
+       // smoother        GaussSeidel;
+       // nSweeps         2;
+       // tolerance       1e-08;
+       // relTol          0.1;
+
+       solver           PBiCGStab;
+       preconditioner	  DILU;
+       tolerance        1e-16; //1e-6
+       relTol           0.01;
+
+       // solver            GAMG;
+       // preconditioner    DILU;
+
+       // mergeLevels       1;
+       // smoother          GaussSeidel;
+       // agglomerator      faceAreaPair;
+       // nCellsInCoarsestLevel   30;
+
+       // tolerance       1e-09;
+       // relTol          0;
+    }
+
+    // "(k|epsilon).*"
+    // {
+    //     // solver           PBiCGStab;
+    //     // preconditioner   DILU;
+    //     // tolerance        1e-8; //1e-6
+    //     // relTol  0.;
+    //
+    //     solver          smoothSolver;
+    //     smoother        GaussSeidel;
+    //     nSweeps         2;
+    //     tolerance       1e-08;
+    //     relTol          0.1;
+    // }
+    k
+    {
+       solver            GAMG;
+       preconditioner    DILU;
+       // mergeLevels       1;
+       smoother          DILU; //GaussSeidel;
+       // agglomerator      faceAreaPair;
+       // nCellsInCoarsestLevel   30;
+       tolerance       1e-16;
+       relTol          0.01;
+    }
+
+    omega
+    {
+       solver            GAMG;
+       preconditioner    DILU;
+       // mergeLevels       1;
+       smoother          DILU; //GaussSeidel;
+       // agglomerator      faceAreaPair;
+       // nCellsInCoarsestLevel   30;
+       tolerance       1e-16;
+       relTol          0.01;
+    }
+    epsilon
+    {
+       solver            GAMG;
+       preconditioner    DILU;
+       // mergeLevels       1;
+       smoother          DILU; //GaussSeidel;
+       // agglomerator      faceAreaPair;
+       // nCellsInCoarsestLevel   30;
+       tolerance       1e-16;
+       relTol          0.01;
+    }
+    Phi
+    {
+        $p;
+        relTol         0;
+    }
+
+    // pFinal
+    // {
+    //     $p;
+    //     relTol         0;
+    // }
+    // UFinal
+    // {
+    //     $U;
+    //     relTol         0;
+    // }
+}
+
+SIMPLE
+{
+    nNonOrthogonalCorrectors 0;
+
+    residualControl
+    {
+        p               1e-10;
+        U               1e-10;
+        k               1e-10;
+        epsilon         1e-10;
+        omega         1e-10;
+    }
+}
+
+potentialFlow
+{
+    nNonOrthogonalCorrectors  5;
+}
+
+relaxationFactors
+{
+    fields
+    {
+        p               0.7; //0.1; //0.3;
+    }
+    equations
+    {
+        U               0.7; //0.3;
+        k               0.3;
+        epsilon         0.3;
+        omega         0.3;
+    }
+}
+
+
+// ************************************************************************* //
