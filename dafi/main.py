@@ -238,7 +238,6 @@ def _solve(inputs_dafi, inverse, model):
                     inverse.gamma *= np.trace(Sd_norm.dot(Sd_norm.T)) / len(obs_vec)
                 elif iteration != 1:
                     inverse.gamma = inverse.gamma * inverse.beta
-                print(inverse.gamma)
             state_analysis = inverse.analysis(
                 iteration, state_forecast, state_in_obsspace, obs, obs_error,
                 obs_vec)
@@ -270,22 +269,15 @@ def _solve(inputs_dafi, inverse, model):
                     # log
                     print(f'      Inner iteration: {loop}')
                     inverse.gamma = inverse.gamma * inverse.alpha
-                    dir = os.path.join(tdir, 'Hx')
-                    state_in_obsspace = np.loadtxt(dir + '/Hx_{}'.format(iteration-1)) 
-
-                    # perturb observations
-                    if inputs_dafi['perturb_obs_option'] == 'iter':
-                        obs, obs_perturbation = _perturb_vec(
-                            obs_vec, obs_error, inputs_dafi['nsamples'])
-
+                    state_analysis = inverse.analysis(
+                        iteration, state_forecast, state_in_obsspace, obs, obs_error,
+                        obs_vec)
+                    state_in_obsspace = model.state_to_observation(state_analysis)
                     diff = obs - state_in_obsspace
                     misfit_norm = np.linalg.norm(np.mean(diff, axis=1))
                     if misfit_norm < misfit_list[iteration-1]:
                         misfit_list[iteration] = misfit_norm
                         break
-                    state_analysis = inverse.analysis(
-                        iteration, state_forecast, state_in_obsspace, obs, obs_error,
-                        obs_vec)
             print(f'      misfit = ... {misfit_norm}s')
 
             conv, log_message, (residual, noise) = _convergence(
