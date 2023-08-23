@@ -24,7 +24,6 @@ interpolationScheme cellPoint;
 fields
 (
     U
-    nut
 );
 
 sets
