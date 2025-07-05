@@ -10,7 +10,13 @@ Cite: C. A. Michelén Ströfer, X-L. Zhang, H. Xiao. DAFI: An open-source framew
 
 List of publications using DAFI:
 
-- X.-L. Zhang, H. Xiao, X. Luo, G. He. Ensemble Kalman method for learning turbulence models from indirect observation data. *Journal of Fluid Mechanics*, 949(A26), 2022.
+- X.-L. Zhang,  H. Xiao, X. Luo, G. He. Combining Direct and Indirect Sparse Data for Learning Generalizable Turbulence Models. *Journal of Computational Physics*, 489, 112272, 2023. DOI: [10.1016/j.jcp.2023.112272](https://doi.org/10.1016/j.jcp.2023.112272)
+
+- MI Zafar, X Zhou, CJ Roy, D Stelter, H Xiao. Data-driven turbulence modeling approach for cold-wall hypersonic boundary layers. arXiv preprint [arXiv:2406.17446](https://arxiv.org/abs/2406.17446)
+
+- X.-L. Zhang, H Xiao, S Jee, G He. Physical interpretation of neural network-based nonlinear eddy viscosity models. *Aerospace Science and Technology* 142 (a), 108632. DOI: [10.1016/j.ast.2023.108632](https://doi.org/10.1016/j.ast.2023.108632)  
+
+- X.-L. Zhang, H. Xiao, X. Luo, G. He. Ensemble Kalman method for learning turbulence models from indirect observation data. *Journal of Fluid Mechanics*, 949(A26), 2022. DOI: [10.1017/jfm.2022.744](https://doi.org/10.1017/jfm.2022.744)
 
 - C. A. Michelén Ströfer, X-L. Zhang, H. Xiao, O. Coutier-Delgosha. Enforcing boundary conditions on physical fields in Bayesian inversion. *Computer Methods in Applied Mechanics and Engineering* 367, 113097, 2020. DOI: [10.1016/j.cma.2020.113097](https://doi.org/10.1016/j.cma.2020.113097). Also available at: [arxiv: 1911.06683](https://arxiv.org/abs/1911.06683).
 
