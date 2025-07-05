@@ -2,15 +2,15 @@ DAFI - Data Assimilation and Field Inversion
 ============================================
 **DAFI** (Data Assimilation and Field Inversion) is an open-source, ensemble-based framework for solving inverse problems such as data assimilation and field inversion. Built with flexibility and extensibility in mind, it uses derivative-free Bayesian methods (ensemble Kalman filters) to infer physical fields from sparse observations while providing uncertainty quantification. DAFI integrates seamlessly with OpenFOAM and supports a wide range of physics models through a simple, object-oriented interface.
 
+Website: https://dafi.readthedocs.io
 
+## History:
 - DAFI was originally developed at Dr. Heng Xiao's group at Virginia Tech. 
 - In December 2022, Dr. Xiao moved to University of Stuttgart to hold the [Chair of Data-Driven Fluid Dynamics (DDSim)](https://www.hengx.org/) The code will be continuously maintained and updated by DDSim and collaborators.
 
-Website: https://dafi.readthedocs.io
-
 If you use DAFI, please cite: C. A. Michelén Ströfer, X-L. Zhang, H. Xiao. DAFI: An open-source framework for ensemble-based data assimilation and field inversion. *Communications in Computational Physics* 29, pp. 1583-1622, 2021. DOI: [10.4208/cicp.OA-2020-0178](https://doi.org/10.4208/cicp.OA-2020-0178). Also available at: [arxiv: 2012.02651](https://arxiv.org/abs/2012.02651).
 
-List of publications using DAFI:
+## List of publications using DAFI:
 
 - X.-L. Zhang,  H. Xiao, X. Luo, G. He. Combining Direct and Indirect Sparse Data for Learning Generalizable Turbulence Models. *Journal of Computational Physics*, 489, 112272, 2023. DOI: [10.1016/j.jcp.2023.112272](https://doi.org/10.1016/j.jcp.2023.112272)
 
